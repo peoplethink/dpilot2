@@ -947,7 +947,7 @@ void NvgWindow::drawSpeedLimit(QPainter &p) {
   int camLimitSpeed = roadLimitSpeed.getCamLimitSpeed();
   int camLimitSpeedLeftDist = roadLimitSpeed.getCamLimitSpeedLeftDist();
 
-  activeNDA = 1; //
+  //activeNDA = 1; //
   int sectionLimitSpeed = roadLimitSpeed.getSectionLimitSpeed();
   int sectionLeftDist = roadLimitSpeed.getSectionLeftDist();
 
