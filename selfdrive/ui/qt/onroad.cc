@@ -1074,7 +1074,8 @@ void NvgWindow::drawSteer(QPainter &p) {
    drawTextWithColor(p, rc.center().x(), rc.center().y(), str, textColor2);
   } else if (steer_angle > 89) {
    drawTextWithColor(p, rc.center().x(), rc.center().y(), str, textColor3);	  
-
+  }
+	
   str.sprintf("%.0f°", desire_angle);
   if (desire_angle < 11) {
    drawTextWithColor(p, rc.center().x(), rc.center().y() + 50, str, textColor0);
