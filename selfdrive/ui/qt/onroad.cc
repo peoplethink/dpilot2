@@ -622,9 +622,11 @@ void NvgWindow::drawCommunity(QPainter &p) {
   drawRestArea(p);
   drawTurnSignals(p);
   drawGpsStatus(p);
-  drawSteer(p);
   drawBrake(p);
   drawLcr(p);
+	
+  if(s->show_steer)
+    drawSteer(p);	
 	
   if(s->show_engrpm)
     drawEngRpm(p);
