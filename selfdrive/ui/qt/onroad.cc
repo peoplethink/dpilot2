@@ -1041,10 +1041,6 @@ void NvgWindow::drawSpeedLimit(QPainter &p) {
 }
 
 void NvgWindow::drawSteer(QPainter &p) {
-
-  int x = 0;
-  int y = 590;
-
   const SubMaster &sm = *(uiState()->sm);
   auto car_state = sm["carState"].getCarState();
   auto car_control = sm["carControl"].getCarControl();
@@ -1055,20 +1051,38 @@ void NvgWindow::drawSteer(QPainter &p) {
   configFont(p, "Open Sans", 50, "Bold");
 
   QString str;
-  int width = 192;
-
+  
+  QRect rc(30, 430, 184, 202);
+  p.setPen(QPen(QColor(0xff, 0xff, 0xff, 100), 10));
+  p.setBrush(QColor(0, 0, 0, 100));
+  p.drawRoundedRect(rc, 20, 20);
+  p.setPen(Qt::NoPen);
+	
+  QColor textColor0 = QColor(255, 255, 255, 200); // white
+  QColor textColor1 = QColor(120, 255, 120, 200); // green
+  QColor textColor2 = QColor(255, 255, 0, 200); // yellow
+  QColor textColor3 = QColor(255, 0, 0, 200);  // red
+	
   str.sprintf("%.0f°", steer_angle);
-  QRect rect = QRect(x, y, width, width);
-
-  p.setPen(QColor(255, 255, 255, 200));
-  p.drawText(rect, Qt::AlignCenter, str);
+  if (steer_angle < 11) {
+   drawTextWithColor(p, rc.center().x(), rc.center().y(), str, textColor0);
+  } else if (steer_angle < 31) {
+   drawTextWithColor(p, rc.center().x(), rc.center().y(), str, textColor1); 
+  } else if (steer_angle < 90) {
+   drawTextWithColor(p, rc.center().x(), rc.center().y(), str, textColor2);
+  } else if (steer_angle > 89) {
+   drawTextWithColor(p, rc.center().x(), rc.center().y(), str, textColor3);	  
 
   str.sprintf("%.0f°", desire_angle);
-  rect.setRect(x, y + 80, width, width);
-
-  p.setPen(QColor(155, 255, 155, 200));
-  p.drawText(rect, Qt::AlignCenter, str);
-
+  if (desire_angle < 11) {
+   drawTextWithColor(p, rc.center().x(), rc.center().y() + 50, str, textColor0);
+  } else if (desire_angle < 31) {
+   drawTextWithColor(p, rc.center().x(), rc.center().y() + 50, str, textColor1); 
+  } else if (desire_angle < 90) {
+   drawTextWithColor(p, rc.center().x(), rc.center().y() + 50, str, textColor2);
+  } else if (desire_angle > 89) {
+   drawTextWithColor(p, rc.center().x(), rc.center().y() + 50, str, textColor3);
+  }
 }
 
 QPixmap NvgWindow::get_icon_iol_com(const char* key) {
