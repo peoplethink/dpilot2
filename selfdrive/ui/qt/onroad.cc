@@ -248,7 +248,7 @@ ButtonsWindow::ButtonsWindow(QWidget *parent) : QWidget(parent) {
       padding: 0px;
       border-width: 9px;
       border-style: solid;
-      background-color: rgba(75, 75, 75, 0.3);
+      background-color: rgba(0, 0, 0, 0.3);
     }
   )");
 }
