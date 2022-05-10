@@ -877,10 +877,10 @@ void NvgWindow::drawBrake(QPainter &p) {
   auto car_state = sm["carState"].getCarState();
   bool brake_valid = car_state.getBrakeLights();
 	
-  int w = 1500;
+  int w = 1450;
   int h = 30;
   int x = (width() + (bdr_s*2))/2 - w/2 - bdr_s;
-  int y = 40 - bdr_s + 30;
+  int y = 40 - bdr_s + 35;
   
   if (brake_valid) {
     p.drawPixmap(x, y, w, h, ic_brake);
@@ -947,7 +947,7 @@ void NvgWindow::drawSpeedLimit(QPainter &p) {
   int camLimitSpeed = roadLimitSpeed.getCamLimitSpeed();
   int camLimitSpeedLeftDist = roadLimitSpeed.getCamLimitSpeedLeftDist();
 
-  //activeNDA = 1; //
+  activeNDA = 1; //
   int sectionLimitSpeed = roadLimitSpeed.getSectionLimitSpeed();
   int sectionLeftDist = roadLimitSpeed.getSectionLeftDist();
 
@@ -966,9 +966,9 @@ void NvgWindow::drawSpeedLimit(QPainter &p) {
   if(activeNDA > 0)
   {
       int w = 180;
-      int h = 50;
-      int x = 30;
-      int y = 422;
+      int h = 40;
+      int x = (width() + (bdr_s*2))/2 - w/2 - bdr_s;
+      int y = bdr_s;
 
       p.setOpacity(1.f);
       p.drawPixmap(x, y, w, h, activeNDA == 1 ? ic_nda : ic_hda);
@@ -1054,7 +1054,7 @@ void NvgWindow::drawSteer(QPainter &p) {
 
   QString str;
   
-  QRect rc(30, 500, 184, 130);
+  QRect rc(30, 440, 184, 130);
   p.setPen(QPen(QColor(0xff, 0xff, 0xff, 100), 10));
   p.setBrush(QColor(0, 0, 0, 100));
   p.drawRoundedRect(rc, 20, 20);
