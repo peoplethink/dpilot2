@@ -966,7 +966,7 @@ void NvgWindow::drawSpeedLimit(QPainter &p) {
   if(activeNDA > 0)
   {
       int w = 180;
-      int h = 40;
+      int h = 35;
       int x = (width() + (bdr_s*2))/2 - w/2 - bdr_s;
       int y = bdr_s;
 
@@ -1054,7 +1054,7 @@ void NvgWindow::drawSteer(QPainter &p) {
 
   QString str;
   
-  QRect rc(30, 440, 184, 130);
+  QRect rc(30, 430, 184, 130);
   p.setPen(QPen(QColor(0xff, 0xff, 0xff, 100), 10));
   p.setBrush(QColor(0, 0, 0, 100));
   p.drawRoundedRect(rc, 20, 20);
@@ -1078,13 +1078,13 @@ void NvgWindow::drawSteer(QPainter &p) {
 	
   str.sprintf("%.0f°", desire_angle);
   if (desire_angle < 11) {
-   drawTextWithColor(p, rc.center().x(), rc.center().y() + 60, str, textColor0);
+   drawTextWithColor(p, rc.center().x(), rc.center().y() + 50, str, textColor0);
   } else if (desire_angle < 31) {
-   drawTextWithColor(p, rc.center().x(), rc.center().y() + 60, str, textColor1); 
+   drawTextWithColor(p, rc.center().x(), rc.center().y() + 50, str, textColor1); 
   } else if (desire_angle < 90) {
-   drawTextWithColor(p, rc.center().x(), rc.center().y() + 60, str, textColor2);
+   drawTextWithColor(p, rc.center().x(), rc.center().y() + 50, str, textColor2);
   } else if (desire_angle > 89) {
-   drawTextWithColor(p, rc.center().x(), rc.center().y() + 60, str, textColor3);
+   drawTextWithColor(p, rc.center().x(), rc.center().y() + 50, str, textColor3);
   }
 }
 
