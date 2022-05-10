@@ -968,7 +968,7 @@ void NvgWindow::drawSpeedLimit(QPainter &p) {
       int w = 180;
       int h = 50;
       int x = 30;
-      int y = 430;
+      int y = 422;
 
       p.setOpacity(1.f);
       p.drawPixmap(x, y, w, h, activeNDA == 1 ? ic_nda : ic_hda);
@@ -1054,8 +1054,8 @@ void NvgWindow::drawSteer(QPainter &p) {
 
   QString str;
   
-  QRect rc(30, 470, 184, 170);
-  p.setPen(QPen(QColor(0xff, 0xff, 0xff, 80), 10));
+  QRect rc(30, 500, 184, 130);
+  p.setPen(QPen(QColor(0xff, 0xff, 0xff, 100), 10));
   p.setBrush(QColor(0, 0, 0, 100));
   p.drawRoundedRect(rc, 20, 20);
   p.setPen(Qt::NoPen);
