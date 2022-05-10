@@ -947,7 +947,7 @@ void NvgWindow::drawSpeedLimit(QPainter &p) {
   int camLimitSpeed = roadLimitSpeed.getCamLimitSpeed();
   int camLimitSpeedLeftDist = roadLimitSpeed.getCamLimitSpeedLeftDist();
 
-  activeNDA = 1; //
+  //activeNDA = 1; //
   int sectionLimitSpeed = roadLimitSpeed.getSectionLimitSpeed();
   int sectionLeftDist = roadLimitSpeed.getSectionLeftDist();
 
@@ -1054,7 +1054,7 @@ void NvgWindow::drawSteer(QPainter &p) {
 
   QString str;
   
-  QRect rc(30, 430, 184, 130);
+  QRect rc(30, 426, 184, 130);
   p.setPen(QPen(QColor(0xff, 0xff, 0xff, 100), 10));
   p.setBrush(QColor(0, 0, 0, 100));
   p.drawRoundedRect(rc, 20, 20);
