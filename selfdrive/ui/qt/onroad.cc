@@ -880,7 +880,7 @@ void NvgWindow::drawBrake(QPainter &p) {
   int w = 1450;
   int h = 30;
   int x = (width() + (bdr_s*2))/2 - w/2 - bdr_s;
-  int y = 40 - bdr_s + 35;
+  int y = 40 - bdr_s + 45;
   
   if (brake_valid) {
     p.drawPixmap(x, y, w, h, ic_brake);
@@ -1066,25 +1066,41 @@ void NvgWindow::drawSteer(QPainter &p) {
   QColor textColor3 = QColor(255, 0, 0, 200);  // red
 	
   str.sprintf("%.0f°", steer_angle);
-  if (steer_angle < 11) {
+  if (steer_angle > - 1 && steer_angle < 11) {
    drawTextWithColor(p, rc.center().x(), rc.center().y(), str, textColor0);
-  } else if (steer_angle < 31) {
+  } else if (steer_angle < 0 && steer_angle > - 11) {
+   drawTextWithColor(p, rc.center().x(), rc.center().y(), str, textColor0); 
+  } else if (steer_angle > 10 && steer_angle < 31) {
+   drawTextWithColor(p, rc.center().x(), rc.center().y(), str, textColor1); 	  
+  } else if (steer_angle < - 10 && steer_angle > - 31) {
    drawTextWithColor(p, rc.center().x(), rc.center().y(), str, textColor1); 
-  } else if (steer_angle < 90) {
-   drawTextWithColor(p, rc.center().x(), rc.center().y(), str, textColor2);
+  } else if (steer_angle > 30 && steer_angle < 90) {
+   drawTextWithColor(p, rc.center().x(), rc.center().y(), str, textColor2); 	  
+  } else if (steer_angle < - 31 && steer_angle > - 90) {
+   drawTextWithColor(p, rc.center().x(), rc.center().y(), str, textColor2); 
   } else if (steer_angle > 89) {
-   drawTextWithColor(p, rc.center().x(), rc.center().y(), str, textColor3);	  
+   drawTextWithColor(p, rc.center().x(), rc.center().y(), str, textColor3); 	  
+  } else if (steer_angle < - 89) {
+   drawTextWithColor(p, rc.center().x(), rc.center().y(), str, textColor3);	  	  
   }
 	
   str.sprintf("%.0f°", desire_angle);
-  if (desire_angle < 11) {
+  if (desire_angle > - 1 && desire_angle < 11) {
    drawTextWithColor(p, rc.center().x(), rc.center().y() + 50, str, textColor0);
-  } else if (desire_angle < 31) {
+  } else if (desire_angle < 0 && desire_angle > - 11) {
+   drawTextWithColor(p, rc.center().x(), rc.center().y() + 50, str, textColor0); 
+  } else if (desire_angle > 10 && desire_angle < 31) {
+   drawTextWithColor(p, rc.center().x(), rc.center().y() + 50, str, textColor1); 	  
+  } else if (desire_angle < - 10 && desire_angle > - 31) {
    drawTextWithColor(p, rc.center().x(), rc.center().y() + 50, str, textColor1); 
-  } else if (desire_angle < 90) {
-   drawTextWithColor(p, rc.center().x(), rc.center().y() + 50, str, textColor2);
+  } else if (desire_angle > 30 && desire_angle < 90) {
+   drawTextWithColor(p, rc.center().x(), rc.center().y() + 50, str, textColor2); 	  
+  } else if (desire_angle < - 31 && desire_angle > - 90) {
+   drawTextWithColor(p, rc.center().x(), rc.center().y() + 50, str, textColor2); 
   } else if (desire_angle > 89) {
-   drawTextWithColor(p, rc.center().x(), rc.center().y() + 50, str, textColor3);
+   drawTextWithColor(p, rc.center().x(), rc.center().y() + 50, str, textColor3); 	  
+  } else if (desire_angle < - 89) {
+   drawTextWithColor(p, rc.center().x(), rc.center().y() + 50, str, textColor3);	  	  
   }
 }
 
