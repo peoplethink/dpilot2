@@ -967,8 +967,8 @@ void NvgWindow::drawSpeedLimit(QPainter &p) {
   {
       int w = 180;
       int h = 35;
-      int x = 20;
-      int y = 948;
+      int x = 12;
+      int y = 935;
 
       p.setOpacity(1.f);
       p.drawPixmap(x, y, w, h, activeNDA == 1 ? ic_nda : ic_hda);
