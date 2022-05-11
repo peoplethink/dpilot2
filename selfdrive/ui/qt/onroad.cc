@@ -966,9 +966,9 @@ void NvgWindow::drawSpeedLimit(QPainter &p) {
   if(activeNDA > 0)
   {
       int w = 180;
-      int h = 35;
+      int h = 30;
       int x = 30;
-      int y = 700;
+      int y = 952;
 
       p.setOpacity(1.f);
       p.drawPixmap(x, y, w, h, activeNDA == 1 ? ic_nda : ic_hda);
@@ -1361,7 +1361,7 @@ void NvgWindow::drawCgear(QPainter &p) {
   p.setPen(QColor(255, 255, 255, 255)); 
 
   int x_gear = 45;
-  int y_gear = 930;
+  int y_gear = 915;
   if ((t_gear < 9) && (t_gear !=0)) { 
     p.drawText(x_gear, y_gear, tgear);
   } else if (t_gear == 14 ) { 
