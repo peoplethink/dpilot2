@@ -880,7 +880,7 @@ void NvgWindow::drawBrake(QPainter &p) {
   int w = 1450;
   int h = 30;
   int x = (width() + (bdr_s*2))/2 - w/2 - bdr_s;
-  int y = 40 - bdr_s + 45;
+  int y = 40 - bdr_s + 30;
   
   if (brake_valid) {
     p.drawPixmap(x, y, w, h, ic_brake);
@@ -947,7 +947,7 @@ void NvgWindow::drawSpeedLimit(QPainter &p) {
   int camLimitSpeed = roadLimitSpeed.getCamLimitSpeed();
   int camLimitSpeedLeftDist = roadLimitSpeed.getCamLimitSpeedLeftDist();
 
-  //activeNDA = 1; //
+  activeNDA = 1; //
   int sectionLimitSpeed = roadLimitSpeed.getSectionLimitSpeed();
   int sectionLeftDist = roadLimitSpeed.getSectionLeftDist();
 
@@ -967,8 +967,8 @@ void NvgWindow::drawSpeedLimit(QPainter &p) {
   {
       int w = 180;
       int h = 35;
-      int x = (width() + (bdr_s*2))/2 - w/2 - bdr_s;
-      int y = bdr_s;
+      int x = 30;
+      int y = 700;
 
       p.setOpacity(1.f);
       p.drawPixmap(x, y, w, h, activeNDA == 1 ? ic_nda : ic_hda);
@@ -1062,46 +1062,12 @@ void NvgWindow::drawSteer(QPainter &p) {
 	
   QColor textColor0 = QColor(255, 255, 255, 200); // white
   QColor textColor1 = QColor(120, 255, 120, 200); // green
-  QColor textColor2 = QColor(255, 255, 0, 200); // yellow
-  QColor textColor3 = QColor(255, 0, 0, 200);  // red
 	
   str.sprintf("%.0f°", steer_angle);
-  if (steer_angle > - 1 && steer_angle < 11) {
-   drawTextWithColor(p, rc.center().x(), rc.center().y(), str, textColor0);
-  } else if (steer_angle < 0 && steer_angle > - 11) {
-   drawTextWithColor(p, rc.center().x(), rc.center().y(), str, textColor0); 
-  } else if (steer_angle > 10 && steer_angle < 31) {
-   drawTextWithColor(p, rc.center().x(), rc.center().y(), str, textColor1); 	  
-  } else if (steer_angle < - 10 && steer_angle > - 31) {
-   drawTextWithColor(p, rc.center().x(), rc.center().y(), str, textColor1); 
-  } else if (steer_angle > 30 && steer_angle < 90) {
-   drawTextWithColor(p, rc.center().x(), rc.center().y(), str, textColor2); 	  
-  } else if (steer_angle < - 31 && steer_angle > - 90) {
-   drawTextWithColor(p, rc.center().x(), rc.center().y(), str, textColor2); 
-  } else if (steer_angle > 89) {
-   drawTextWithColor(p, rc.center().x(), rc.center().y(), str, textColor3); 	  
-  } else if (steer_angle < - 89) {
-   drawTextWithColor(p, rc.center().x(), rc.center().y(), str, textColor3);	  	  
-  }
+  drawTextWithColor(p, rc.center().x(), rc.center().y(), str, textColor0);
 	
   str.sprintf("%.0f°", desire_angle);
-  if (desire_angle > - 1 && desire_angle < 11) {
-   drawTextWithColor(p, rc.center().x(), rc.center().y() + 50, str, textColor0);
-  } else if (desire_angle < 0 && desire_angle > - 11) {
-   drawTextWithColor(p, rc.center().x(), rc.center().y() + 50, str, textColor0); 
-  } else if (desire_angle > 10 && desire_angle < 31) {
-   drawTextWithColor(p, rc.center().x(), rc.center().y() + 50, str, textColor1); 	  
-  } else if (desire_angle < - 10 && desire_angle > - 31) {
-   drawTextWithColor(p, rc.center().x(), rc.center().y() + 50, str, textColor1); 
-  } else if (desire_angle > 30 && desire_angle < 90) {
-   drawTextWithColor(p, rc.center().x(), rc.center().y() + 50, str, textColor2); 	  
-  } else if (desire_angle < - 31 && desire_angle > - 90) {
-   drawTextWithColor(p, rc.center().x(), rc.center().y() + 50, str, textColor2); 
-  } else if (desire_angle > 89) {
-   drawTextWithColor(p, rc.center().x(), rc.center().y() + 50, str, textColor3); 	  
-  } else if (desire_angle < - 89) {
-   drawTextWithColor(p, rc.center().x(), rc.center().y() + 50, str, textColor3);	  	  
-  }
+  drawTextWithColor(p, rc.center().x(), rc.center().y() + 50, str, textColor1);
 }
 
 QPixmap NvgWindow::get_icon_iol_com(const char* key) {
@@ -1391,11 +1357,11 @@ void NvgWindow::drawCgear(QPainter &p) {
   tgear.sprintf("%.0f", t_gear);
   configFont(p, "Open Sans", 150, "Bold");
 
-  //shifter = 1;
+  shifter = 1;
   p.setPen(QColor(255, 255, 255, 255)); 
 
   int x_gear = 45;
-  int y_gear = 952;
+  int y_gear = 930;
   if ((t_gear < 9) && (t_gear !=0)) { 
     p.drawText(x_gear, y_gear, tgear);
   } else if (t_gear == 14 ) { 
