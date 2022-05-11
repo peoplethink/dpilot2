@@ -947,7 +947,7 @@ void NvgWindow::drawSpeedLimit(QPainter &p) {
   int camLimitSpeed = roadLimitSpeed.getCamLimitSpeed();
   int camLimitSpeedLeftDist = roadLimitSpeed.getCamLimitSpeedLeftDist();
 
-  activeNDA = 1; //
+  //activeNDA = 1; //
   int sectionLimitSpeed = roadLimitSpeed.getSectionLimitSpeed();
   int sectionLeftDist = roadLimitSpeed.getSectionLeftDist();
 
@@ -1357,7 +1357,7 @@ void NvgWindow::drawCgear(QPainter &p) {
   tgear.sprintf("%.0f", t_gear);
   configFont(p, "Open Sans", 150, "Bold");
 
-  shifter = 1;
+  //shifter = 1;
   p.setPen(QColor(255, 255, 255, 255)); 
 
   int x_gear = 45;
