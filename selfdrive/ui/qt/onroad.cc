@@ -965,9 +965,9 @@ void NvgWindow::drawSpeedLimit(QPainter &p) {
 
   if(activeNDA > 0)
   {
-      int w = 160;
+      int w = 140;
       int h = 35;
-      int x = 5;
+      int x = 20;
       int y = 935;
 
       p.setOpacity(1.f);
