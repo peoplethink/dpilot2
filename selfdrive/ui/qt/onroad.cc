@@ -965,7 +965,7 @@ void NvgWindow::drawSpeedLimit(QPainter &p) {
 
   if(activeNDA > 0)
   {
-      int w = 180;
+      int w = 160;
       int h = 35;
       int x = 5;
       int y = 935;
