@@ -1366,7 +1366,7 @@ void NvgWindow::drawCgear(QPainter &p) {
   p.setPen(Qt::NoPen);
 	
   if ((t_gear < 9) && (t_gear !=0)) { 
-    p.drawText( rc.center().x() - 43, rc.center().y() + 55, tgear);
+    p.drawText( rc.center().x(), rc.center().y(), tgear);
   } else if (t_gear == 14 ) { 
     p.setPen(QColor(201, 34, 49, 255));
     p.drawText(rc.center().x() - 43, rc.center().y() + 55, "R");
@@ -1375,7 +1375,7 @@ void NvgWindow::drawCgear(QPainter &p) {
     p.drawText(rc.center().x() - 43, rc.center().y() + 55, "P");
   } else if (shifter == 3 ) {  
     p.setPen(QColor(255, 255, 255, 255));
-    p.drawText(rc.center().x() - 43, rc.center().y() + 55, "N");
+    p.drawText(rc.center().x() - 50, rc.center().y() + 55, "N");
   }
   // 1 "P"   2 "D"  3 "N" 4 "R"
 
