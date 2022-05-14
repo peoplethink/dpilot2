@@ -115,7 +115,7 @@ class CarInterface(CarInterfaceBase):
     ret.longitudinalActuatorDelayUpperBound = 0.3
 
     ret.stopAccel = -2.0
-    ret.stoppingDecelRate = 0.4  # brake_travel/s while trying to stop
+    ret.stoppingDecelRate = 0.3  # brake_travel/s while trying to stop
     ret.vEgoStopping = 0.5
     ret.vEgoStarting = 0.5
 
@@ -131,8 +131,8 @@ class CarInterface(CarInterfaceBase):
 	
       if ret.lateralTuning.which() == 'pid':
         ret.lateralTuning.pid.kf = 0.00006908923778520113
-        ret.lateralTuning.pid.kpBP = [0., 10., 30.]
-        ret.lateralTuning.pid.kpV = [0.0132, 0.0333, 0.0503]
+        ret.lateralTuning.pid.kpBP = [0., 10., 30., 60.]
+        ret.lateralTuning.pid.kpV = [0.0132, 0.0333, 0.0503, 0.450]
         ret.lateralTuning.pid.kiBP = [0., 30.]
         ret.lateralTuning.pid.kiV = [0.008, 0.01]
         ret.lateralTuning.pid.kdBP = [0.]
