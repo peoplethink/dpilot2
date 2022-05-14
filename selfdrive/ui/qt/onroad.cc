@@ -1372,7 +1372,7 @@ void NvgWindow::drawCgear(QPainter &p) {
     p.drawText(rc.center().x() - 20, rc.center().y() + 30, "R");
   } else if (shifter == 1 ) { 
     p.setPen(QColor(255, 255, 255, 255));
-    p.drawText(rc.center().x() - 20, rc.center().y() + 30, "P");
+    p.drawText(rc.center().x() - 35, rc.center().y() + 45, "P");
   } else if (shifter == 3 ) {  
     p.setPen(QColor(255, 255, 255, 255));
     p.drawText(rc.center().x() - 20, rc.center().y() + 30, "N");
