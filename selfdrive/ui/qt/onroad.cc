@@ -1358,6 +1358,7 @@ void NvgWindow::drawCgear(QPainter &p) {
   configFont(p, "Open Sans", 150, "Bold");
 
   shifter = 1;
+	
   QRect rc(30, 600, 184, 180);
   p.setPen(QPen(QColor(0xff, 0xff, 0xff, 100), 10));
   p.setBrush(QColor(0, 0, 0, 100));
@@ -1365,16 +1366,16 @@ void NvgWindow::drawCgear(QPainter &p) {
   p.setPen(Qt::NoPen);
 	
   if ((t_gear < 9) && (t_gear !=0)) { 
-    p.drawText( rc.center().x(), rc.center().y(), tgear);
+    p.drawText( rc.center().x() - 20, rc.center().y() + 30, tgear);
   } else if (t_gear == 14 ) { 
     p.setPen(QColor(201, 34, 49, 255));
-    p.drawText(rc.center().x(), rc.center().y(), "R");
+    p.drawText(rc.center().x() - 20, rc.center().y() + 30, "R");
   } else if (shifter == 1 ) { 
     p.setPen(QColor(255, 255, 255, 255));
-    p.drawText(rc.center().x(), rc.center().y(), "P");
+    p.drawText(rc.center().x() - 20, rc.center().y() + 30, "P");
   } else if (shifter == 3 ) {  
     p.setPen(QColor(255, 255, 255, 255));
-    p.drawText(rc.center().x(), rc.center().y(), "N");
+    p.drawText(rc.center().x() - 20, rc.center().y() + 30, "N");
   }
   // 1 "P"   2 "D"  3 "N" 4 "R"
 
