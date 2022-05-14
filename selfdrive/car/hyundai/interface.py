@@ -130,7 +130,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRateCost = 0.4
 	
       if ret.lateralTuning.which() == 'pid':
-        ret.lateralTuning.pid.kf = 0.00006908923778520113
+        ret.lateralTuning.pid.kf = 0.00008908923778520113
         ret.lateralTuning.pid.kpBP = [0., 10., 30., 60.]
         ret.lateralTuning.pid.kpV = [0.0132, 0.0333, 0.0503, 0.450]
         ret.lateralTuning.pid.kiBP = [0., 30.]
