@@ -28,7 +28,7 @@ class CarInterface(CarInterfaceBase):
     v_current_kph = current_speed * CV.MS_TO_KPH
 
     gas_max_bp = [10., 20., 50., 70., 130., 150.]
-    gas_max_v = [1.5, 1.23, 0.67, 0.47, 0.16, 0.1]
+    gas_max_v = [1.55, 1.25, 0.67, 0.49, 0.18, 0.1]
 
     return CarControllerParams.ACCEL_MIN, interp(v_current_kph, gas_max_bp, gas_max_v)
 
@@ -42,7 +42,7 @@ class CarInterface(CarInterfaceBase):
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hyundaiLegacy, 0)]
     ret.radarOffCan = RADAR_START_ADDR not in fingerprint[1] or DBC[ret.carFingerprint]["radar"] is None
 
-    tire_stiffness_factor = 0.85
+    tire_stiffness_factor = 1.0
     if Params().get_bool('SteerLockout'):
       ret.maxSteeringAngleDeg = 1000
     else:
@@ -55,7 +55,7 @@ class CarInterface(CarInterfaceBase):
 
     # -------------PID
     if Params().get("LateralControlSelect", encoding='utf8') == "0":
-      ret.lateralTuning.pid.kf = 0.00006908923778520113
+      ret.lateralTuning.pid.kf = 0.00006
       ret.lateralTuning.pid.kpBP = [0., 10., 30.]
       ret.lateralTuning.pid.kpV = [0.0132, 0.0333, 0.0503]
       ret.lateralTuning.pid.kiBP = [0., 30.]
@@ -124,21 +124,6 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 1960. + STD_CARGO_KG
       ret.wheelbase = 3.01
       ret.centerToFront = ret.wheelbase * 0.4
-
-      ret.steerRatio = 15.8
-      ret.steerActuatorDelay = 0.2
-      ret.steerRateCost = 0.4
-	
-      if ret.lateralTuning.which() == 'pid':
-        ret.lateralTuning.pid.kf = 0.00008908923778520113
-        ret.lateralTuning.pid.kpBP = [0., 10., 30., 60.]
-        ret.lateralTuning.pid.kpV = [0.0132, 0.0333, 0.0503, 0.450]
-        ret.lateralTuning.pid.kiBP = [0., 30.]
-        ret.lateralTuning.pid.kiV = [0.008, 0.01]
-        ret.lateralTuning.pid.kdBP = [0.]
-        ret.lateralTuning.pid.kdV = [0.8]
-        ret.lateralTuning.pid.newKfTuned = True
-	
     elif candidate == CAR.GENESIS_G70:
       ret.mass = 1640. + STD_CARGO_KG
       ret.wheelbase = 2.84
