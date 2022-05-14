@@ -1366,6 +1366,7 @@ void NvgWindow::drawCgear(QPainter &p) {
   p.setPen(Qt::NoPen);
 	
   if ((t_gear < 9) && (t_gear !=0)) { 
+    p.setPen(QColor(255, 255, 255, 255)); 
     p.drawText( rc.center().x(), rc.center().y(), tgear);
   } else if (t_gear == 14 ) { 
     p.setPen(QColor(201, 34, 49, 255));
