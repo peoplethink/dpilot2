@@ -1358,7 +1358,7 @@ void NvgWindow::drawCgear(QPainter &p) {
   configFont(p, "Open Sans", 150, "Bold");
 
   shifter = 1;
-  QRect rc(30, 600, 184, 130);
+  QRect rc(30, 600, 184, 180);
   p.setPen(QPen(QColor(0xff, 0xff, 0xff, 100), 10));
   p.setBrush(QColor(0, 0, 0, 100));
   p.drawRoundedRect(rc, 20, 20);
