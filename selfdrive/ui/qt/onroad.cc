@@ -839,7 +839,7 @@ void NvgWindow::drawBottomIcons(QPainter &p) {
   else {
     str.sprintf("%d", (int)gap);
     textColor = QColor(120, 255, 120, 200);
-    textSize = 70.f;
+    textSize = 60.f;
   }
 
   configFont(p, "Open Sans", 35, "Bold");
