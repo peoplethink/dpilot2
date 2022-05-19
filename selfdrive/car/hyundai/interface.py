@@ -28,7 +28,7 @@ class CarInterface(CarInterfaceBase):
     v_current_kph = current_speed * CV.MS_TO_KPH
 
     gas_max_bp = [0., 10., 20., 30., 40., 50., 70., 90., 130.]
-    gas_max_v = [1.69, 1.61, 1.25, 1.04, 0.74, 0.57, 0.365, 0.325, 0.20]
+    gas_max_v = [1.695, 1.615, 1.25, 1.04, 0.73, 0.56, 0.365, 0.325, 0.20]
 
     return CarControllerParams.ACCEL_MIN, interp(v_current_kph, gas_max_bp, gas_max_v)
 
@@ -55,13 +55,13 @@ class CarInterface(CarInterfaceBase):
 
     # -------------PID
     if Params().get("LateralControlSelect", encoding='utf8') == "0":
-      ret.lateralTuning.pid.kf = 0.00007
+      ret.lateralTuning.pid.kf = 0.00009
       ret.lateralTuning.pid.kpBP = [0., 10., 30.]
-      ret.lateralTuning.pid.kpV = [0.0132, 0.0333, 0.0503]
+      ret.lateralTuning.pid.kpV = [0.01, 0.03, 0.05]
       ret.lateralTuning.pid.kiBP = [0., 30.]
       ret.lateralTuning.pid.kiV = [0.008, 0.01]
       ret.lateralTuning.pid.kdBP = [0.]
-      ret.lateralTuning.pid.kdV = [0.5]
+      ret.lateralTuning.pid.kdV = [1.0]
       ret.lateralTuning.pid.newKfTuned = True
           
     # -------------INDI
