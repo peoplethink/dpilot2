@@ -692,7 +692,7 @@ void NvgWindow::drawCommunity(QPainter &p) {
                       );
 
   // info
-  configFont(p, "Open Sans", 34, "Regular");
+  configFont(p, "Open Sans", 35, "Regular");
   p.setPen(QColor(0xff, 0xff, 0xff, 0xff));
   p.drawText(rect().left() + 180, rect().height() - 15, infoText);	
   const int h = 60;
