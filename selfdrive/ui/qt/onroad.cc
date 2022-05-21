@@ -676,7 +676,7 @@ void NvgWindow::drawCommunity(QPainter &p) {
   int scc_bus = car_params.getSccBus();
 
   QString infoText;
-  infoText.sprintf(" %s  AO(%.2f/%.2f) SR(%.2f) SC(%.2f) SD(%.2f) (%d) (A%.2f/B%.2f/C%.2f)  CPU온도 %.1f°  BIG_0814",
+  infoText.sprintf(" %s  AO(%.2f/%.2f) SR(%.2f) SC(%.2f) SD(%.2f) (%d) (A%.2f/B%.2f/C%.2f)  CPU온도 %.1f° 0814",
 		      lateral_state[lateralControlState],
                       live_params.getAngleOffsetDeg(),
                       live_params.getAngleOffsetAverageDeg(),
@@ -692,7 +692,7 @@ void NvgWindow::drawCommunity(QPainter &p) {
                       );
 
   // info
-  configFont(p, "Open Sans", 35, "Regular");
+  configFont(p, "Open Sans", 36, "Bold");
   p.setPen(QColor(0xff, 0xff, 0xff, 0xff));
   p.drawText(rect().left() + 180, rect().height() - 15, infoText);	
   const int h = 60;
