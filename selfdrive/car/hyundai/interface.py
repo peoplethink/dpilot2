@@ -92,19 +92,19 @@ class CarInterface(CarInterfaceBase):
     elif Params().get("LateralControlSelect", encoding='utf8') == "3":
       ret.lateralTuning.init('torque')
       ret.lateralTuning.torque.useSteeringAngle = True
-      max_lat_accel = 2.5
+      max_lat_accel = 2.62
       ret.lateralTuning.torque.kp = 1.5 / max_lat_accel
       ret.lateralTuning.torque.kf = 0.7 / max_lat_accel
       ret.lateralTuning.torque.ki = 0.05 / max_lat_accel
       ret.lateralTuning.torque.friction = 0.001
 
-      ret.lateralTuning.torque.kd = 0.0
-      ret.lateralTuning.torque.deadzone = 0.0
+      ret.lateralTuning.torque.kd = 0.02
+      ret.lateralTuning.torque.deadzone = 0.001
 
-    ret.steerActuatorDelay = 0.2
+    ret.steerActuatorDelay = 0.1
     ret.steerRateCost = 0.35
     ret.steerLimitTimer = 2.5
-    ret.steerRatio = 16.0
+    ret.steerRatio = 15.8
 	
     # longitudinal
     ret.longitudinalTuning.kpBP = [0.*CV.KPH_TO_MS, 10.*CV.KPH_TO_MS, 20.*CV.KPH_TO_MS, 30.*CV.KPH_TO_MS, 70.*CV.KPH_TO_MS, 130.*CV.KPH_TO_MS]
@@ -113,10 +113,10 @@ class CarInterface(CarInterfaceBase):
     ret.longitudinalTuning.kiV = [0.06, 0.05]
     #ret.longitudinalTuning.kf = 0.92
     ret.longitudinalActuatorDelayLowerBound = 0.3
-    ret.longitudinalActuatorDelayUpperBound = 0.38
+    ret.longitudinalActuatorDelayUpperBound = 0.4
 
     ret.stopAccel = -0.5
-    ret.stoppingDecelRate = 0.2  # brake_travel/s while trying to stop
+    ret.stoppingDecelRate = 0.18  # brake_travel/s while trying to stop
     ret.vEgoStopping = 0.5
     ret.vEgoStarting = 0.5
 
