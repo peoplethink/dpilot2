@@ -42,7 +42,7 @@ class CarInterface(CarInterfaceBase):
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hyundaiLegacy, 0)]
     ret.radarOffCan = RADAR_START_ADDR not in fingerprint[1] or DBC[ret.carFingerprint]["radar"] is None
 
-    tire_stiffness_factor = 1.0
+    tire_stiffness_factor = 0.85
     if Params().get_bool('SteerLockout'):
       ret.maxSteeringAngleDeg = 1000
     else:
@@ -55,13 +55,13 @@ class CarInterface(CarInterfaceBase):
 
     # -------------PID
     if Params().get("LateralControlSelect", encoding='utf8') == "0":
-      ret.lateralTuning.pid.kf = 0.000055
+      ret.lateralTuning.pid.kf = 0.00006
       ret.lateralTuning.pid.kpBP = [0., 10., 30.]
-      ret.lateralTuning.pid.kpV = [0.014, 0.035, 0.052]
+      ret.lateralTuning.pid.kpV = [0.02, 0.04, 0.06]
       ret.lateralTuning.pid.kiBP = [0., 30.]
       ret.lateralTuning.pid.kiV = [0.005, 0.008]
       ret.lateralTuning.pid.kdBP = [0.]
-      ret.lateralTuning.pid.kdV = [0.8]
+      ret.lateralTuning.pid.kdV = [0.75]
       ret.lateralTuning.pid.newKfTuned = True
           
     # -------------INDI
