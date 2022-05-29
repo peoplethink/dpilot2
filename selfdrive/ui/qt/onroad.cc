@@ -475,15 +475,15 @@ void NvgWindow::drawLaneLines(QPainter &painter, const UIScene &scene) {
       const float lane_pos = line.getY().size() > 0 ? std::abs(line.getY()[5]) : default_pos;  // get redder when line is closer to car
       float hue = 332.5 * lane_pos - 332.5;  // equivalent to {1.4, 1.0}: {133, 0} (green to red)
       hue = std::fmin(133, fmax(0, hue)) / 360.;  // clip and normalize
-      painter.setBrush(QColor(23, 134, 68, 241));
+      painter.setBrush(QColor(255, 255, 255, 250));
     } else {
-      painter.setBrush(QColor(23, 134, 68, 241));
+      painter.setBrush(QColor(255, 255, 255, 250));
     }
     painter.drawPolygon(scene.lane_line_vertices[i].v, scene.lane_line_vertices[i].cnt);
   }
   // road edges
   for (int i = 0; i < std::size(scene.road_edge_vertices); ++i) {
-    painter.setBrush(QColor(23, 134, 68, 241));
+    painter.setBrush(QColor(255, 0, 0, 250));
     painter.drawPolygon(scene.road_edge_vertices[i].v, scene.road_edge_vertices[i].cnt);
   }
 	
