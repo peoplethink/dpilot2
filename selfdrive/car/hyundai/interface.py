@@ -61,7 +61,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiBP = [0., 30.]
       ret.lateralTuning.pid.kiV = [0.002, 0.005]
       ret.lateralTuning.pid.kdBP = [0.]
-      ret.lateralTuning.pid.kdV = [0.8]
+      ret.lateralTuning.pid.kdV = [1.0]
       ret.lateralTuning.pid.newKfTuned = True
           
     # -------------INDI
