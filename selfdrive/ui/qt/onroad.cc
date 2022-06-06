@@ -209,7 +209,7 @@ ButtonsWindow::ButtonsWindow(QWidget *parent) : QWidget(parent) {
   QWidget *btns_wrapper = new QWidget;
   QHBoxLayout *btns_layout  = new QHBoxLayout(btns_wrapper);
   btns_layout->setSpacing(0);
-  btns_layout->setContentsMargins(0, 920, 30, 30);
+  btns_layout->setContentsMargins(0, 820, 30, 30);
 
   main_layout->addWidget(btns_wrapper, 0, Qt::AlignTop);
 
@@ -1087,7 +1087,7 @@ void NvgWindow::drawSteer(QPainter &p) {
 
   QString str;
   
-  QRect rc(2000, 200, 184, 130);
+  QRect rc(1500, 200, 184, 130);
   p.setPen(QPen(QColor(0xff, 0xff, 0xff, 100), 10));
   p.setBrush(QColor(0, 0, 0, 100));
   p.drawRoundedRect(rc, 20, 20);
