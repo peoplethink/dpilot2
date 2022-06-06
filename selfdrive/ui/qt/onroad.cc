@@ -209,7 +209,7 @@ ButtonsWindow::ButtonsWindow(QWidget *parent) : QWidget(parent) {
   QWidget *btns_wrapper = new QWidget;
   QHBoxLayout *btns_layout  = new QHBoxLayout(btns_wrapper);
   btns_layout->setSpacing(0);
-  btns_layout->setContentsMargins(0, 240, 30, 30);
+  btns_layout->setContentsMargins(0, 420, 30, 30);
 
   main_layout->addWidget(btns_wrapper, 0, Qt::AlignTop);
 
