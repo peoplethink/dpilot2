@@ -209,7 +209,7 @@ ButtonsWindow::ButtonsWindow(QWidget *parent) : QWidget(parent) {
   QWidget *btns_wrapper = new QWidget;
   QHBoxLayout *btns_layout  = new QHBoxLayout(btns_wrapper);
   btns_layout->setSpacing(0);
-  btns_layout->setContentsMargins(0, 790, 30, 30);
+  btns_layout->setContentsMargins(0, 770, 30, 30);
 
   main_layout->addWidget(btns_wrapper, 0, Qt::AlignTop);
 
@@ -232,7 +232,7 @@ ButtonsWindow::ButtonsWindow(QWidget *parent) : QWidget(parent) {
       dlpBtn->setText("Auto\nLane");
     }
   });
-  dlpBtn->setFixedWidth(184);
+  dlpBtn->setFixedWidth(186);
   dlpBtn->setFixedHeight(140);
   btns_layout->addWidget(dlpBtn, 0, Qt::AlignLeft);
   btns_layout->addSpacing(0);
@@ -1392,7 +1392,7 @@ void NvgWindow::drawCgear(QPainter &p) {
 
   shifter = 1;
 	
-  QRect rc(30, 620, 184, 140);
+  QRect rc(30, 620, 182, 135);
   p.setPen(QPen(QColor(0xff, 0xff, 0xff, 100), 10));
   p.setBrush(QColor(0, 0, 0, 100));
   p.drawRoundedRect(rc, 20, 20);
