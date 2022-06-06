@@ -1390,7 +1390,7 @@ void NvgWindow::drawCgear(QPainter &p) {
   tgear.sprintf("%.0f", t_gear);
   configFont(p, "Open Sans", 150, "Bold");
 
-  shifter = 1;
+  //shifter = 1;
 	
   QRect rc(30, 620, 182, 135);
   p.setPen(QPen(QColor(0xff, 0xff, 0xff, 100), 10));
