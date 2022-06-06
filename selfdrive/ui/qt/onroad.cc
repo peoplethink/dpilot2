@@ -209,7 +209,7 @@ ButtonsWindow::ButtonsWindow(QWidget *parent) : QWidget(parent) {
   QWidget *btns_wrapper = new QWidget;
   QHBoxLayout *btns_layout  = new QHBoxLayout(btns_wrapper);
   btns_layout->setSpacing(0);
-  btns_layout->setContentsMargins(0, 800, 30, 30);
+  btns_layout->setContentsMargins(0, 790, 30, 30);
 
   main_layout->addWidget(btns_wrapper, 0, Qt::AlignTop);
 
@@ -232,8 +232,8 @@ ButtonsWindow::ButtonsWindow(QWidget *parent) : QWidget(parent) {
       dlpBtn->setText("Auto\nLane");
     }
   });
-  dlpBtn->setFixedWidth(187);
-  dlpBtn->setFixedHeight(135);
+  dlpBtn->setFixedWidth(184);
+  dlpBtn->setFixedHeight(140);
   btns_layout->addWidget(dlpBtn, 0, Qt::AlignLeft);
   btns_layout->addSpacing(0);
 
@@ -813,10 +813,10 @@ void NvgWindow::drawBrake(QPainter &p) {
   auto car_state = sm["carState"].getCarState();
   bool brake_valid = car_state.getBrakeLights();
 	
-  int w = 1450;
+  int w = 1440;
   int h = 30;
   int x = (width() + (bdr_s*2))/2 - w/2 - bdr_s;
-  int y = 40 - bdr_s + 30;
+  int y = 40 - bdr_s + 35;
   
   if (brake_valid) {
     p.drawPixmap(x, y, w, h, ic_brake);
@@ -1390,9 +1390,9 @@ void NvgWindow::drawCgear(QPainter &p) {
   tgear.sprintf("%.0f", t_gear);
   configFont(p, "Open Sans", 150, "Bold");
 
-  //shifter = 1;
+  shifter = 1;
 	
-  QRect rc(30, 620, 184, 180);
+  QRect rc(30, 620, 184, 140);
   p.setPen(QPen(QColor(0xff, 0xff, 0xff, 100), 10));
   p.setBrush(QColor(0, 0, 0, 100));
   p.drawRoundedRect(rc, 20, 20);
