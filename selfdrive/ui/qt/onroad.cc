@@ -209,7 +209,7 @@ ButtonsWindow::ButtonsWindow(QWidget *parent) : QWidget(parent) {
   QWidget *btns_wrapper = new QWidget;
   QHBoxLayout *btns_layout  = new QHBoxLayout(btns_wrapper);
   btns_layout->setSpacing(0);
-  btns_layout->setContentsMargins(0, 420, 30, 30);
+  btns_layout->setContentsMargins(0, 620, 30, 30);
 
   main_layout->addWidget(btns_wrapper, 0, Qt::AlignTop);
 
@@ -895,7 +895,7 @@ void NvgWindow::drawMaxSpeed(QPainter &p) {
   float applyMaxSpeed = scc_smoother.getApplyMaxSpeed();
   float cruiseMaxSpeed = scc_smoother.getCruiseMaxSpeed();
 
-  //activeNDA = 1; //
+  activeNDA = 1; //
   int activeNDA = road_limit_speed.getActive();
   int roadLimitSpeed = road_limit_speed.getRoadLimitSpeed();
   int camLimitSpeed = road_limit_speed.getCamLimitSpeed();
@@ -917,10 +917,10 @@ void NvgWindow::drawMaxSpeed(QPainter &p) {
 
   if(activeNDA > 0)
   {
-      int w = 145;
-      int h = 35;
-      int x = 15;
-      int y = 935;
+      int w = 184;
+      int h = 30;
+      int x = 30;
+      int y = 900;
 
       p.setOpacity(1.f);
       p.drawPixmap(x, y, w, h, activeNDA == 1 ? ic_nda : ic_hda);
@@ -1087,7 +1087,7 @@ void NvgWindow::drawSteer(QPainter &p) {
 
   QString str;
   
-  QRect rc(30, 430, 184, 130);
+  QRect rc(530, 150, 184, 130);
   p.setPen(QPen(QColor(0xff, 0xff, 0xff, 100), 10));
   p.setBrush(QColor(0, 0, 0, 100));
   p.drawRoundedRect(rc, 20, 20);
@@ -1390,7 +1390,7 @@ void NvgWindow::drawCgear(QPainter &p) {
   tgear.sprintf("%.0f", t_gear);
   configFont(p, "Open Sans", 150, "Bold");
 
-  //shifter = 1;
+  shifter = 1;
 	
   QRect rc(30, 600, 184, 180);
   p.setPen(QPen(QColor(0xff, 0xff, 0xff, 100), 10));
