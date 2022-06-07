@@ -125,6 +125,7 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 1960. + STD_CARGO_KG
       ret.wheelbase = 3.01
       ret.centerToFront = ret.wheelbase * 0.4
+      ret.maxLateralAccel = 3.2
     elif candidate == CAR.GENESIS_G70:
       ret.mass = 1640. + STD_CARGO_KG
       ret.wheelbase = 2.84
