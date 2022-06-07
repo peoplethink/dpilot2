@@ -1389,7 +1389,7 @@ void NvgWindow::drawCgear(QPainter &p) {
   QString tgear, tgearshifter;
 
   tgear.sprintf("%.0f", t_gear);
-  configFont(p, "Open Sans", 150, "Bold");
+  configFont(p, "Open Sans", 120, "Regular");
 
   //shifter = 1;
 	
