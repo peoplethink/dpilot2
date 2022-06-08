@@ -918,8 +918,8 @@ void NvgWindow::drawMaxSpeed(QPainter &p) {
 
   if(activeNDA > 0)
   {
-      int w = 184;
-      int h = 30;
+      int w = 230;
+      int h = 22;
       int x = (width() + (bdr_s*2))/2 - w/2 - bdr_s;
       int y = 40 - bdr_s;
 
@@ -1389,7 +1389,7 @@ void NvgWindow::drawCgear(QPainter &p) {
   QString tgear, tgearshifter;
 
   tgear.sprintf("%.0f", t_gear);
-  configFont(p, "Open Sans", 120, "Regular");
+  configFont(p, "Open Sans", 130, "Semi Bold");
 
   //shifter = 1;
 	
@@ -1401,19 +1401,17 @@ void NvgWindow::drawCgear(QPainter &p) {
 	
   if ((t_gear < 9) && (t_gear !=0)) { 
     p.setPen(QColor(255, 255, 255, 255)); 
-    p.drawText(rc.center().x() - 43, rc.center().y() + 55, tgear);
+    p.drawText(rc.center().x() - 38, rc.center().y() + 48, tgear);
   } else if (t_gear == 14 ) { 
     p.setPen(QColor(201, 34, 49, 255));
-    p.drawText(rc.center().x() - 43, rc.center().y() + 55, "R");
+    p.drawText(rc.center().x() - 38, rc.center().y() + 48, "R");
   } else if (shifter == 1 ) { 
     p.setPen(QColor(255, 255, 255, 255));
-    p.drawText(rc.center().x() - 43, rc.center().y() + 55, "P");
+    p.drawText(rc.center().x() - 38, rc.center().y() + 48, "P");
   } else if (shifter == 3 ) {  
     p.setPen(QColor(255, 255, 255, 255));
-    p.drawText(rc.center().x() - 50, rc.center().y() + 55, "N");
+    p.drawText(rc.center().x() - 40, rc.center().y() + 48, "N");
   }
-  // 1 "P"   2 "D"  3 "N" 4 "R"
-
 }
 
 void NvgWindow::drawEngRpm(QPainter &p) {

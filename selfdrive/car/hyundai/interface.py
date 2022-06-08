@@ -92,13 +92,13 @@ class CarInterface(CarInterfaceBase):
     elif Params().get("LateralControlSelect", encoding='utf8') == "3":
       ret.lateralTuning.init('torque')
       ret.lateralTuning.torque.useSteeringAngle = True
-      max_lat_accel = 2.0
-      ret.lateralTuning.torque.kp = 2.0 / max_lat_accel
-      ret.lateralTuning.torque.kf = 1.0 / max_lat_accel
-      ret.lateralTuning.torque.ki = 0.5 / max_lat_accel
-      ret.lateralTuning.torque.friction = 0.05
+      max_lat_accel = 2.5
+      ret.lateralTuning.torque.kp = 1.5 / max_lat_accel
+      ret.lateralTuning.torque.kf = 0.7 / max_lat_accel
+      ret.lateralTuning.torque.ki = 0.05 / max_lat_accel
+      ret.lateralTuning.torque.friction = 0.001
 
-      ret.lateralTuning.torque.kd = 0.02
+      ret.lateralTuning.torque.kd = 0.0
       ret.lateralTuning.torque.deadzone = 0.001
 
     ret.steerActuatorDelay = 0.15
@@ -110,22 +110,22 @@ class CarInterface(CarInterfaceBase):
     ret.longitudinalTuning.kpBP = [0.*CV.KPH_TO_MS, 10.*CV.KPH_TO_MS, 20.*CV.KPH_TO_MS, 30.*CV.KPH_TO_MS, 70.*CV.KPH_TO_MS, 130.*CV.KPH_TO_MS]
     ret.longitudinalTuning.kpV = [1.15, 1.05, 0.8, 0.7, 0.55, 0.35]
     ret.longitudinalTuning.kiBP = [0., 130. * CV.KPH_TO_MS]
-    ret.longitudinalTuning.kiV = [0.06, 0.05]
+    ret.longitudinalTuning.kiV = [0.08, 0.05]
     #ret.longitudinalTuning.kf = 0.92
     ret.longitudinalActuatorDelayLowerBound = 0.3
-    ret.longitudinalActuatorDelayUpperBound = 0.3
+    ret.longitudinalActuatorDelayUpperBound = 0.4
 
     ret.stopAccel = 0.0
-    ret.stoppingDecelRate = 0.18  # brake_travel/s while trying to stop
+    ret.stoppingDecelRate = 0.2  # brake_travel/s while trying to stop
     ret.vEgoStopping = 0.5
     ret.vEgoStarting = 0.5
 
     # genesis
     if candidate == CAR.GENESIS:
-      ret.mass = 1960. + STD_CARGO_KG
+      ret.mass = 2060. + STD_CARGO_KG
       ret.wheelbase = 3.01
       ret.centerToFront = ret.wheelbase * 0.4
-      ret.maxLateralAccel = 3.2
+      ret.maxLateralAccel = 2.5
     elif candidate == CAR.GENESIS_G70:
       ret.mass = 1640. + STD_CARGO_KG
       ret.wheelbase = 2.84
