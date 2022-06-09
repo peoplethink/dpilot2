@@ -107,13 +107,12 @@ class CarInterface(CarInterfaceBase):
     ret.steerRatio = 16.2
 	
     # longitudinal
-    ret.longitudinalTuning.kpBP = [0.*CV.KPH_TO_MS, 10.*CV.KPH_TO_MS, 20.*CV.KPH_TO_MS, 30.*CV.KPH_TO_MS, 70.*CV.KPH_TO_MS, 130.*CV.KPH_TO_MS]
-    ret.longitudinalTuning.kpV = [1.15, 1.05, 0.8, 0.7, 0.55, 0.35]
+    ret.longitudinalTuning.kpBP = [0., 5.*CV.KPH_TO_MS, 10.*CV.KPH_TO_MS, 30.*CV.KPH_TO_MS, 130.*CV.KPH_TO_MS]
+    ret.longitudinalTuning.kpV = [1.2, 1.0, 0.93, 0.88, 0.5]
     ret.longitudinalTuning.kiBP = [0., 130. * CV.KPH_TO_MS]
     ret.longitudinalTuning.kiV = [0.08, 0.05]
-    #ret.longitudinalTuning.kf = 0.92
     ret.longitudinalActuatorDelayLowerBound = 0.3
-    ret.longitudinalActuatorDelayUpperBound = 0.4
+    ret.longitudinalActuatorDelayUpperBound = 0.3
 
     ret.stopAccel = 0.0
     ret.stoppingDecelRate = 0.2  # brake_travel/s while trying to stop
