@@ -28,7 +28,7 @@ class CarInterface(CarInterfaceBase):
     v_current_kph = current_speed * CV.MS_TO_KPH
 
     gas_max_bp = [10., 20., 50., 70., 130., 150.]
-    gas_max_v = [1.5, 1.3, 0.65, 0.44, 0.15, 0.1]
+    gas_max_v = [1.55, 1.35, 0.62, 0.42, 0.15, 0.1]
 
     return CarControllerParams.ACCEL_MIN, interp(v_current_kph, gas_max_bp, gas_max_v)
 
@@ -101,10 +101,10 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.torque.kd = 0.0
       ret.lateralTuning.torque.deadzone = 0.001
 
-    ret.steerActuatorDelay = 0.15
+    ret.steerActuatorDelay = 0.1
     ret.steerRateCost = 0.35
     ret.steerLimitTimer = 2.5
-    ret.steerRatio = 16.0
+    ret.steerRatio = 16.5
 	
     # longitudinal
     ret.longitudinalTuning.kpBP = [0., 5.*CV.KPH_TO_MS, 10.*CV.KPH_TO_MS, 30.*CV.KPH_TO_MS, 130.*CV.KPH_TO_MS]
