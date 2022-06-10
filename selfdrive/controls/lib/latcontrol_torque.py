@@ -32,7 +32,7 @@ def apply_deadzone(error, deadzone):
     error = 0.
   return error
 
-def set_torque_tune(tune, MAX_LAT_ACCEL=2.5, FRICTION=0.01):
+def set_torque_tune(tune, MAX_LAT_ACCEL=1.763684, FRICTION=0.102542):
   tune.init('torque')
   tune.torque.useSteeringAngle = True
   tune.torque.kp = 1.0 / MAX_LAT_ACCEL
