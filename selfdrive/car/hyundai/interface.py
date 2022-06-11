@@ -92,17 +92,17 @@ class CarInterface(CarInterfaceBase):
     elif Params().get("LateralControlSelect", encoding='utf8') == "3":
       ret.lateralTuning.init('torque')
       ret.lateralTuning.torque.useSteeringAngle = True
-      max_lat_accel = 1.763684
+      max_lat_accel = 1.535976
       ret.lateralTuning.torque.kp = 1.0 / max_lat_accel
       ret.lateralTuning.torque.kf = 1.0 / max_lat_accel
       ret.lateralTuning.torque.ki = 0.1 / max_lat_accel
-      ret.lateralTuning.torque.friction = 0.0102542
+      ret.lateralTuning.torque.friction = 0.102542
 
       ret.lateralTuning.torque.kd = 0.0
-      ret.lateralTuning.torque.deadzone = 0.081489
+      ret.lateralTuning.torque.steering_angle_deadzone_deg = 0.081489
 
     ret.steerActuatorDelay = 0.1
-    ret.steerRateCost = 0.4
+    ret.steerRateCost = 0.5
     ret.steerLimitTimer = 2.5
     ret.steerRatio = 16.5
 	
@@ -124,7 +124,7 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 2060. + STD_CARGO_KG
       ret.wheelbase = 3.01
       ret.centerToFront = ret.wheelbase * 0.4
-      ret.maxLateralAccel = 1.763684
+      ret.maxLateralAccel = 1.535976
     elif candidate == CAR.GENESIS_G70:
       ret.mass = 1640. + STD_CARGO_KG
       ret.wheelbase = 2.84

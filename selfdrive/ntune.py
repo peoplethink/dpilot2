@@ -179,7 +179,7 @@ class nTune():
     if self.checkValue("steerActuatorDelay", 0., 0.8, 0.1):
       updated = True
 
-    if self.checkValue("steerRateCost", 0.1, 1.5, 0.4):
+    if self.checkValue("steerRateCost", 0.1, 1.5, 0.5):
       updated = True
 
     if self.checkValue("pathOffset", -1.0, 1.0, 0.0):
@@ -223,7 +223,7 @@ class nTune():
 
     if self.checkValue("useSteeringAngle", 0., 1., 1.):
       updated = True
-    if self.checkValue("maxLatAccel", 0.5, 4.0, 1.763684):
+    if self.checkValue("maxLatAccel", 0.5, 4.0, 1.535976):
       updated = True
     if self.checkValue("friction", 0.0, 0.2, 0.0102542):
       updated = True
