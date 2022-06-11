@@ -5,6 +5,7 @@ from abc import abstractmethod, ABC
 from typing import Dict, Tuple, List
 
 from cereal import car
+from common.basedir import BASEDIR
 from common.conversions import Conversions as CV
 from common.kalman.simple_kalman import KF1D
 from common.realtime import DT_CTRL
