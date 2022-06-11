@@ -54,6 +54,8 @@ class CarInterface(CarInterfaceBase):
 	
     ret.disableLateralLiveTuning = False
 
+    torque_params = CarInterfaceBase.get_torque_params(candidate)
+
     # -------------PID
     if Params().get("LateralControlSelect", encoding='utf8') == "0":
       if candidate in [CAR.GENESIS, CAR.GENESIS_G70, CAR.GENESIS_G80, CAR.GENESIS_G90]:
@@ -113,7 +115,6 @@ class CarInterface(CarInterfaceBase):
     ret.vEgoStarting = 0.4
 
     # genesis
-    torque_params = CarInterfaceBase.get_torque_params(candidate)
     if candidate == CAR.GENESIS:
       ret.mass = 2060. + STD_CARGO_KG
       ret.wheelbase = 3.01
