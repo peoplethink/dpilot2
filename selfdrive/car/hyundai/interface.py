@@ -9,6 +9,7 @@ from selfdrive.car.hyundai.values import CAR, DBC, Buttons, CarControllerParams,
 from selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
+from selfdrive.controls.lib.latcontrol_torque import set_torque_tune
 from common.params import Params
 from selfdrive.controls.lib.desire_helper import LANE_CHANGE_SPEED_MIN
 
@@ -55,14 +56,15 @@ class CarInterface(CarInterfaceBase):
 
     # -------------PID
     if Params().get("LateralControlSelect", encoding='utf8') == "0":
-      ret.lateralTuning.pid.kf = 0.00005
-      ret.lateralTuning.pid.kpBP = [0., 10., 30.]
-      ret.lateralTuning.pid.kpV = [0.018, 0.038, 0.078]
-      ret.lateralTuning.pid.kiBP = [0., 10., 30.]
-      ret.lateralTuning.pid.kiV = [0.0018, 0.0038, 0.0078]
-      ret.lateralTuning.pid.kdBP = [0.]
-      ret.lateralTuning.pid.kdV = [0.6]
-      ret.lateralTuning.pid.newKfTuned = True
+      if candidate in [CAR.GENESIS, CAR.GENESIS_G70, CAR.GENESIS_G80, CAR.GENESIS_G90]:
+        ret.lateralTuning.pid.kf = 0.00005
+        ret.lateralTuning.pid.kpBP = [0., 10., 30.]
+        ret.lateralTuning.pid.kpV = [0.018, 0.038, 0.078]
+        ret.lateralTuning.pid.kiBP = [0., 10., 30.]
+        ret.lateralTuning.pid.kiV = [0.0018, 0.0038, 0.0078]
+        ret.lateralTuning.pid.kdBP = [0.]
+        ret.lateralTuning.pid.kdV = [0.6]
+        ret.lateralTuning.pid.newKfTuned = True
           
     # -------------INDI
     elif Params().get("LateralControlSelect", encoding='utf8') == "1":
@@ -90,17 +92,7 @@ class CarInterface(CarInterfaceBase):
     
     # --------------Torque
     elif Params().get("LateralControlSelect", encoding='utf8') == "3":
-      ret.lateralTuning.init('torque')
-      ret.lateralTuning.torque.useSteeringAngle = True
-      ret.lateralTuning.torque.steeringAngleDeadzoneDeg = 1.0
-      max_lat_accel = 1.535976
-      ret.lateralTuning.torque.kp = 1.0 / max_lat_accel
-      ret.lateralTuning.torque.kf = 1.0 / max_lat_accel
-      ret.lateralTuning.torque.ki = 0.1 / max_lat_accel
-      ret.lateralTuning.torque.friction = 0.102542
-
-      ret.lateralTuning.torque.kd = 0.0
-      ret.lateralTuning.torque.deadzone = 0.01
+      set_torque_tune(ret.lateralTuning, ret.maxLateralAccel, 0.01)
 
     ret.steerActuatorDelay = 0.1
     ret.steerRateCost = 0.5
@@ -121,10 +113,13 @@ class CarInterface(CarInterfaceBase):
     ret.vEgoStarting = 0.4
 
     # genesis
+    torque_params = CarInterfaceBase.get_torque_params(candidate)
     if candidate == CAR.GENESIS:
       ret.mass = 2060. + STD_CARGO_KG
       ret.wheelbase = 3.01
       ret.centerToFront = ret.wheelbase * 0.4
+
+      set_torque_tune(ret.lateralTuning, torque_params['LAT_ACCEL_FACTOR'], torque_params['FRICTION'])
     elif candidate == CAR.GENESIS_G70:
       ret.mass = 1640. + STD_CARGO_KG
       ret.wheelbase = 2.84
