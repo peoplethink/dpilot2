@@ -95,7 +95,6 @@ class CarInterface(CarInterfaceBase):
     # --------------Torque
     elif Params().get("LateralControlSelect", encoding='utf8') == "3":
       if candidate in [CAR.GENESIS, CAR.GENESIS_G80]:
-	ret.lateralTuning.pid.kf = 0.00005
         set_torque_tune(ret.lateralTuning, torque_params['LAT_ACCEL_FACTOR'], torque_params['FRICTION'])
 
     ret.steerActuatorDelay = 0.1
@@ -118,15 +117,16 @@ class CarInterface(CarInterfaceBase):
 
     # genesis
     if candidate == CAR.GENESIS:
+      ret.lateralTuning.pid.kf = 0.00005
       ret.mass = 2060. + STD_CARGO_KG
       ret.wheelbase = 3.01
       ret.centerToFront = ret.wheelbase * 0.4
-
     elif candidate == CAR.GENESIS_G70:
       ret.mass = 1640. + STD_CARGO_KG
       ret.wheelbase = 2.84
       ret.centerToFront = ret.wheelbase * 0.4
     elif candidate == CAR.GENESIS_G80:
+      ret.lateralTuning.pid.kf = 0.00005	
       ret.mass = 1855. + STD_CARGO_KG
       ret.wheelbase = 3.01
       ret.centerToFront = ret.wheelbase * 0.4
