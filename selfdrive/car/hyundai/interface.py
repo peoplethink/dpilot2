@@ -117,7 +117,6 @@ class CarInterface(CarInterfaceBase):
 
     # genesis
     if candidate == CAR.GENESIS:
-      ret.lateralTuning.pid.kf = 0.00005
       ret.mass = 2060. + STD_CARGO_KG
       ret.wheelbase = 3.01
       ret.centerToFront = ret.wheelbase * 0.4
