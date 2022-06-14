@@ -35,7 +35,7 @@ X_EGO_COST = 0.
 V_EGO_COST = 0.
 A_EGO_COST = 0.
 J_EGO_COST = 5.0
-A_CHANGE_COST = 20. # 200.
+A_CHANGE_COST = 10. # 200.
 DANGER_ZONE_COST = 100.
 CRASH_DISTANCE = .5
 LIMIT_COST = 1e6
@@ -49,7 +49,7 @@ AUTO_TR_BP = [0., 30.*CV.KPH_TO_MS, 70.*CV.KPH_TO_MS, 110.*CV.KPH_TO_MS]
 AUTO_TR_V = [1.1, 1.1, 1.2, 1.35]
 
 AUTO_TR_CRUISE_GAP = 4
-DIFF_RADAR_VISION = 1.5
+DIFF_RADAR_VISION = 2.0
 
 
 # Fewer timestamps don't hurt performance and lead to
