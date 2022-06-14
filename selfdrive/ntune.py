@@ -173,7 +173,7 @@ class nTune():
     if self.checkValue("useLiveSteerRatio", 0., 1., 1.):
       updated = True
 
-    if self.checkValue("steerRatio", 10.0, 20.0, 16.2):
+    if self.checkValue("steerRatio", 10.0, 20.0, 16.0):
       updated = True
 
     if self.checkValue("steerActuatorDelay", 0., 0.8, 0.2):
@@ -225,11 +225,11 @@ class nTune():
       updated = True
     if self.checkValue("maxLatAccel", 0.5, 4.0, 3.893208):
       updated = True
-    if self.checkValue("friction", 0.0, 0.2, 0.0086371):
+    if self.checkValue("friction", 0.0, 0.2, 0.0056371):
       updated = True
     if self.checkValue("ki_factor", 0.0, 1.0, 0.1):
       updated = True
-    if self.checkValue("kd", 0.0, 2.0, 0.6):
+    if self.checkValue("kd", 0.0, 2.0, 0.5):
       updated = True
     if self.checkValue("deadzone", 0.0, 0.05, 0.081489):
       updated = True
