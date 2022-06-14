@@ -96,15 +96,15 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.torque.useSteeringAngle = True
       ret.lateralTuning.torque.steeringAngleDeadzoneDeg = 1.0	  
       max_lat_accel = 4.493208
-      ret.lateralTuning.torque.torque.kpBP = [0., 10., 30.]
-      ret.lateralTuning.torque.torque.kpV = [0.2, 0.3, 0.4]
-      ret.lateralTuning.torque.torque.kf = 0.4
-      ret.lateralTuning.torque.torque.kiBP = [0., 10., 30.]
-      ret.lateralTuning.torque.torque.kiV = [0.02, 0.03, 0.04]
-      ret.lateralTuning.torque.torque.friction = 0.0086371
+      ret.lateralTuning.torque.kpBP = [0., 10., 30.]
+      ret.lateralTuning.torque.kpV = [0.2, 0.3, 0.4]
+      ret.lateralTuning.torque.kf = 0.4
+      ret.lateralTuning.torque.kiBP = [0., 10., 30.]
+      ret.lateralTuning.torque.kiV = [0.02, 0.03, 0.04]
+      ret.lateralTuning.torque.friction = 0.0086371
 	
-      ret.lateralTuning.torque.torque.kdBP = [0.]
-      ret.lateralTuning.torque.torque.kdV = [0.1]
+      ret.lateralTuning.torque.kdBP = [0.]
+      ret.lateralTuning.torque.kdV = [0.1]
       ret.lateralTuning.torque.deadzone = 0.01
 
     ret.steerActuatorDelay = 0.1
