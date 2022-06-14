@@ -9,7 +9,6 @@ from selfdrive.car.hyundai.values import CAR, DBC, Buttons, CarControllerParams,
 from selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
-from selfdrive.controls.lib.latcontrol_torque import set_torque_tune
 from common.params import Params
 from selfdrive.controls.lib.desire_helper import LANE_CHANGE_SPEED_MIN
 
@@ -54,8 +53,6 @@ class CarInterface(CarInterfaceBase):
 	
     ret.disableLateralLiveTuning = False
 
-    torque_params = CarInterfaceBase.get_torque_params(candidate)
-
     # -------------PID
     if Params().get("LateralControlSelect", encoding='utf8') == "0":
       if candidate in [CAR.GENESIS, CAR.GENESIS_G80]:
@@ -94,8 +91,18 @@ class CarInterface(CarInterfaceBase):
     
     # --------------Torque
     elif Params().get("LateralControlSelect", encoding='utf8') == "3":
-      if candidate in [CAR.GENESIS, CAR.GENESIS_G80]:
-        set_torque_tune(ret.lateralTuning, torque_params['LAT_ACCEL_FACTOR'], torque_params['FRICTION'])
+      ret.lateralTuning.init('torque')
+
+      ret.lateralTuning.torque.useSteeringAngle = True
+      ret.lateralTuning.torque.steeringAngleDeadzoneDeg = 1.0	  
+      max_lat_accel = 2.5
+      ret.lateralTuning.torque.kp = 1.0 / max_lat_accel
+      ret.lateralTuning.torque.kf = 1.0 / max_lat_accel
+      ret.lateralTuning.torque.ki = 0.2 / max_lat_accel
+      ret.lateralTuning.torque.friction = 0.0
+
+      ret.lateralTuning.torque.kd = 1.0
+      ret.lateralTuning.torque.deadzone = 0.01
 
     ret.steerActuatorDelay = 0.1
     ret.steerRateCost = 0.5
