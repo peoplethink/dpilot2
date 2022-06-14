@@ -28,10 +28,10 @@ def set_torque_tune(tune, MAX_LAT_ACCEL=2.5, FRICTION=0.01, steering_angle_deadz
   tune.init('torque')
   tune.torque.useSteeringAngle = True
   tune.torque.kpBP = [0., 10., 30.]
-  tune.torque.kpV = [0.1, 0.2, 0.3]
-  tune.torque.kf = 0.3
+  tune.torque.kpV = [0.2, 0.3, 0.4]
+  tune.torque.kf = 0.4
   tune.torque.kiBP = [0., 10., 30.]
-  tune.torque.kiV = [0.01, 0.02, 0.03]
+  tune.torque.kiV = [0.02, 0.03, 0.04]
   tune.torque.friction = FRICTION
   tune.torque.kdBP = [0.]
   tune.torque.kdV = [0.1]
