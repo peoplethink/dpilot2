@@ -20,7 +20,6 @@ from selfdrive.ntune import nTune
 # move it at all, this is compensated for too.
 
 
-#LOW_SPEED_FACTOR = 200
 FRICTION_THRESHOLD = 0.2
 
 
@@ -73,7 +72,7 @@ class LatControlTorque(LatControl):
       actual_lateral_accel = actual_curvature * CS.vEgo ** 2
       lateral_accel_deadzone = curvature_deadzone * CS.vEgo ** 2
 
-      
+
       low_speed_factor = interp(CS.vEgo, [0, 15], [500, 0])
       setpoint = desired_lateral_accel + low_speed_factor * desired_curvature
       measurement = actual_lateral_accel + low_speed_factor * actual_curvature

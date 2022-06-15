@@ -94,7 +94,6 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.init('torque')
 
       ret.lateralTuning.torque.useSteeringAngle = True
-      ret.lateralTuning.torque.steeringAngleDeadzoneDeg = 1.0	  
       max_lat_accel = 3.893208
       ret.lateralTuning.torque.kpBP = [0., 10., 30.]
       ret.lateralTuning.torque.kpV = [0.8 / max_lat_accel, 1.0 / max_lat_accel, 1.2 / max_lat_accel]
@@ -105,7 +104,7 @@ class CarInterface(CarInterfaceBase):
 	
       ret.lateralTuning.torque.kdBP = [0.]
       ret.lateralTuning.torque.kdV = [0.5]
-      ret.lateralTuning.torque.deadzone = 0.01
+      ret.lateralTuning.torque.steeringAngleDeadzoneDeg = 0.5
 
     ret.steerActuatorDelay = 0.2
     ret.steerRateCost = 0.4
@@ -135,7 +134,6 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.84
       ret.centerToFront = ret.wheelbase * 0.4
     elif candidate == CAR.GENESIS_G80:
-      ret.lateralTuning.pid.kf = 0.00005	
       ret.mass = 1855. + STD_CARGO_KG
       ret.wheelbase = 3.01
       ret.centerToFront = ret.wheelbase * 0.4
