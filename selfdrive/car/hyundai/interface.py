@@ -97,7 +97,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.torque.kp = 1.0 / max_lat_accel
       ret.lateralTuning.torque.kf = 1.0 / max_lat_accel
       ret.lateralTuning.torque.ki = 0.1 / max_lat_accel
-      ret.lateralTuning.torque.friction = 0.0036371
+      ret.lateralTuning.torque.friction = 0.0031371
 
       ret.lateralTuning.torque.kd = 1.0
       ret.lateralTuning.torque.steeringAngleDeadzoneDeg = 0.5
