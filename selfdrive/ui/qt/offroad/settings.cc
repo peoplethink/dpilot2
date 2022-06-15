@@ -707,17 +707,11 @@ CommunityPanel::CommunityPanel(QWidget* parent) : QWidget(parent) {
                                             "../assets/offroad/icon_road.png",
                                             this));
 
-  toggles.append(new ParamControl("MadModeEnabled",
-                                            "HKG MAD 모드 ",
-                                            "HKG 매드모드 사용. 가감속의 사용 하지 않아도 핸들 조향을 사용합니다.",
-                                            "../assets/offroad/icon_openpilot.png",
-                                            this));
-
-  /*toggles.append(new ParamControl("IsLdwsCar",
+  toggles.append(new ParamControl("IsLdwsCar",
                                             "LDWS",
                                             "If your car only supports LDWS, turn it on.",
                                             "../assets/offroad/icon_openpilot.png",
-                                            this));*/
+                                            this));
 
   toggles.append(new ParamControl("LaneChangeEnabled",
                                             "차로 변경 옵션 사용",
