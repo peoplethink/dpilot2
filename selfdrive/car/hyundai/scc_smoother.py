@@ -17,7 +17,7 @@ from selfdrive.road_speed_limiter import road_speed_limiter_get_max_speed, road_
   get_road_speed_limiter
 
 SYNC_MARGIN = 3.
-CREEP_SPEED = 3.
+CREEP_SPEED = 3.3
 
 # do not modify
 MIN_SET_SPEED_KPH = V_CRUISE_MIN
