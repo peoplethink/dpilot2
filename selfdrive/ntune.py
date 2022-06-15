@@ -223,11 +223,11 @@ class nTune():
 
     if self.checkValue("useSteeringAngle", 0., 1., 1.):
       updated = True
-    if self.checkValue("maxLatAccel", 0.5, 4.0, 3.893208):
+    if self.checkValue("maxLatAccel", 0.5, 4.0, 3.493208):
       updated = True
-    if self.checkValue("friction", 0.0, 0.2, 0.0056371):
+    if self.checkValue("friction", 0.0, 0.2, 0.0036371):
       updated = True
-    if self.checkValue("ki_factor", 0.0, 1.0, 0.2):
+    if self.checkValue("ki_factor", 0.0, 1.0, 0.1):
       updated = True
     if self.checkValue("kd", 0.0, 2.0, 1.0):
       updated = True
