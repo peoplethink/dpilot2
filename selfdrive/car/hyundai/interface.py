@@ -94,15 +94,12 @@ class CarInterface(CarInterfaceBase):
 
       ret.lateralTuning.torque.useSteeringAngle = True
       max_lat_accel = 3.893208
-      ret.lateralTuning.torque.kpBP = [0.]
-      ret.lateralTuning.torque.kpV = [1.0 / max_lat_accel]
+      ret.lateralTuning.torque.kp = 1.0 / max_lat_accel
       ret.lateralTuning.torque.kf = 1.0 / max_lat_accel
-      ret.lateralTuning.torque.kiBP = [0.]
-      ret.lateralTuning.torque.kiV = [0.2 / max_lat_accel]
+      ret.lateralTuning.torque.ki = 0.2 / max_lat_accel
       ret.lateralTuning.torque.friction = 0.0056371
-	
-      ret.lateralTuning.torque.kdBP = [0.]
-      ret.lateralTuning.torque.kdV = [1.0]
+
+      ret.lateralTuning.torque.kd = 1.0
       ret.lateralTuning.torque.steeringAngleDeadzoneDeg = 0.5
 
     ret.steerActuatorDelay = 0.2
@@ -118,7 +115,7 @@ class CarInterface(CarInterfaceBase):
     ret.longitudinalActuatorDelayLowerBound = 0.3
     ret.longitudinalActuatorDelayUpperBound = 0.3
 
-    ret.stopAccel = - 2.0
+    ret.stopAccel = -2.0
     ret.stoppingDecelRate = 0.4  # brake_travel/s while trying to stop
     ret.vEgoStopping = 0.5
     ret.vEgoStarting = 0.5

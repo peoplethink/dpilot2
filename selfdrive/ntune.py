@@ -227,9 +227,9 @@ class nTune():
       updated = True
     if self.checkValue("friction", 0.0, 0.2, 0.0056371):
       updated = True
-    if self.checkValue("ki_factor", 0.0, 1.0, 0.1):
+    if self.checkValue("ki_factor", 0.0, 1.0, 0.2):
       updated = True
-    if self.checkValue("kd", 0.0, 2.0, 0.5):
+    if self.checkValue("kd", 0.0, 2.0, 1.0):
       updated = True
     if self.checkValue("angle_deadzone", 0.0, 3.0, 0.5):
       updated = True
@@ -239,7 +239,7 @@ class nTune():
   def checkValidISCC(self):
     updated = False
 
-    if self.checkValue("sccGasFactor", 0.5, 1.5, 1.01):
+    if self.checkValue("sccGasFactor", 0.5, 1.5, 1.0):
       updated = True
 
     if self.checkValue("sccBrakeFactor", 0.5, 1.5, 1.0):

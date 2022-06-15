@@ -369,9 +369,9 @@ class SccSmoother:
     #  if not lead.radar:
     #    brake_factor *= 0.975
 
-    start_boost = interp(CS.out.vEgo, [0.0, 1.5 * CREEP_SPEED, 3 * CREEP_SPEED], [0.8, 0.8, 0.3])
+    start_boost = interp(CS.out.vEgo, [0.0, 1.5 * CREEP_SPEED, 3 * CREEP_SPEED], [0.8, 0.8, 0.1])
     is_accelerating = interp(accel, [0.0, 0.2], [0.0, 1.0])
-    boost = start_boost * is_accelerating
+    boost = start_boost * is_accelerating * 0.2
 
     accel += boost
 

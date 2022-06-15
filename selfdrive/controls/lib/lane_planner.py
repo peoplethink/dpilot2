@@ -5,16 +5,13 @@ from common.numpy_fast import interp, clip, mean
 from common.realtime import DT_MDL
 from selfdrive.hardware import EON, TICI
 from selfdrive.swaglog import cloudlog
-from selfdrive.ntune import ntune_common_get
 
 ENABLE_ZORROBYTE = True
 ENABLE_INC_LANE_PROB = True
 
 TRAJECTORY_SIZE = 33
 # camera offset is meters from center car to camera
-# model path is in the frame of the camera. Empirically 
-# the model knows the difference between TICI and EON
-# so a path offset is not needed
+# model path is in the frame of the camera
 PATH_OFFSET = 0.00
 if EON:
   CAMERA_OFFSET = -0.06
@@ -58,8 +55,6 @@ class LanePlanner:
       self.ll_t = (np.array(lane_lines[1].t) + np.array(lane_lines[2].t))/2
       # left and right ll x is the same
       self.ll_x = lane_lines[1].x
-      # only offset left and right lane lines; offsetting path does not make sense
-
       self.lll_y = np.array(lane_lines[1].y) + self.camera_offset
       self.rll_y = np.array(lane_lines[2].y) + self.camera_offset
       self.lll_prob = md.laneLineProbs[1]
