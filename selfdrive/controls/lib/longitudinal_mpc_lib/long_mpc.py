@@ -213,6 +213,7 @@ def gen_long_ocp():
 class LongitudinalMpc:
   def __init__(self, e2e=False):
     self.e2e = e2e
+    self.param_tr = T_FOLLOW
     self.solver = AcadosOcpSolverCython(MODEL_NAME, ACADOS_SOLVER_TYPE, N)
     self.reset()
     self.source = SOURCES[2]
