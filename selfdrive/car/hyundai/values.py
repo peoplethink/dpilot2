@@ -4,8 +4,11 @@ Ecu = car.CarParams.Ecu
 
 class CarControllerParams:
 
-  ACCEL_MAX = 2.0
+  ACCEL_MAX = 1.6
   ACCEL_MIN = -3.5
+  # KRKeegan increase allowed PID accel for sluggish start
+  ACCEL_MAX_VALS = [1.8, ACCEL_MAX]
+  ACCEL_MAX_BP =   [0.0, 15.0]
 
   
   def __init__(self, CP):
