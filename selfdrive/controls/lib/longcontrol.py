@@ -124,13 +124,13 @@ class LongControl:
       # with greater braking than stopAccel.  In that case, we need to slowly release back to the
       # defined stopAccel.  I am not sure what happens if you hold the car for an extended time period
       # at a decel rate below stopAccel.  Could be cause of clicking some people hear?
-      if abs(output_accel - CP.stopAccel) > 0.02:
-        if output_accel > CP.stopAccel:
-          output_accel -= CP.stoppingDecelRate * DT_CTRL
+      if abs(output_accel - self.CP.stopAccel) > 0.02:
+        if output_accel > self.CP.stopAccel:
+          output_accel -= self.CP.stoppingDecelRate * DT_CTRL
         else:
-          output_accel += CP.stoppingDecelRate * DT_CTRL
+          output_accel += self.CP.stoppingDecelRate * DT_CTRL
       else:
-        output_accel = CP.stopAccel
+        output_accel = self.CP.stopAccel
       output_accel = clip(output_accel, accel_limits[0], accel_limits[1])
       self.reset(CS.vEgo)
 
