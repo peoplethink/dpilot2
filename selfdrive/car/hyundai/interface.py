@@ -9,6 +9,7 @@ from selfdrive.car.hyundai.values import CAR, DBC, Buttons, CarControllerParams,
 from selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
+from selfdrive.controls.lib.latcontrol_torque import set_torque_tune
 from common.params import Params
 from selfdrive.controls.lib.desire_helper import LANE_CHANGE_SPEED_MIN
 
@@ -86,17 +87,8 @@ class CarInterface(CarInterfaceBase):
     
     # --------------Torque
     elif Params().get("LateralControlSelect", encoding='utf8') == "3":
-      ret.lateralTuning.init('torque')
+      set_torque_tune(ret.lateralTuning, ret.maxLateralAccel, 0.01, 0.5)
 
-      ret.lateralTuning.torque.useSteeringAngle = True
-      max_lat_accel = 2.5
-      ret.lateralTuning.torque.kp = 1.0 / max_lat_accel
-      ret.lateralTuning.torque.kf = 1.0 / max_lat_accel
-      ret.lateralTuning.torque.ki = 0.1 / max_lat_accel
-      ret.lateralTuning.torque.friction = 0.001
-
-      ret.lateralTuning.torque.kd = 1.0
-      ret.lateralTuning.torque.steeringAngleDeadzoneDeg = 0.5
 
     ret.steerActuatorDelay = 0.1
     ret.steerRateCost = 0.4
@@ -105,7 +97,7 @@ class CarInterface(CarInterfaceBase):
 	
     # longitudinal
     ret.longitudinalTuning.kpBP = [0., 5.*CV.KPH_TO_MS, 10.*CV.KPH_TO_MS, 30.*CV.KPH_TO_MS, 130.*CV.KPH_TO_MS]
-    ret.longitudinalTuning.kpV = [1.22, 1.02, 0.93, 0.88, 0.5]
+    ret.longitudinalTuning.kpV = [1.2, 1.0, 0.93, 0.88, 0.5]
     ret.longitudinalTuning.kiBP = [0., 130. * CV.KPH_TO_MS]
     ret.longitudinalTuning.kiV = [0.1, 0.05]
     ret.longitudinalActuatorDelayLowerBound = 0.3
