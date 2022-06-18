@@ -53,11 +53,11 @@ class CarInterface(CarInterfaceBase):
     # -------------PID
     if Params().get("LateralControlSelect", encoding='utf8') == "0":
       if candidate in [CAR.GENESIS, CAR.GENESIS_G80]:
-        ret.lateralTuning.pid.kf = 0.00005
+        ret.lateralTuning.pid.kf = 0.00006
         ret.lateralTuning.pid.kpBP = [0., 10., 30.]
-        ret.lateralTuning.pid.kpV = [0.018, 0.038, 0.078]
+        ret.lateralTuning.pid.kpV = [0.018, 0.038, 0.088]
         ret.lateralTuning.pid.kiBP = [0., 10., 30.]
-        ret.lateralTuning.pid.kiV = [0.0018, 0.0038, 0.0078]
+        ret.lateralTuning.pid.kiV = [0.0018, 0.0038, 0.0088]
         ret.lateralTuning.pid.kdBP = [0.]
         ret.lateralTuning.pid.kdV = [0.6]
         ret.lateralTuning.pid.newKfTuned = True
@@ -106,7 +106,7 @@ class CarInterface(CarInterfaceBase):
     ret.longitudinalActuatorDelayUpperBound = 0.3
 
     ret.stopAccel = - 0.7
-    ret.stoppingDecelRate = 0.4  # brake_travel/s while trying to stop
+    ret.stoppingDecelRate = 0.3  # brake_travel/s while trying to stop
     ret.vEgoStopping = 0.4
     ret.vEgoStarting = 0.4
 
