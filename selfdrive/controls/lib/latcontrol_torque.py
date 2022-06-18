@@ -26,14 +26,11 @@ FRICTION_THRESHOLD = 0.2
 def set_torque_tune(tune, MAX_LAT_ACCEL=2.5, FRICTION=0.01, steering_angle_deadzone_deg=0.5):
   tune.init('torque')
   tune.torque.useSteeringAngle = True
-  tune.torque.kpBP = [0., 10., 30.]
-  tune.torque.kpV = [1.0 / MAX_LAT_ACCEL, 1.5 / MAX_LAT_ACCEL, 2.0 / MAX_LAT_ACCEL]
+  tune.torque.kp = 1.0 / MAX_LAT_ACCEL
   tune.torque.kf = 1.0 / MAX_LAT_ACCEL
-  tune.torque.kiBP = [0., 10., 30.]
-  tune.torque.kiV = [0.1 / MAX_LAT_ACCEL, 0.15 / MAX_LAT_ACCEL, 0.2 / MAX_LAT_ACCEL]
+  tune.torque.ki = 0.1 / MAX_LAT_ACCEL
   tune.torque.friction = FRICTION
-  tune.torque.kdBP = [0.]
-  tune.torque.kdV = [0.6]
+  tune.torque.kd = 0.8
   tune.torque.steeringAngleDeadzoneDeg = steering_angle_deadzone_deg
 
 
