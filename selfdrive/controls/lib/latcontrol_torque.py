@@ -50,6 +50,7 @@ class LatControlTorque(LatControl):
     self.friction = CP.lateralTuning.torque.friction
     self.kf = CP.lateralTuning.torque.kf
     self.steering_angle_deadzone_deg = CP.lateralTuning.torque.steeringAngleDeadzoneDeg
+    self.tune = nTune(CP, self)
 
   def update(self, active, CS, VM, params, last_actuators, desired_curvature, desired_curvature_rate, llk):
     self.tune.check()
