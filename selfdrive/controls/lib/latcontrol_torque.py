@@ -23,7 +23,7 @@ from selfdrive.ntune import nTune
 FRICTION_THRESHOLD = 0.2
 
 
-def set_torque_tune(tune, MAX_LAT_ACCEL=3.3, FRICTION=0.002, steering_angle_deadzone_deg=0.5):
+def set_torque_tune(tune, MAX_LAT_ACCEL=2.5, FRICTION=0.01, steering_angle_deadzone_deg=0.5):
   tune.init('torque')
   tune.torque.useSteeringAngle = True
   tune.torque.kpBP = [0., 10., 30.]
