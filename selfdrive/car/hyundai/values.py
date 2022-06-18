@@ -7,7 +7,7 @@ class CarControllerParams:
   ACCEL_MAX = 1.6
   ACCEL_MIN = -3.5
   # KRKeegan increase allowed PID accel for sluggish start
-  ACCEL_MAX_VALS = [1.7, ACCEL_MAX, 1.35 ,1.0, 0.8, 0.5]
+  ACCEL_MAX_VALS = [1.7, ACCEL_MAX, 1.35 ,0.8, 0.65, 0.35]
   ACCEL_MAX_BP =   [0.0, 12.5, 25.0, 37.5, 50.0, 62.5] # 0~20~40~60~80~100km
 
   
