@@ -87,8 +87,7 @@ class CarInterface(CarInterfaceBase):
     
     # --------------Torque
     elif Params().get("LateralControlSelect", encoding='utf8') == "3":
-      set_torque_tune(ret.lateralTuning, MAX_LAT_ACCEL, FRICTION, steering_angle_deadzone_deg)
-
+      set_torque_tune(ret.lateralTuning, ret.maxLateralAccel, 0.01, 0.5)
 
     ret.steerActuatorDelay = 0.1
     #ret.steerRateCost = 0.4
