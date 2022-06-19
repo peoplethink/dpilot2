@@ -202,7 +202,6 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"KeepSteeringTurnSignals", PERSISTENT},
     {"HapticFeedbackWhenSpeedCamera", PERSISTENT},
     {"PutPrebuilt", PERSISTENT},
-    {"DisplayRadarInfo", PERSISTENT},
     {"DynamicLaneProfile", PERSISTENT},
     {"SoftRestartTriggered", CLEAR_ON_MANAGER_START},
     {"AutoSetOpt", PERSISTENT},
