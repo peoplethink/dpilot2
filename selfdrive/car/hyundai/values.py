@@ -6,11 +6,7 @@ class CarControllerParams:
 
   ACCEL_MAX = 1.6
   ACCEL_MIN = -3.5
-  # KRKeegan increase allowed PID accel for sluggish start
-  ACCEL_MAX_VALS = [1.7, ACCEL_MAX, 1.0 ,0.4, 0.3, 0.2]
-  ACCEL_MAX_BP =   [0.0, 12.5, 25.0, 37.5, 50.0, 62.5] # 0~20~40~60~80~100km
 
-  
   def __init__(self, CP):
     self.STEER_MAX = 384   # 409 is the max, 255 is stock
     self.STEER_DELTA_UP = 3   # 1.5s time to peak torque
