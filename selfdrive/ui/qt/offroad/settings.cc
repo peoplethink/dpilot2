@@ -439,11 +439,6 @@ VIPPanel::VIPPanel(QWidget* parent) : QWidget(parent) {
                                             "타이어공기압 를 볼수 있습니다..",
                                             "../assets/offroad/icon_shell.png"
                                             ));
-  layout->addWidget(new ParamControl("DisplayRadarInfo",
-                                            "RADAR 정보 활성화",
-                                            "Display RADAR interface information on the onroad HUD.",
-                                            "../assets/offroad/icon_shell.png"
-                                            ));
   layout->addWidget(new ParamControl("ShowSteerUI",
                                             "STEER 정보 활성화 ",
                                             "",
