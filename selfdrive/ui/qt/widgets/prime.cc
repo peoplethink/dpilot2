@@ -240,7 +240,7 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
 
   finishRegistationLayout->addStretch();
 
-  QPushButton* pair = new QPushButton("BIG MODEL");
+  QPushButton* pair = new QPushButton("ROCKET LEAGUE MODEL");
   pair->setFixedHeight(220);
   pair->setStyleSheet(R"(
     QPushButton {
