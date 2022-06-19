@@ -243,7 +243,6 @@ void ui_update_params(UIState *s) {
   s->show_tpms = params.getBool("ShowTpmsUI");
   s->show_brake = params.getBool("ShowBrakeUI");
   s->show_lcr = params.getBool("ShowLcrUI");
-  s->scene.enable_radar_state = Params().getBool("DisplayRadarInfo");
   s->show_engrpm = params.getBool("ShowEngRPMUI");
   s->show_steer = params.getBool("ShowSteerUI");
 }
