@@ -101,7 +101,6 @@ typedef struct UIScene {
   bool steerOverride;
   float angleSteersDes;
   float cpuTempAvg;
-  bool enable_radar_state;
   
   cereal::PandaState::PandaType pandaType;
   
