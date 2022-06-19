@@ -65,7 +65,6 @@ def manager_init() -> None:
     ("ShowEngRPMUI", "1"),
     ("DisableOpFcw", "0"),
     ("ShowDebugUI", "0"),
-    ("DisplayRadarInfo", "1"),
     ("NewRadarInterface", "1"),
     ("AutoSetOpt", "1"),
     ("SteerLockout", "1"),
