@@ -78,9 +78,12 @@ private:
 // container window for the NVG UI
 class NvgWindow : public CameraViewWidget {
   Q_OBJECT
+  Q_PROPERTY(bool left_blindspot MEMBER left_blindspot);
+  Q_PROPERTY(bool right_blindspot MEMBER right_blindspot); 
 
 public:
   explicit NvgWindow(VisionStreamType type, QWidget* parent = 0);
+  void updateState(const UIState &s);
   OnroadHud *hud;
   
 protected:
@@ -141,7 +144,9 @@ protected:
 private:
   QPixmap get_icon_iol_com(const char* key);
   void drawRestAreaItem(QPainter &p, int yPos, capnp::Text::Reader image, capnp::Text::Reader title,
-                        capnp::Text::Reader oilPrice, capnp::Text::Reader distance, bool lastItem);  
+                        capnp::Text::Reader oilPrice, capnp::Text::Reader distance, bool lastItem); 
+  bool left_blindspot = false;
+  bool right_blindspot = false;
   
 signals:
   void resizeSignal(int w);  
