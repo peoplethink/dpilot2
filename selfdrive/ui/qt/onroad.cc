@@ -633,9 +633,6 @@ void NvgWindow::drawCommunity(QPainter &p) {
   if(s->show_gear && width() > 1200)
     drawCgear(p);//기어
 	
-  if(s->show_bsd && width() > 1200)
-    drawBsd(p);//bsd
-
   char str[1024];
   const auto car_state = sm["carState"].getCarState();
   const auto controls_state = sm["controlsState"].getControlsState();
