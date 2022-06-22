@@ -444,8 +444,8 @@ void NvgWindow::updateState(const UIState &s) {
   const SubMaster &sm = *(s.sm);
   const auto ce = sm["carState"].getCarState();
 	
-  setProperty("left_blindspot", cs_alive && sm["carState"].getCarState().getLeftBlindspot());
-  setProperty("right_blindspot", cs_alive && sm["carState"].getCarState().getRightBlindspot());
+  setProperty("left_blindspot", ce.getLeftBlindspot());
+  setProperty("right_blindspot", ce.getRightBlindspot());
 }
 
 void NvgWindow::updateFrameMat(int w, int h) {
