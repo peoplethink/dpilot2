@@ -442,6 +442,15 @@ void NvgWindow::initializeGL() {
   ic_lcr = QPixmap("../assets/images/img_lcr.png");
 }
 
+void NvgWindow::updateState(const UIState &s) {
+  const SubMaster &sm = *(s.sm);
+	
+  const bool cs_alive = sm.alive("controlsState");
+	
+  setProperty("left_blindspot", cs_alive && sm["carState"].getCarState().getLeftBlindspot());
+  setProperty("right_blindspot", cs_alive && sm["carState"].getCarState().getRightBlindspot());
+}
+
 void NvgWindow::updateFrameMat(int w, int h) {
   CameraViewWidget::updateFrameMat(w, h);
 
@@ -481,6 +490,12 @@ void NvgWindow::drawLaneLines(QPainter &painter, const UIScene &scene) {
     }
     painter.drawPolygon(scene.lane_line_vertices[i].v, scene.lane_line_vertices[i].cnt);
   }
+	
+  // TODO: Fix empty spaces when curiving back on itself
+  painter.setBrush(QColor::fromRgbF(1.0, 0.0, 0.0, 0.2));
+  if (left_blindspot) painter.drawPolygon(scene.lane_barrier_vertices[0].v, scene.lane_barrier_vertices[0].cnt);
+  if (right_blindspot) painter.drawPolygon(scene.lane_barrier_vertices[1].v, scene.lane_barrier_vertices[1].cnt);  
+	  
   // road edges
   for (int i = 0; i < std::size(scene.road_edge_vertices); ++i) {
     painter.setBrush(QColor(255, 0, 0, 250));
