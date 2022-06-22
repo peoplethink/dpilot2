@@ -442,9 +442,7 @@ void NvgWindow::initializeGL() {
 
 void NvgWindow::updateState(const UIState &s) {
   const SubMaster &sm = *(s.sm);
-	
-  const bool cs_alive = sm.alive("controlsState");
-  const auto cs = sm["carState"].getCarState();	
+  const auto ce = sm["carState"].getCarState();
 	
   setProperty("left_blindspot", cs_alive && sm["carState"].getCarState().getLeftBlindspot());
   setProperty("right_blindspot", cs_alive && sm["carState"].getCarState().getRightBlindspot());
