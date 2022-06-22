@@ -437,8 +437,6 @@ void NvgWindow::initializeGL() {
   ic_turn_signal_l = QPixmap("../assets/images/turn_signal_l.png");
   ic_turn_signal_r = QPixmap("../assets/images/turn_signal_r.png");
   ic_satellite = QPixmap("../assets/images/satellite.png");
-  ic_bsd_l = QPixmap("../assets/images/img_car_left.png"); //bsd
-  ic_bsd_r = QPixmap("../assets/images/img_car_right.png"); //bsd
   ic_lcr = QPixmap("../assets/images/img_lcr.png");
 }
 
