@@ -115,9 +115,9 @@ class CarInterface(CarInterfaceBase):
     ret.longitudinalActuatorDelayUpperBound = 0.3
 
     ret.stopAccel = - 1.0
-    ret.stoppingDecelRate = 0.3  # brake_travel/s while trying to stop
-    ret.vEgoStopping = 0.35
-    ret.vEgoStarting = 0.35
+    ret.stoppingDecelRate = 0.25  # brake_travel/s while trying to stop
+    ret.vEgoStopping = 0.3
+    ret.vEgoStarting = 0.3
 
     # genesis
     if candidate == CAR.GENESIS:
