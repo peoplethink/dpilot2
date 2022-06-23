@@ -97,9 +97,9 @@ class CarInterface(CarInterfaceBase):
         set_torque_tune(ret.lateralTuning, torque_params['LAT_ACCEL_FACTOR'], torque_params['FRICTION'])
 
 
-    ret.steerActuatorDelay = 0.1
-    ret.steerLimitTimer = 2.5
-    ret.steerRatio = 16.0
+    ret.steerActuatorDelay = 0.05
+    ret.steerLimitTimer = 1.0
+    ret.steerRatio = 15.6
 	
     # longitudinal
     #ret.longitudinalTuning.kpBP = [0., 5.*CV.KPH_TO_MS, 10.*CV.KPH_TO_MS, 30.*CV.KPH_TO_MS, 130.*CV.KPH_TO_MS]
@@ -107,9 +107,9 @@ class CarInterface(CarInterfaceBase):
     #ret.longitudinalTuning.kiBP = [0., 10.*CV.KPH_TO_MS, 20.*CV.KPH_TO_MS, 30.*CV.KPH_TO_MS, 50.*CV.KPH_TO_MS]
     #ret.longitudinalTuning.kiV = [0.32, 0.28, 0.18, 0.16, 0.1]
     ret.longitudinalTuning.kpBP = [0., 5., 20.]
-    ret.longitudinalTuning.kpV = [1.3, 1.0, 0.7]
+    ret.longitudinalTuning.kpV = [1.4, 1.1, 0.8]
     ret.longitudinalTuning.kiBP = [0., 5., 12., 20., 27.]
-    ret.longitudinalTuning.kiV = [.35, .23, .20, .17, .1]
+    ret.longitudinalTuning.kiV = [.3, .23, .20, .17, .1]
 
     ret.longitudinalActuatorDelayLowerBound = 0.3
     ret.longitudinalActuatorDelayUpperBound = 0.3
