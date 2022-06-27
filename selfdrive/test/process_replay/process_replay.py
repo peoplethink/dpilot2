@@ -278,6 +278,7 @@ CONFIGS = [
     pub_sub={
       "carState": ["liveCalibration"],
       "cameraOdometry": []
+      "carParams": [],
     },
     ignore=["logMonoTime", "valid"],
     init_callback=get_car_params,
