@@ -12,7 +12,7 @@ import capnp
 import numpy as np
 from typing import List, NoReturn, Optional
 
-from cereal import log
+from cereal import car, log
 import cereal.messaging as messaging
 from common.conversions import Conversions as CV
 from common.params import Params, put_nonblocking
@@ -63,7 +63,7 @@ class Calibrator:
   def __init__(self, param_put: bool = False):
     self.param_put = param_put
 
-    self.not_car = False
+    self.CP = car.CarParams.from_bytes(Params().get("CarParams", block=True))
 
     # Read saved calibration
     params = Params()
@@ -193,7 +193,7 @@ class Calibrator:
     liveCalibration.rpyCalib = smooth_rpy.tolist()
     liveCalibration.rpyCalibSpread = self.calib_spread.tolist()
 
-    if self.not_Car:
+    if self.CP.notCar:
       extrinsic_matrix = get_view_frame_from_road_frame(0, 0, 0, model_height)
       liveCalibration.validBlocks = INPUTS_NEEDED
       liveCalibration.calStatus = Calibration.CALIBRATED
@@ -213,7 +213,7 @@ def calibrationd_thread(sm: Optional[messaging.SubMaster] = None, pm: Optional[m
   set_realtime_priority(1)
 
   if sm is None:
-    sm = messaging.SubMaster(['cameraOdometry', 'carState', 'carParams'], poll=['cameraOdometry'])
+    sm = messaging.SubMaster(['cameraOdometry', 'carState'], poll=['cameraOdometry'])
 
   if pm is None:
     pm = messaging.PubMaster(['liveCalibration'])
@@ -224,8 +224,6 @@ def calibrationd_thread(sm: Optional[messaging.SubMaster] = None, pm: Optional[m
     timeout = 0 if sm.frame == -1 else 100
     sm.update(timeout)
     
-    calibrator.not_car = sm['carParams'].notCar
-
     if sm.updated['cameraOdometry']:
       calibrator.handle_v_ego(sm['carState'].vEgo)
       new_rpy = calibrator.handle_cam_odom(sm['cameraOdometry'].trans,
