@@ -277,7 +277,7 @@ CONFIGS = [
     proc_name="calibrationd",
     pub_sub={
       "carState": ["liveCalibration"],
-      "cameraOdometry": []
+      "cameraOdometry": [],
       "carParams": [],
     },
     ignore=["logMonoTime", "valid"],
