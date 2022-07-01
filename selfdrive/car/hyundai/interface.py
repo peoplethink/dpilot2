@@ -58,7 +58,7 @@ class CarInterface(CarInterfaceBase):
     # -------------PID
     if Params().get("LateralControlSelect", encoding='utf8') == "0":
       if candidate in [CAR.GENESIS, CAR.GENESIS_G80]:
-        ret.lateralTuning.pid.kf = 0.000055
+        ret.lateralTuning.pid.kf = 0.00006
         ret.lateralTuning.pid.kpBP = [0., 10., 30.]
         ret.lateralTuning.pid.kpV = [0.018, 0.038, 0.088]
         ret.lateralTuning.pid.kiBP = [0., 10., 30.]
@@ -99,21 +99,21 @@ class CarInterface(CarInterfaceBase):
 
     ret.steerActuatorDelay = 0.05
     ret.steerLimitTimer = 1.0
-    ret.steerRatio = 15.6
+    ret.steerRatio = 16.0
 	
     # longitudinal 
     ret.longitudinalTuning.kpBP = [0., 5., 20.]
-    ret.longitudinalTuning.kpV = [1.3, 1.1, 0.75]
+    ret.longitudinalTuning.kpV = [.9, .6, 0.375]
     ret.longitudinalTuning.kiBP = [0., 5., 12., 20., 27.]
-    ret.longitudinalTuning.kiV = [.35, .25, .25, .17, .1]
+    ret.longitudinalTuning.kiV = [.27, .20, .18, .17, .1]
 
-    ret.longitudinalActuatorDelayLowerBound = 0.2
-    ret.longitudinalActuatorDelayUpperBound = 0.2
+    ret.longitudinalActuatorDelayLowerBound = 0.3
+    ret.longitudinalActuatorDelayUpperBound = 0.3
 
-    ret.stopAccel = 0.0
-    ret.stoppingDecelRate = 0.1  # brake_travel/s while trying to stop
-    ret.vEgoStopping = 0.4
-    ret.vEgoStarting = 0.4
+    ret.stopAccel = -2.0
+    ret.stoppingDecelRate = 0.2  # brake_travel/s while trying to stop
+    ret.vEgoStopping = 0.2
+    ret.vEgoStarting = 0.2
 
     # genesis
     if candidate == CAR.GENESIS:
