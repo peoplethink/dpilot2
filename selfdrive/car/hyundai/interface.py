@@ -98,8 +98,8 @@ class CarInterface(CarInterfaceBase):
 
 
     ret.steerActuatorDelay = 0.05
-    ret.steerLimitTimer = 1.0
-    ret.steerRatio = 16.0
+    ret.steerLimitTimer = 2.0
+    ret.steerRatio = 15.6
 	
     # longitudinal 
     ret.longitudinalTuning.kpBP = [0., 5., 20.]
@@ -112,8 +112,8 @@ class CarInterface(CarInterfaceBase):
 
     ret.stopAccel = -2.0
     ret.stoppingDecelRate = 0.2  # brake_travel/s while trying to stop
-    ret.vEgoStopping = 0.2
-    ret.vEgoStarting = 0.2
+    ret.vEgoStopping = 0.3
+    ret.vEgoStarting = 0.3
 
     # genesis
     if candidate == CAR.GENESIS:
