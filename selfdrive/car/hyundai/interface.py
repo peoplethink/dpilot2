@@ -102,23 +102,24 @@ class CarInterface(CarInterfaceBase):
     ret.steerRatio = 15.8
 	
     # longitudinal 
-    ret.longitudinalTuning.kpBP = [0., 4., 9., 17., 23., 31.]
-    ret.longitudinalTuning.kpV = [1.2, 1.1, 1.0, 0.9, 0.75, 0.65]
-    ret.longitudinalTuning.kiBP = [0., 4., 9., 17., 23., 31.]
-    ret.longitudinalTuning.kiV = [0.27, 0.24, 0.23, 0.2, 0.17, 0.15]
-    ret.longitudinalTuning.deadzoneBP = [0., 4.]
-    ret.longitudinalTuning.deadzoneV = [0., 0.1]
-    ret.longitudinalTuning.kdBP = [0., 4., 9., 17., 23., 31.]
-    ret.longitudinalTuning.kdV = [0.9, 1.0, 0.85, 0.7, 0.5, 0.4]
-    ret.longitudinalTuning.kf = 1.
+    ret.longitudinalTuning.kpBP = [0.]
+    ret.longitudinalTuning.kpV = [0.1]
+    ret.longitudinalTuning.kiBP = [0., 5., 12., 20., 27.]
+    ret.longitudinalTuning.kiV = [.35, .23, .20, .17, .1]
+    
+    #ret.longitudinalTuning.deadzoneBP = [0., 4.]
+    #ret.longitudinalTuning.deadzoneV = [0., 0.1]
+    #ret.longitudinalTuning.kdBP = [0., 4., 9., 17., 23., 31.]
+    #ret.longitudinalTuning.kdV = [0.9, 1.0, 0.85, 0.7, 0.5, 0.4]
+    #ret.longitudinalTuning.kf = 1.
 
-    ret.longitudinalActuatorDelayLowerBound = 1.0
-    ret.longitudinalActuatorDelayUpperBound = 1.0
+    ret.longitudinalActuatorDelayLowerBound = 0.3
+    ret.longitudinalActuatorDelayUpperBound = 0.3
 
     ret.stopAccel = -2.0
-    ret.stoppingDecelRate = 1.0  # brake_travel/s while trying to stop
-    ret.vEgoStopping = 0.8
-    ret.vEgoStarting = 0.8
+    ret.stoppingDecelRate = 0.3  # brake_travel/s while trying to stop
+    ret.vEgoStopping = 0.25
+    ret.vEgoStarting = 0.25
 
     # genesis
     if candidate == CAR.GENESIS:
