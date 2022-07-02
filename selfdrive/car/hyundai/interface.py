@@ -60,9 +60,9 @@ class CarInterface(CarInterfaceBase):
       if candidate in [CAR.GENESIS, CAR.GENESIS_G80]:
         ret.lateralTuning.pid.kf = 0.000055
         ret.lateralTuning.pid.kpBP = [0., 10., 30.]
-        ret.lateralTuning.pid.kpV = [0.05, 0.07, 0.075]
+        ret.lateralTuning.pid.kpV = [0.018, 0.038, 0.088]
         ret.lateralTuning.pid.kiBP = [0., 30.]
-        ret.lateralTuning.pid.kiV = [0.002, 0.003, 0.008]
+        ret.lateralTuning.pid.kiV = [0.0015, 0.0035, 0.0088]
         ret.lateralTuning.pid.kdBP = [0.]
         ret.lateralTuning.pid.kdV = [0.6]
         ret.lateralTuning.pid.newKfTuned = True
@@ -102,10 +102,10 @@ class CarInterface(CarInterfaceBase):
     ret.steerRatio = 15.6
 	
     # longitudinal 
-    ret.longitudinalTuning.kpBP = [0., 6., 10., 35.]
-    ret.longitudinalTuning.kpV = [.7, .6, 0.5, .2]
-    ret.longitudinalTuning.kiBP = [0., 30.]
-    ret.longitudinalTuning.kiV = [.001, .001]
+    ret.longitudinalTuning.kpBP = [0.]
+    ret.longitudinalTuning.kpV = [0.1]
+    ret.longitudinalTuning.kiBP = [0.]
+    ret.longitudinalTuning.kiV = [0.25]
     
     #ret.longitudinalTuning.deadzoneBP = [0., 4.]
     #ret.longitudinalTuning.deadzoneV = [0., 0.1]
