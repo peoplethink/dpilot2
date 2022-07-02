@@ -479,12 +479,12 @@ void NvgWindow::drawLaneLines(QPainter &painter, const UIScene &scene) {
     } else {
       painter.setBrush(QColor(255, 255, 255, 250));
     }
-    painter.drawPolygon(scene.lane_line_vertices[i].v, scene.lane_line_vertices[i].cnt);
+    painter.drawPolygon(scene.lane_line_vertices[i]);
   }
   // road edges
   for (int i = 0; i < std::size(scene.road_edge_vertices); ++i) {
     painter.setBrush(QColor(255, 0, 0, 250));
-    painter.drawPolygon(scene.road_edge_vertices[i].v, scene.road_edge_vertices[i].cnt);
+    painter.drawPolygon(scene.road_edge_vertices[i]);
   }
 	
   // paint path
@@ -502,7 +502,7 @@ void NvgWindow::drawLaneLines(QPainter &painter, const UIScene &scene) {
     bg.setColorAt(1, QColor(255, 255, 255, 0));
   }  
   painter.setBrush(bg);
-  painter.drawPolygon(scene.track_vertices.v, scene.track_vertices.cnt);
+  painter.drawPolygon(scene.track_vertices);
 }
 
 void NvgWindow::drawLead(QPainter &painter, const cereal::ModelDataV2::LeadDataV3::Reader &lead_data, const QPointF &vd, bool is_radar) {
