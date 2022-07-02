@@ -118,7 +118,6 @@ typedef struct UIScene {
   line_vertices_data track_vertices;
   line_vertices_data lane_line_vertices[4];
   line_vertices_data road_edge_vertices[2];
-  line_vertices_data lane_barrier_vertices[2];
 
   // lead
   QPointF lead_vertices[2];
@@ -163,6 +162,7 @@ public:
   bool recording = false;
   bool show_debug = false;
   bool show_gear = false;//기어
+  bool show_bsd = false;//bsd
   bool show_tpms = false;
   bool show_brake = false;
   bool show_lcr = false;
