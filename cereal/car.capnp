@@ -372,9 +372,10 @@ struct CarControl {
 
   struct CruiseControl {
     cancel @0: Bool;
-    override @1: Bool;
-    speedOverride @2: Float32;
-    accelOverride @3: Float32;
+    resume @1: Bool;
+    override @2: Bool;
+    speedOverride @3: Float32;
+    accelOverride @4: Float32;
   }
 
   struct HUDControl {

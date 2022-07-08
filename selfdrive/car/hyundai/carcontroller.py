@@ -194,7 +194,7 @@ class CarController:
 
   def update_auto_resume(self, CC, CS, clu11_speed, can_sends):
     # fix auto resume - by neokii
-    if CS.out.cruiseState.standstill and not CS.out.gasPressed:
+    if CC.cruiseControl.resume and not CS.out.gasPressed:
       if self.last_lead_distance == 0:
         self.last_lead_distance = CS.lead_distance
         self.resume_cnt = 0
@@ -265,7 +265,7 @@ class CarController:
         self.scc12_cnt %= 0xF
 
         can_sends.append(create_scc12(self.packer, apply_accel, CC.enabled, self.scc12_cnt, self.scc_live, CS.scc12,
-                                      CS.out.gasPressed, CS.out.brakePressed, CS.out.cruiseState.standstill,
+                                      CS.out.gasPressed, CS.out.brakePressed, CC.cruiseControl.resume,
                                       self.car_fingerprint))
 
         can_sends.append(create_scc11(self.packer, self.frame, CC.enabled, set_speed, hud_control.leadVisible, self.scc_live, CS.scc11,
