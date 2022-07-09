@@ -181,9 +181,6 @@ class LateralPlanner:
     lateralPlan.laneChangeState = self.DH.lane_change_state
     lateralPlan.laneChangeDirection = self.DH.lane_change_direction
 
-    lateralPlan.autoLaneChangeEnabled = self.DH.auto_lane_change_enabled
-    lateralPlan.autoLaneChangeTimer = int(AUTO_LCA_START_TIME) - int(self.DH.auto_lane_change_timer)
-
     lateralPlan.dynamicLaneProfile = bool(self.dynamic_lane_profile_status)
 	
     pm.send('lateralPlan', plan_send)
