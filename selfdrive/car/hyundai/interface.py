@@ -102,17 +102,10 @@ class CarInterface(CarInterfaceBase):
     ret.steerRatio = 15.6
 	
     # longitudinal 
-    ret.longitudinalTuning.kpBP = [0.]
-    ret.longitudinalTuning.kpV = [0.1]
-    ret.longitudinalTuning.kiBP = [0., 60.]
-    ret.longitudinalTuning.kiV = [0.8, 0.3]
-    
-    #ret.longitudinalTuning.deadzoneBP = [0., 4.]
-    #ret.longitudinalTuning.deadzoneV = [0., 0.1]
-    #ret.longitudinalTuning.kdBP = [0., 4., 9., 17., 23., 31.]
-    #ret.longitudinalTuning.kdV = [0.9, 1.0, 0.85, 0.7, 0.5, 0.4]
-    #ret.longitudinalTuning.kf = 1.
-
+    ret.longitudinalTuning.kpBP = [0., 5.*CV.KPH_TO_MS, 10.*CV.KPH_TO_MS, 30.*CV.KPH_TO_MS, 130.*CV.KPH_TO_MS]
+    ret.longitudinalTuning.kpV = [1.2, 1.0, 0.93, 0.88, 0.5]
+    ret.longitudinalTuning.kiBP = [0., 130. * CV.KPH_TO_MS]
+    ret.longitudinalTuning.kiV = [0.1, 0.05]
     ret.longitudinalActuatorDelayLowerBound = 0.3
     ret.longitudinalActuatorDelayUpperBound = 0.3
 
