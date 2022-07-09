@@ -6,7 +6,7 @@ from selfdrive.swaglog import cloudlog
 from selfdrive.controls.lib.lateral_mpc_lib.lat_mpc import LateralMpc
 from selfdrive.controls.lib.drive_helpers import CONTROL_N, MPC_COST_LAT, LAT_MPC_N, CAR_ROTATION_RADIUS
 from selfdrive.controls.lib.lane_planner import LanePlanner, TRAJECTORY_SIZE
-from selfdrive.controls.lib.desire_helper import DesireHelper, AUTO_LCA_START_TIME
+from selfdrive.controls.lib.desire_helper import DesireHelper
 import cereal.messaging as messaging
 from common.params import Params
 from cereal import log
