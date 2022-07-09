@@ -50,8 +50,6 @@ def manager_init() -> None:
     ("UseClusterSpeed", "0"),
     ("LongControlEnabled", "0"),
     ("IsLdwsCar", "0"),
-    ("LaneChangeEnabled", "0"),
-    ("AutoLaneChangeEnabled", "0"),
     ("LateralControlSelect", "0"),
     ("AutoLaneChangeTimer", "0"),
 
