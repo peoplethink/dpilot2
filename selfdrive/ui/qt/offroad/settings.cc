@@ -708,18 +708,6 @@ CommunityPanel::CommunityPanel(QWidget* parent) : QWidget(parent) {
                                             "../assets/offroad/icon_openpilot.png",
                                             this));
 
-  toggles.append(new ParamControl("LaneChangeEnabled",
-                                            "차로 변경 옵션 사용",
-                                            "차로 변경 자동 옵션 사용.",
-                                            "../assets/offroad/icon_road.png",
-                                            this));
-
-  toggles.append(new ParamControl("AutoLaneChangeEnabled",
-                                            "차로변경의 수동/자동 옵션",
-                                            "자동 차로 변경. 사용에 주의 하십시오",
-                                            "../assets/offroad/icon_road.png",
-                                            this));
-
   toggles.append(new ParamControl("SccSmootherSlowOnCurves",
                                             "커브 감속 사용",
                                             "SCC 설정 시 곡률에 따른 속도 감속 기능을 사용",
