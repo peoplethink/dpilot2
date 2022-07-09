@@ -69,7 +69,7 @@ class DesireHelper:
 
     if self.lane_change_state == LaneChangeState.off and re == lane_change_direction:
       self.lane_change_direction = LaneChangeDirection.none
-    elif not lat_active or self.lane_change_timer > LANE_CHANGE_TIME_MAX:
+    elif not active or self.lane_change_timer > LANE_CHANGE_TIME_MAX:
       self.lane_change_state = LaneChangeState.off
       self.lane_change_direction = LaneChangeDirection.none
     else:
