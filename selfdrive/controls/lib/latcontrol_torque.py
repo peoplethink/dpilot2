@@ -72,8 +72,11 @@ class LatControlTorque(LatControl):
       lateral_accel_deadzone = curvature_deadzone * CS.vEgo ** 2
 
 
-      low_speed_factor = interp(CS.vEgo, [10., 20., 30., 40.], [500., 300., 100., 0.])
-      setpoint = desired_lateral_accel + low_speed_factor * desired_curvature
+      
+      setpoint =low_speed_factor = interp(CS.vEgo, [0, 15], [500, 0]) # comma 1st
+      #low_speed_factor = interp(CS.vEgo, [0, 10, 20], [500, 500, 200]) # comma 2nd
+      #low_speed_factor = interp(CS.vEgo, [10, 20, 30, 40], [500, 300, 100, 0]) # neokii c3
+      #low_speed_factor = interp(CS.vEgo, [0, 15, 30], [500, 100, 0]) # test desired_lateral_accel + low_speed_factor * desired_curvature
       measurement = actual_lateral_accel + low_speed_factor * actual_curvature
       error = setpoint - measurement
       pid_log.error = error
