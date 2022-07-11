@@ -1,10 +1,8 @@
 import numpy as np
-
 from cereal import log
 from common.realtime import DT_MDL
 from common.conversions import Conversions as CV
 from common.params import Params
-from selfdrive.controls.lib.lane_planner import TRAJECTORY_SIZE
 
 LaneChangeState = log.LateralPlan.LaneChangeState
 LaneChangeDirection = log.LateralPlan.LaneChangeDirection
@@ -45,29 +43,39 @@ class DesireHelper:
     self.desire = log.LateralPlan.Desire.none
     self.lane_change_wait_timer = 0
 
-  def update(self, carstate, lat_active, lane_change_prob, model_data):
+  def update(self, carstate, lat_active, lane_change_prob, md):
     lane_change_set_timer = int(Params().get("AutoLaneChangeTimer", encoding="utf8"))
     lane_change_auto_timer = 0.0 if lane_change_set_timer == 0 else 0.1 if lane_change_set_timer == 1 else 0.5 if lane_change_set_timer == 2 \
       else 1.0 if lane_change_set_timer == 3 else 1.5 if lane_change_set_timer == 4 else 2.0
+
     v_ego = carstate.vEgo
     one_blinker = carstate.leftBlinker != carstate.rightBlinker
     below_lane_change_speed = v_ego < LANE_CHANGE_SPEED_MIN
 
-    # multikyd's method
-    flll_prob = model_data.laneLineProbs[0]
-    lll_prob = model_data.laneLineProbs[1]
-    rll_prob = model_data.laneLineProbs[2]
-    frll_prob = model_data.laneLineProbs[3]
-    lre_prob = np.clip(1.0 - model_data.roadEdgeStds[0], 0.0, 1.0)
-    rre_prob = np.clip(1.0 - model_data.roadEdgeStds[1], 0.0, 1.0)
+    left_edge_prob = np.clip(1.0 - md.roadEdgeStds[0], 0.0, 1.0)
+    left_nearside_prob = md.laneLineProbs[0]
+    left_close_prob = md.laneLineProbs[1]
+    right_close_prob = md.laneLineProbs[2]
+    right_nearside_prob = md.laneLineProbs[3]
+    right_edge_prob = np.clip(1.0 - md.roadEdgeStds[1], 0.0, 1.0)
 
-    re = 1 if rre_prob > 0.35 and frll_prob < 0.2 and rll_prob > 0.5 and flll_prob >= frll_prob \
-          else -1 if lre_prob > 0.35 and flll_prob < 0.2 and lll_prob > 0.5 and frll_prob >= flll_prob \
-          else 0
+    if right_edge_prob > 0.35 and right_nearside_prob < 0.2 and right_close_prob > 0.5 and left_nearside_prob >= right_nearside_prob:
+      road_edge_stat = 1
+    elif left_edge_prob > 0.35 and left_nearside_prob < 0.2 and left_close_prob > 0.5 and right_nearside_prob >= left_nearside_prob:
+      road_edge_stat = -1
+    else:
+      road_edge_stat = 0
     
-    lane_change_direction = -1 if carstate.leftBlinker else 1 if carstate.rightBlinker else 2
-
-    if self.lane_change_state == LaneChangeState.off and re == lane_change_direction:
+    if carstate.leftBlinker:
+      self.lane_change_direction = LaneChangeDirection.left
+      lane_direction = -1
+    elif carstate.rightBlinker:
+      self.lane_change_direction = LaneChangeDirection.right
+      lane_direction = 1
+    else:
+      lane_direction = 2
+    
+    if self.lane_change_state == LaneChangeState.off and road_edge_stat == lane_direction:
       self.lane_change_direction = LaneChangeDirection.none
     elif not lat_active or self.lane_change_timer > LANE_CHANGE_TIME_MAX:
       self.lane_change_state = LaneChangeState.off
