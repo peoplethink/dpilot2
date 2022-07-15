@@ -35,7 +35,7 @@ X_EGO_COST = 0.
 V_EGO_COST = 0.
 A_EGO_COST = 0.
 J_EGO_COST = 5.0
-A_CHANGE_COST = 30.
+A_CHANGE_COST = 100.
 DANGER_ZONE_COST = 100.
 CRASH_DISTANCE = .5
 LIMIT_COST = 1e6
@@ -61,7 +61,7 @@ T_DIFFS = np.diff(T_IDXS, prepend=[0.])
 MIN_ACCEL = -3.5
 T_FOLLOW = 1.45
 COMFORT_BRAKE = 2.5
-STOP_DISTANCE = 6.0
+STOP_DISTANCE = 5.5
 
 def get_stopped_equivalence_factor(v_lead, v_ego, tr):
   # KRKeegan this offset rapidly decreases the following distance when the lead pulls
@@ -258,19 +258,19 @@ class LongitudinalMpc:
   def get_cost_multipliers(self, v_lead0, v_lead1):
     v_ego = self.x0[1]
     v_ego_bps = [0, 10]
-    TFs = [1.0, 1.25, T_FOLLOW]
+    TFs = [1.2, 1.45, 1.8]
     # KRKeegan adjustments to costs for different TFs
     # these were calculated using the test_longitudial.py deceleration tests
-    a_change_tf = interp(self.param_tr, TFs, [.1, .8, 1.])
-    j_ego_tf = interp(self.param_tr, TFs, [.6, .8, 1.])
-    d_zone_tf = interp(self.param_tr, TFs, [1.6, 1.3, 1.])
+    a_change_tf = interp(self.param_tr, TFs, [.8, 1., 1.1])
+    j_ego_tf = interp(self.param_tr, TFs, [.8, 1., 1.1])
+    d_zone_tf = interp(self.param_tr, TFs, [1.3, 1., 1.])
     # KRKeegan adjustments to improve sluggish acceleration
     # do not apply to deceleration
     j_ego_v_ego = 1
     a_change_v_ego = 1
     if (v_lead0 - v_ego >= 0) and (v_lead1 - v_ego >= 0):
-      j_ego_v_ego = interp(v_ego, v_ego_bps, [.01, 1.])
-      a_change_v_ego = interp(v_ego, v_ego_bps, [.01, 1.])
+      j_ego_v_ego = interp(v_ego, v_ego_bps, [.05, 1.])
+      a_change_v_ego = interp(v_ego, v_ego_bps, [.05, 1.])
     # Select the appropriate min/max of the options
     j_ego = min(j_ego_tf, j_ego_v_ego)
     a_change = min(a_change_tf, a_change_v_ego)
