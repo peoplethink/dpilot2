@@ -18,8 +18,8 @@ from common.params import Params
 LON_MPC_STEP = 0.2  # first step is 0.2s
 AWARENESS_DECEL = -0.2  # car smoothly decel at .2m/s^2 when user is distracted
 A_CRUISE_MIN = -1.2
-A_CRUISE_MAX_VALS = [1.2, 1.2, 0.8, 0.6]
-A_CRUISE_MAX_BP = [0., 15., 25., 40.]
+A_CRUISE_MAX_VALS = [1.6, 1.4, 1.2, 0.8, 0.5]  # Sets the limits of the planner accel, PID may exceed
+A_CRUISE_MAX_BP = [0., 5., 10., 20., 55.]
 
 # Lookup table for turns
 _A_TOTAL_MAX_V = [1.7, 3.2]
@@ -27,7 +27,7 @@ _A_TOTAL_MAX_BP = [20., 40.]
 
 
 def get_max_accel(v_ego):
-  return interp(v_ego, [0., 10., 25., 40.], [1.4, 1.2, 0.7, 0.6])
+  return interp(v_ego, A_CRUISE_MAX_BP, A_CRUISE_MAX_VALS)
 
 
 def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
