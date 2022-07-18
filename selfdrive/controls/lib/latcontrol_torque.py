@@ -72,10 +72,7 @@ class LatControlTorque(LatControl):
       lateral_accel_deadzone = curvature_deadzone * CS.vEgo ** 2
 
 
-      low_speed_factor = interp(CS.vEgo, [0, 15], [500, 0]) # comma 1st
-      #low_speed_factor = interp(CS.vEgo, [0, 10, 20], [500, 500, 200]) # comma 2nd
-      #low_speed_factor = interp(CS.vEgo, [10, 20, 30, 40], [500, 300, 100, 0]) # neokii c3
-      #low_speed_factor = interp(CS.vEgo, [0, 15, 30], [500, 100, 0]) # test desired_lateral_accel + low_speed_factor * desired_curvature
+      low_speed_factor = interp(CS.vEgo, [0, 15], [500, 0])
       setpoint = desired_lateral_accel + low_speed_factor * desired_curvature
 
       measurement = actual_lateral_accel + low_speed_factor * actual_curvature
@@ -84,8 +81,8 @@ class LatControlTorque(LatControl):
 
       ff = desired_lateral_accel - params.roll * ACCELERATION_DUE_TO_GRAVITY
       # convert friction into lateral accel units for feedforward
-      friction_compensation = interp(apply_deadzone(error, lateral_accel_deadzone), [-FRICTION_THRESHOLD, FRICTION_THRESHOLD], [-self.friction, self.friction])
-      ff += friction_compensation / self.kf
+      #friction_compensation = interp(apply_deadzone(error, lateral_accel_deadzone), [-FRICTION_THRESHOLD, FRICTION_THRESHOLD], [-self.friction, self.friction])
+      #ff += friction_compensation / self.kf
       freeze_integrator = CS.steeringRateLimited or CS.steeringPressed or CS.vEgo < 5
       output_torque = self.pid.update(error,
                                       feedforward=ff,
