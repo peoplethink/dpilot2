@@ -4,6 +4,7 @@
 
 #include <QDebug>
 #include <QSound>
+#include <QMouseEvent>
 
 #include "selfdrive/common/timing.h"
 #include "selfdrive/ui/qt/util.h"
@@ -56,7 +57,6 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   QObject::connect(uiState(), &UIState::uiUpdate, this, &OnroadWindow::updateState);
   QObject::connect(uiState(), &UIState::offroadTransition, this, &OnroadWindow::offroadTransition);
 
-#ifdef QCOM2
   // screen recoder - neokii
 
   record_timer = std::make_shared<QTimer>();
@@ -66,7 +66,7 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
     }
   });
 	record_timer->start(1000/UI_FREQ);
-/*
+	
   QWidget* recorder_widget = new QWidget(this);
   QVBoxLayout * recorder_layout = new QVBoxLayout (recorder_widget);
   recorder_layout->setMargin(35);
@@ -76,8 +76,7 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 
   stacked_layout->addWidget(recorder_widget);
   recorder_widget->raise();
-  alerts->raise();*/
-#endif
+  alerts->raise();
 }
 
 void OnroadWindow::updateState(const UIState &s) {
@@ -103,8 +102,6 @@ void OnroadWindow::updateState(const UIState &s) {
 
 void OnroadWindow::mouseReleaseEvent(QMouseEvent* e) {
 
-#ifdef QCOM2
-  // neokii
   QPoint endPos = e->pos();
   int dx = endPos.x() - startPos.x();
   int dy = endPos.y() - startPos.y();
@@ -148,21 +145,10 @@ void OnroadWindow::mouseReleaseEvent(QMouseEvent* e) {
 
   // propagation event to parent(HomeWindow)
   QWidget::mouseReleaseEvent(e);
-#endif
 }
 
 void OnroadWindow::mousePressEvent(QMouseEvent* e) {
-#ifdef QCOM2
   startPos = e->pos();
-#else
-  if (map != nullptr) {
-    bool sidebarVisible = geometry().x() > 0;
-    map->setVisible(!sidebarVisible && !map->isVisible());
-  }
-
-  // propagation event to parent(HomeWindow)
-  QWidget::mouseReleaseEvent(e);
-#endif
 }
 
 void OnroadWindow::offroadTransition(bool offroad) {
@@ -189,11 +175,9 @@ void OnroadWindow::offroadTransition(bool offroad) {
   bool wide_cam = Hardware::TICI() && Params().getBool("EnableWideCamera");
   nvg->setStreamType(wide_cam ? VISION_STREAM_RGB_WIDE_ROAD : VISION_STREAM_RGB_ROAD);
 
-#ifdef QCOM2
   if(offroad && recorder) {
     recorder->stop(false);
   }
-#endif
 }
 
 void OnroadWindow::paintEvent(QPaintEvent *event) {
