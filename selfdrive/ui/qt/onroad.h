@@ -110,7 +110,6 @@ protected:
   QPixmap ic_satellite;
   QPixmap ic_bsd_l;
   QPixmap ic_bsd_r;
-  QPixmap ic_lcr;
   
   QMap<QString, QPixmap> ic_oil_com;
   
@@ -127,7 +126,6 @@ protected:
   void drawBsd(QPainter &p);//bsd
   void drawTpms(QPainter &p);
   void drawBrake(QPainter &p);
-  void drawLcr(QPainter &p);
   void drawCommunity(QPainter &p);
   void drawRestArea(QPainter &p);
   void drawSteer(QPainter &p);
