@@ -31,7 +31,7 @@ ScreenRecoder::ScreenRecoder(QWidget *parent) : QPushButton(parent)
   started = 0;
   frame = 0;
 
-  const int size = 190;
+  const int size = 160;
   setFixedSize(size, size);
   setFocusPolicy(Qt::NoFocus);
   connect(this, SIGNAL(pressed()),this,SLOT(btnPressed()));
