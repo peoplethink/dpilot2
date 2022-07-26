@@ -792,8 +792,8 @@ void NvgWindow::drawTpms(QPainter &p) {
 
   const int w = 58;
   const int h = 126;
-  const int x = 110 + 1600;
-  const int y = height() - h - 80 - 80;
+  const int x = 110 + 1610;
+  const int y = height() - h - 230;
 
   auto tpms = car_state.getTpms();
   const float fl = tpms.getFl();
