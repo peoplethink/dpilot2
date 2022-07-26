@@ -423,7 +423,6 @@ void NvgWindow::initializeGL() {
   ic_satellite = QPixmap("../assets/images/satellite.png");
   ic_bsd_l = QPixmap("../assets/images/img_car_left.png"); //bsd
   ic_bsd_r = QPixmap("../assets/images/img_car_right.png"); //bsd
-  ic_lcr = QPixmap("../assets/images/img_lcr.png");
 }
 
 void NvgWindow::updateFrameMat(int w, int h) {
@@ -584,7 +583,6 @@ void NvgWindow::drawCommunity(QPainter &p) {
   drawTurnSignals(p);
   drawGpsStatus(p);
   drawBrake(p);
-  drawLcr(p);
 	
   if(s->show_steer)
     drawSteer(p);	
@@ -785,22 +783,6 @@ void NvgWindow::drawBrake(QPainter &p) {
   if (brake_valid) {
     p.drawPixmap(x, y, w, h, ic_brake);
     p.setOpacity(1.f);
-  }
-}
-
-void NvgWindow::drawLcr(QPainter &p) {
-  const SubMaster &sm = *(uiState()->sm);
-  auto controls_state = sm["controlsState"].getControlsState().getEnabled();
-  auto car_state = sm["carState"].getCarState().getCluSpeedMs();
-
-  const int w = 120;
-  const int h = 120;
-  const int x = width() - w - 60;
-  const int y = 620;
-	
-  if (sm["controlsState"].getControlsState().getEnabled() && (sm["carState"].getCarState().getCluSpeedMs()) >= 16.111111111) {
-    p.setOpacity(1.f);
-    p.drawPixmap(x, y, w, h, ic_lcr);
   }
 }
 	  
