@@ -45,7 +45,7 @@ class DesireHelper:
 
   def update(self, carstate, lat_active, lane_change_prob, md):
     lane_change_set_timer = int(Params().get("AutoLaneChangeTimer", encoding="utf8"))
-    lane_change_auto_timer = 0.0 if lane_change_set_timer == 0 else 0.1 if lane_change_set_timer == 1 else 0.5 if lane_change_set_timer == 2 \
+    lane_change_auto_timer = 0.0 if lane_change_set_timer == 0 else 0.2 if lane_change_set_timer == 1 else 0.5 if lane_change_set_timer == 2 \
       else 1.0 if lane_change_set_timer == 3 else 1.5 if lane_change_set_timer == 4 else 2.0
 
     v_ego = carstate.vEgo
@@ -59,9 +59,9 @@ class DesireHelper:
     right_nearside_prob = md.laneLineProbs[3]
     right_edge_prob = np.clip(1.0 - md.roadEdgeStds[1], 0.0, 1.0)
 
-    if right_edge_prob > 0.35 and right_nearside_prob < 0.2 and right_close_prob > 0.5 and left_nearside_prob >= right_nearside_prob:
+    if right_edge_prob > 0.35 and right_nearside_prob < 0.2 and left_nearside_prob >= right_nearside_prob:
       road_edge_stat = 1
-    elif left_edge_prob > 0.35 and left_nearside_prob < 0.2 and left_close_prob > 0.5 and right_nearside_prob >= left_nearside_prob:
+    elif left_edge_prob > 0.35 and left_nearside_prob < 0.2 and right_nearside_prob >= left_nearside_prob:
       road_edge_stat = -1
     else:
       road_edge_stat = 0
