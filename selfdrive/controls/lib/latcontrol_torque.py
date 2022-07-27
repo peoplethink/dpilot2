@@ -47,7 +47,7 @@ class LatControlTorque(LatControl):
     self.steering_angle_deadzone_deg = CP.lateralTuning.torque.steeringAngleDeadzoneDeg
     self.tune = nTune(CP, self)
 
-  def update(self, active, CS, VM, params, last_actuators, desired_curvature, desired_curvature_rate, llk):
+  def update(self, active, CS, VM, params, last_actuators, steer_limited, desired_curvature, desired_curvature_rate, llk):
     self.tune.check()
     pid_log = log.ControlsState.LateralTorqueState.new_message()
 
@@ -83,7 +83,7 @@ class LatControlTorque(LatControl):
       # convert friction into lateral accel units for feedforward
       friction_compensation = interp(apply_deadzone(error, lateral_accel_deadzone), [-FRICTION_THRESHOLD, FRICTION_THRESHOLD], [-self.friction, self.friction])
       ff += friction_compensation / self.kf
-      freeze_integrator = CS.steeringRateLimited or CS.steeringPressed or CS.vEgo < 5
+      freeze_integrator = steer_limited or CS.steeringPressed or CS.vEgo < 5
       output_torque = self.pid.update(error,
                                       feedforward=ff,
                                       speed=CS.vEgo,
@@ -95,7 +95,7 @@ class LatControlTorque(LatControl):
       pid_log.d = self.pid.d
       pid_log.f = self.pid.f
       pid_log.output = -output_torque
-      pid_log.saturated = self._check_saturation(self.steer_max - abs(output_torque) < 1e-3, CS)
+      pid_log.saturated = self._check_saturation(self.steer_max - abs(output_torque) < 1e-3, CS, steer_limited)
       pid_log.actualLateralAccel = actual_lateral_accel
       pid_log.desiredLateralAccel = desired_lateral_accel
 
