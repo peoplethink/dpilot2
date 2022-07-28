@@ -69,10 +69,10 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 	
   QWidget* recorder_widget = new QWidget(this);
   QVBoxLayout * recorder_layout = new QVBoxLayout (recorder_widget);
-  recorder_layout->setMargin(30);
+  recorder_layout->setMargin(35);
   recorder = new ScreenRecoder(this);
   recorder_layout->addWidget(recorder);
-  recorder_layout->setAlignment(recorder, Qt::AlignRight | Qt::AlignBottom);
+  recorder_layout->setAlignment(recorder, Qt::AlignRight | Qt::AlignCenter);
 
   stacked_layout->addWidget(recorder_widget);
   recorder_widget->raise();
@@ -792,8 +792,8 @@ void NvgWindow::drawTpms(QPainter &p) {
 
   const int w = 58;
   const int h = 126;
-  const int x = 110 + 1615;
-  const int y = height() - h - 260;
+  const int x = 110 + 1625;
+  const int y = height() - h - 170;
 
   auto tpms = car_state.getTpms();
   const float fl = tpms.getFl();
