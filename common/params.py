@@ -8,14 +8,6 @@ assert put_bool_nonblocking
 if __name__ == "__main__":
   import sys
 
-assert Params
-assert ParamKeyType
-assert UnknownKeyName
-assert put_nonblocking
-
-if __name__ == "__main__":
-  import sys
-
   params = Params()
   key = sys.argv[1]
   assert params.check_key(key), f"unknown param: {key}"
