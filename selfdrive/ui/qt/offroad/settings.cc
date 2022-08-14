@@ -133,6 +133,23 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
     });
   });
 
+  // MDPS
+  QPushButton *dtc_btn = new QPushButton(tr("MDPS"));
+  dtc_btn->setStyleSheet("height: 120px;border-radius: 15px;background-color: #E22C2C;");
+  reset_layout->addWidget(dtc_btn);
+  const char* dtcrun = "/data/openpilot/selfdrive/assets/dtc/dtc.sh ''";
+  QObject::connect(dtc_btn, &QPushButton::released, [=]() {
+    if (ConfirmationDialog::confirm(tr("제네시스DH MDPS 고장코드 삭제! \n 약 10초후 무조건 재부팅합니다!! "), this)) {
+      std::system(dtcrun);
+      std::system("touch /data/openpilot/prebuilt");
+      if (Hardware::TICI())
+        std::system("sudo reboot");
+      else
+        std::system("reboot");
+
+    }
+  });
+  
   // reset calibration button
   QPushButton *reset_calib_btn = new QPushButton("캘리 및 학습값 초기화");
   reset_calib_btn->setStyleSheet("height: 120px;border-radius: 15px;background-color: #008299;");
@@ -378,7 +395,7 @@ C2NetworkPanel::C2NetworkPanel(QWidget *parent) : QWidget(parent) {
   auto gitpullbtn = new ButtonControl("GitPull", "실행");
   QObject::connect(gitpullbtn, &ButtonControl::clicked, [=]() {
     if (ConfirmationDialog::confirm("GitPull 실행하시겠습니까?", this)){
-      std::system(gitpull);
+      std::system("rm /data/openpilot/prebuilt");
       QTimer::singleShot(1000, []() { Hardware::reboot(); });
     }
   });
