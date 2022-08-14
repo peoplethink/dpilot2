@@ -42,6 +42,8 @@ class DesireHelper:
     self.prev_one_blinker = False
     self.desire = log.LateralPlan.Desire.none
     self.lane_change_wait_timer = 0
+    
+    self.ready_to_change = False
 
   def update(self, carstate, lat_active, lane_change_prob, md):
     lane_change_set_timer = int(Params().get("AutoLaneChangeTimer", encoding="utf8"))
@@ -85,7 +87,7 @@ class DesireHelper:
       if self.lane_change_state == LaneChangeState.off and one_blinker and not self.prev_one_blinker and not below_lane_change_speed:
         self.lane_change_state = LaneChangeState.preLaneChange
         self.lane_change_ll_prob = 1.0
-        self.lane_change_wait_timer = 0
+        self.lane_change_wait_timer = 0 if not self.ready_to_change else lane_change_set_timer
 
       # LaneChangeState.preLaneChange
       elif self.lane_change_state == LaneChangeState.preLaneChange:
@@ -133,6 +135,10 @@ class DesireHelper:
       self.lane_change_timer += DT_MDL
 
     self.prev_one_blinker = one_blinker
+    self.ready_to_change = False
+    if self.lane_change_state == LaneChangeState.off and road_edge_stat == lane_direction and one_blinker:
+      self.prev_one_blinker = False
+      self.ready_to_change = True
 
     self.desire = DESIRES[self.lane_change_direction][self.lane_change_state]
 
