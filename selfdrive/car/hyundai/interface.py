@@ -28,7 +28,7 @@ class CarInterface(CarInterfaceBase):
     v_current_kph = current_speed * CV.MS_TO_KPH
 
     gas_max_bp = [0., 10., 20., 50., 70., 130., 150.]
-    gas_max_v = [1.8, 1.5, 1.42, 0.5, 0.38, 0.18, 0.1]
+    gas_max_v = [1.7, 1.5, 1.42, 0.5, 0.38, 0.18, 0.1]
 
     return CarControllerParams.ACCEL_MIN, interp(v_current_kph, gas_max_bp, gas_max_v)
 
@@ -58,7 +58,7 @@ class CarInterface(CarInterfaceBase):
     # -------------PID
     if Params().get("LateralControlSelect", encoding='utf8') == "0":
       if candidate in [CAR.GENESIS, CAR.GENESIS_G80]:
-        ret.lateralTuning.pid.kf = 0.00006
+        ret.lateralTuning.pid.kf = 0.000065
         ret.lateralTuning.pid.kpBP = [0., 10., 30.]
         ret.lateralTuning.pid.kpV = [0.018, 0.038, 0.088]
         ret.lateralTuning.pid.kiBP = [0., 10., 30.]
@@ -113,7 +113,7 @@ class CarInterface(CarInterfaceBase):
     ret.longitudinalActuatorDelayUpperBound = 0.3
 
     ret.stopAccel = -2.0
-    ret.stoppingDecelRate = 0.32 # brake_travel/s while trying to stop
+    ret.stoppingDecelRate = 0.3 # brake_travel/s while trying to stop
     ret.vEgoStopping = 0.2
     ret.vEgoStarting = 0.2
 
