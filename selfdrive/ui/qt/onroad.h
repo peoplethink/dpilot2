@@ -129,17 +129,11 @@ protected:
   void drawTpms(QPainter &p);
   void drawBrake(QPainter &p);
   void drawCommunity(QPainter &p);
-  void drawRestArea(QPainter &p);
   void drawSteer(QPainter &p);
   void drawEngRpm(QPainter &p);
   
   const int radius = 192;
   const int img_size = (radius / 2) * 1.5;
-  
-private:
-  QPixmap get_icon_iol_com(const char* key);
-  void drawRestAreaItem(QPainter &p, int yPos, capnp::Text::Reader image, capnp::Text::Reader title,
-                        capnp::Text::Reader oilPrice, capnp::Text::Reader distance, bool lastItem);  
   
 signals:
   void resizeSignal(int w);  
