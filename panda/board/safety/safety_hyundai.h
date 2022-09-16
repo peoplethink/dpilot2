@@ -1,10 +1,14 @@
-const int HYUNDAI_MAX_STEER = 408;             // like stock
-const int HYUNDAI_MAX_RT_DELTA = 200;          // max delta torque allowed for real time checks
-const uint32_t HYUNDAI_RT_INTERVAL = 250000;   // 250ms between real time checks
-const int HYUNDAI_MAX_RATE_UP = 5;
-const int HYUNDAI_MAX_RATE_DOWN = 10;
-const int HYUNDAI_DRIVER_TORQUE_ALLOWANCE = 50;
-const int HYUNDAI_DRIVER_TORQUE_FACTOR = 2;
+const SteeringLimits HYUNDAI_STEERING_LIMITS = {
+  .max_steer = 408,
+  .max_rt_delta = 200,
+  .max_rt_interval = 250000,
+  .max_rate_up = 5,
+  .max_rate_down = 10,
+  .driver_torque_allowance = 50,
+  .driver_torque_factor = 2,
+  .type = TorqueDriverLimited,
+};
+
 const int HYUNDAI_STANDSTILL_THRSLD = 30;  // ~1kph
 
 const int HYUNDAI_MAX_ACCEL = 200;  // 1/100 m/s2
@@ -14,7 +18,7 @@ const CanMsg HYUNDAI_TX_MSGS[] = {
   {832, 0, 8},  // LKAS11 Bus 0
   {1265, 0, 4}, // CLU11 Bus 0
   {1157, 0, 4}, // LFAHDA_MFC Bus 0
- };
+};
 
 const CanMsg HYUNDAI_LONG_TX_MSGS[] = {
   {832, 0, 8},  // LKAS11 Bus 0
@@ -283,46 +287,9 @@ static int hyundai_tx_hook(CANPacket_t *to_send, bool longitudinal_allowed) {
   // LKA STEER: safety check
   if (addr == 832) {
     int desired_torque = ((GET_BYTES_04(to_send) >> 16) & 0x7ffU) - 1024U;
-    uint32_t ts = microsecond_timer_get();
-    bool violation = 0;
+    bool steer_req = GET_BIT(to_send, 27U) != 0U;
 
-    if (controls_allowed) {
-
-      // *** global torque limit check ***
-      violation |= max_limit_check(desired_torque, HYUNDAI_MAX_STEER, -HYUNDAI_MAX_STEER);
-
-      // *** torque rate limit check ***
-      violation |= driver_limit_check(desired_torque, desired_torque_last, &torque_driver,
-        HYUNDAI_MAX_STEER, HYUNDAI_MAX_RATE_UP, HYUNDAI_MAX_RATE_DOWN,
-        HYUNDAI_DRIVER_TORQUE_ALLOWANCE, HYUNDAI_DRIVER_TORQUE_FACTOR);
-
-      // used next time
-      desired_torque_last = desired_torque;
-
-      // *** torque real time rate limit check ***
-      violation |= rt_rate_limit_check(desired_torque, rt_torque_last, HYUNDAI_MAX_RT_DELTA);
-
-      // every RT_INTERVAL set the new limits
-      uint32_t ts_elapsed = get_ts_elapsed(ts, ts_last);
-      if (ts_elapsed > HYUNDAI_RT_INTERVAL) {
-        rt_torque_last = desired_torque;
-        ts_last = ts;
-      }
-    }
-
-    // no torque if controls is not allowed
-    if (!controls_allowed && (desired_torque != 0)) {
-      violation = 1;
-    }
-
-    // reset to 0 if either controls is not allowed or there's a violation
-    if (violation || !controls_allowed) {
-      desired_torque_last = 0;
-      rt_torque_last = 0;
-      ts_last = ts;
-    }
-
-    if (violation) {
+    if (steer_torque_cmd_checks(desired_torque, steer_req, HYUNDAI_STEERING_LIMITS)) { 
       tx = 0;
     }
   }
