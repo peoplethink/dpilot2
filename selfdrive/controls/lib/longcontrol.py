@@ -10,7 +10,7 @@ LongCtrlState = car.CarControl.Actuators.LongControlState
 
 # As per ISO 15622:2018 for all speeds
 ACCEL_MIN_ISO = -3.5  # m/s^2
-ACCEL_MAX_ISO = 1.6  # m/s^2
+ACCEL_MAX_ISO = 2.0  # m/s^2
 
 
 def long_control_state_trans(CP, active, long_control_state, v_ego, v_target,
@@ -116,17 +116,8 @@ class LongControl:
     # Intention is to stop, switch to a different brake control until we stop
     elif self.long_control_state == LongCtrlState.stopping:
       # Keep applying brakes until the car is stopped
-      # KRKeegan contributed by Shane and I think he is right, there is a case where we reach vEgoStopping
-      # with greater braking than stopAccel.  In that case, we need to slowly release back to the
-      # defined stopAccel.  I am not sure what happens if you hold the car for an extended time period
-      # at a decel rate below stopAccel.  Could be cause of clicking some people hear?
-      if abs(output_accel - self.CP.stopAccel) > 0.02:
-        if output_accel > self.CP.stopAccel:
-          output_accel -= self.CP.stoppingDecelRate * DT_CTRL
-        else:
-          output_accel += self.CP.stoppingDecelRate * DT_CTRL
-      else:
-        output_accel = self.CP.stopAccel
+      if not CS.standstill or output_accel > self.CP.stopAccel:
+        output_accel -= self.CP.stoppingDecelRate * DT_CTRL
       output_accel = clip(output_accel, accel_limits[0], accel_limits[1])
       self.reset(CS.vEgo)
 
