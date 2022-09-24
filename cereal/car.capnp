@@ -364,7 +364,8 @@ struct CarControl {
       off @0;
       pid @1;
       stopping @2;
-      starting @3;
+
+      startingDEPRECATED @3;
     }
 
   }
@@ -486,12 +487,10 @@ struct CarParams {
   vEgoStarting @59 :Float32; # Speed at which the car goes into starting state
   directAccelControl @30 :Bool; # Does the car have direct accel control or just gas/brake
   stoppingControl @31 :Bool; # Does the car allows full control even at lows speeds when stopping
+  stopAccel @60 :Float32; # Required acceleraton to keep vehicle stationary
   steerControlType @34 :SteerControlType;
   radarOffCan @35 :Bool; # True when radar objects aren't visible on CAN
-  stopAccel @60 :Float32; # Required acceleration to keep vehicle stationary
   stoppingDecelRate @52 :Float32; # m/s^2/s while trying to stop
-  startAccel @32 :Float32; # Required acceleration to get car moving
-  startingState @69 :Bool; # Does this car make use of special starting state
 
   steerActuatorDelay @36 :Float32; # Steering wheel actuator delay in seconds
   longitudinalActuatorDelayLowerBound @61 :Float32; # Gas/Brake actuator delay in seconds, lower bound
@@ -513,18 +512,18 @@ struct CarParams {
     safetyParam @1 :Int16;
   }
   
-  mdpsBus @70: Int8;
-  sasBus @71: Int8;
-  sccBus @72: Int8;
-  enableAutoHold @73 :Bool;
-  hasScc13 @74 :Bool;
-  hasScc14 @75 :Bool;
-  hasEms @76 :Bool;
-  hasLfaHda @77 :Bool;
-  steerFaultMaxAngle @78 :Int16;
-  steerFaultMaxFrames @79 :Int16;
+  mdpsBus @69: Int8;
+  sasBus @70: Int8;
+  sccBus @71: Int8;
+  enableAutoHold @72 :Bool;
+  hasScc13 @73 :Bool;
+  hasScc14 @74 :Bool;
+  hasEms @75 :Bool;
+  hasLfaHda @76 :Bool;
+  steerFaultMaxAngle @77 :Int16;
+  steerFaultMaxFrames @78 :Int16;
 
-  disableLateralLiveTuning @80 :Bool;
+  disableLateralLiveTuning @79 :Bool;
 
   struct LateralParams {
     torqueBP @0 :List(Int32);
@@ -690,6 +689,7 @@ struct CarParams {
   safetyModelDEPRECATED @9 :SafetyModel;
   safetyModelPassiveDEPRECATED @42 :SafetyModel = silent;
   minSpeedCanDEPRECATED @51 :Float32;
+  startAccelDEPRECATED @32 :Float32;
   communityFeatureDEPRECATED @46: Bool;
   startingAccelRateDEPRECATED @53 :Float32;
 }
