@@ -4,7 +4,7 @@ Ecu = car.CarParams.Ecu
 
 class CarControllerParams:
 
-  ACCEL_MAX = 1.6
+  ACCEL_MAX = 1.5
   ACCEL_MIN = -3.5
 
   def __init__(self, CP):
