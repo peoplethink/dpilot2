@@ -99,7 +99,7 @@ class CarInterface(CarInterfaceBase):
 
     ret.steerActuatorDelay = 0.05
     ret.steerLimitTimer = 0.8
-    ret.steerRatio = 16.0
+    ret.steerRatio = 15.5
 	
     # longitudinal 
     ret.longitudinalTuning.kpBP = [0., 5., 20.]
@@ -109,8 +109,8 @@ class CarInterface(CarInterfaceBase):
     ret.longitudinalTuning.deadzoneBP = [0., 8.05]
     ret.longitudinalTuning.deadzoneV = [.0, .14]
 
-    #ret.longitudinalActuatorDelayLowerBound = 0.3
-    #ret.longitudinalActuatorDelayUpperBound = 0.3
+    ret.longitudinalActuatorDelayLowerBound = 0.5
+    ret.longitudinalActuatorDelayUpperBound = 0.5
 
     #ret.stopAccel = -0.8
     ret.stoppingDecelRate = 0.3 # brake_travel/s while trying to stop
