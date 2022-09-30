@@ -258,12 +258,12 @@ class LongitudinalMpc:
   def get_cost_multipliers(self, v_lead0, v_lead1):
     v_ego = self.x0[1]
     v_ego_bps = [0, 10]
-    TFs = [1.0, 1.25, 1.45]
+    TFs = [1.0, 1.45, 1.8]
     # KRKeegan adjustments to costs for different TFs
     # these were calculated using the test_longitudial.py deceleration tests
-    a_change_tf = interp(self.param_tr, TFs, [.1, .8, 1.])
-    j_ego_tf = interp(self.param_tr, TFs, [.6, .8, 1.])
-    d_zone_tf = interp(self.param_tr, TFs, [1.6, 1.3, 1.])
+    a_change_tf = interp(self.param_tr, TFs, [.1, 1., 1.1])
+    j_ego_tf = interp(self.param_tr, TFs, [.6, 1., 1.1])
+    d_zone_tf = interp(self.param_tr, TFs, [1.6, 1., 1.])
     # KRKeegan adjustments to improve sluggish acceleration
     # do not apply to deceleration
     j_ego_v_ego = 1
@@ -296,7 +296,7 @@ class LongitudinalMpc:
       self.solver.cost_set(i, 'Zl', Zl)
 
   def set_weights_for_xva_policy(self):
-    W = np.asfortranarray(np.diag([0., 10., 1., 10., 0.0, 1.]))
+    W = np.asfortranarray(np.diag([0., 0.2, 0.25, 1., 0.0, .1]))
     for i in range(N):
       self.solver.cost_set(i, 'W', W)
     # Setting the slice without the copy make the array not contiguous,
