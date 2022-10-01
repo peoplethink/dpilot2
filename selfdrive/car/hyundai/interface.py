@@ -102,10 +102,17 @@ class CarInterface(CarInterfaceBase):
     # longitudinal 
     ret.longitudinalTuning.kpBP = [0., 5., 20., 30.]
     ret.longitudinalTuning.kpV = [1.3, 1.0, 0.7, 0.1]
-    ret.longitudinalTuning.kiBP = [0., 0.07, 8, 13., 18., 20., 24., 25., 27., 33.]
-    ret.longitudinalTuning.kiV = [.01, .1, .15, .21, .175, .18, .2, .01, .001, .0001]
-    ret.longitudinalTuning.deadzoneBP = [0., 8.05]
-    ret.longitudinalTuning.deadzoneV = [.0, .14]
+    #ret.longitudinalTuning.kiBP = [0., 0.07, 8, 13., 18., 20., 24., 25., 27., 33.]
+    #ret.longitudinalTuning.kiV = [.01, .1, .15, .21, .175, .18, .2, .01, .001, .0001]
+    #ret.longitudinalTuning.deadzoneBP = [0., 8.05]
+    #ret.longitudinalTuning.deadzoneV = [.0, .14]
+
+    #ret.longitudinalTuning.kpBP = [0., .3, 10., 35.]
+    #ret.longitudinalTuning.kpV = [1.8, 1.2, .8, .6]
+    ret.longitudinalTuning.kiBP = [0., .3, 15., 35.]
+    ret.longitudinalTuning.kiV = [0.15, .10, .05, .045]
+    ret.longitudinalTuning.deadzoneBP = [0., .5]
+    ret.longitudinalTuning.deadzoneV = [0.00, 0.00]
 
     ret.longitudinalActuatorDelayLowerBound = 0.3
     ret.longitudinalActuatorDelayUpperBound = 0.3
