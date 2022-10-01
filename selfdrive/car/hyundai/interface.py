@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+Ù#!/usr/bin/env python3
 from typing import List
 
 from cereal import car
@@ -111,7 +111,7 @@ class CarInterface(CarInterfaceBase):
     ret.longitudinalActuatorDelayUpperBound = 0.3
 
     ret.stopAccel = -2.0
-    ret.stoppingDecelRate = 0.3 # brake_travel/s while trying to stop
+    ret.stoppingDecelRate = 0.25 # brake_travel/s while trying to stop
     ret.vEgoStopping = 0.2
     ret.vEgoStarting = 0.2
 
