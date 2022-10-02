@@ -114,10 +114,10 @@ class CarInterface(CarInterfaceBase):
     #ret.longitudinalTuning.deadzoneBP = [0., .5]
     #ret.longitudinalTuning.deadzoneV = [0.00, 0.00]
 
-    ret.vEgoStopping = 0.8  # 1.0, 0.5
-    ret.vEgoStarting = 0.8  # needs to be >= vEgoStopping to avoid state transition oscillation
-    ret.stopAccel = -2.0 # 0.0, -0.5    
-    ret.stoppingDecelRate = 0.8 # 0.8, 0.2  # brake_travel/s while trying to stop
+    ret.vEgoStopping = 0.8
+    ret.vEgoStarting = 0.8
+    ret.stopAccel = -2.0  
+    ret.stoppingDecelRate = 0.5
     
     ret.longitudinalActuatorDelayLowerBound = 1.0
     ret.longitudinalActuatorDelayUpperBound = 1.0
