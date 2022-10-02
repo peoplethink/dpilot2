@@ -100,24 +100,24 @@ class CarInterface(CarInterfaceBase):
     ret.steerRatio = 15.5
 	
     # longitudinal 
-    ret.longitudinalTuning.kpBP = [0., 5., 20., 30.]
-    ret.longitudinalTuning.kpV = [1.3, 1.0, 0.7, 0.1]
-    #ret.longitudinalTuning.kiBP = [0., 0.07, 8, 13., 18., 20., 24., 25., 27., 33.]
-    #ret.longitudinalTuning.kiV = [.01, .1, .15, .21, .175, .18, .2, .01, .001, .0001]
-    #ret.longitudinalTuning.deadzoneBP = [0., 8.05]
-    #ret.longitudinalTuning.deadzoneV = [.0, .14]
+    ret.longitudinalTuning.kpBP = [0., 4., 9., 17., 23., 31]
+    ret.longitudinalTuning.kpV = [1.2, 1.1, 1.0, 0.9, 0.75, 0.65]
+    ret.longitudinalTuning.kiBP = [0., 4., 9., 17., 23., 31.]
+    ret.longitudinalTuning.kiV = [0.27, 0.24, 0.23, 0.2, 0.17, 0.15]
+    ret.longitudinalTuning.deadzoneBP = [0., 4.]
+    ret.longitudinalTuning.deadzoneV = [.0, 0.1]
 
     #ret.longitudinalTuning.kpBP = [0., .3, 10., 35.]
     #ret.longitudinalTuning.kpV = [1.8, 1.2, .8, .6]
-    ret.longitudinalTuning.kiBP = [0., .3, 15., 35.]
-    ret.longitudinalTuning.kiV = [0.15, .10, .05, .045]
-    ret.longitudinalTuning.deadzoneBP = [0., .5]
-    ret.longitudinalTuning.deadzoneV = [0.00, 0.00]
+    #ret.longitudinalTuning.kiBP = [0., .3, 15., 35.]
+    #ret.longitudinalTuning.kiV = [0.15, .10, .05, .045]
+    #ret.longitudinalTuning.deadzoneBP = [0., .5]
+    #ret.longitudinalTuning.deadzoneV = [0.00, 0.00]
 
     ret.vEgoStopping = 0.8  # 1.0, 0.5
     ret.vEgoStarting = 0.8  # needs to be >= vEgoStopping to avoid state transition oscillation
     ret.stopAccel = -2.0 # 0.0, -0.5    
-    ret.stoppingDecelRate = 1.0 # 0.8, 0.2  # brake_travel/s while trying to stop
+    ret.stoppingDecelRate = 0.8 # 0.8, 0.2  # brake_travel/s while trying to stop
     
     ret.longitudinalActuatorDelayLowerBound = 1.0
     ret.longitudinalActuatorDelayUpperBound = 1.0
