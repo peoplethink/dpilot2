@@ -26,8 +26,8 @@ class CarInterface(CarInterfaceBase):
   def get_pid_accel_limits(CP, current_speed, cruise_speed):
     v_current_kph = current_speed * CV.MS_TO_KPH
 
-    gas_max_bp = [10., 20., 50., 70., 130., 150.]
-    gas_max_v = [1.3, 1.1, 0.63, 0.44, 0.15, 0.1]
+    gas_max_bp = [10., 70., 100., 150.]
+    gas_max_v = [1.6, 0.8, 0.3, 0.1]
 
     return CarControllerParams.ACCEL_MIN, interp(v_current_kph, gas_max_bp, gas_max_v)
 
@@ -100,12 +100,16 @@ class CarInterface(CarInterfaceBase):
     ret.steerRatio = 15.5
 	
     # longitudinal 
-    ret.longitudinalTuning.kpBP = [0., 4., 9., 17., 23., 31.]
-    ret.longitudinalTuning.kpV = [1.2, 1.1, 1.0, 0.9, 0.75, 0.65]
-    ret.longitudinalTuning.kiBP = [0., 4., 9., 17., 23., 31.]
-    ret.longitudinalTuning.kiV = [0.27, 0.24, 0.23, 0.2, 0.17, 0.15]
-    ret.longitudinalTuning.deadzoneBP = [0., 4.]
-    ret.longitudinalTuning.deadzoneV = [.0, 0.1]
+    ret.longitudinalTuning.kpBP = [0., 130.*CV.KPH_TO_MS]
+    ret.longitudinalTuning.kpV = [1.2, 0.52]
+    ret.longitudinalTuning.kiBP = [0., 130. * CV.KPH_TO_MS]
+    ret.longitudinalTuning.kiV = [0.1, 0.05]
+    #ret.longitudinalTuning.kpBP = [0., 4., 9., 17., 23., 31.]
+    #ret.longitudinalTuning.kpV = [1.2, 1.1, 1.0, 0.9, 0.75, 0.65]
+    #ret.longitudinalTuning.kiBP = [0., 4., 9., 17., 23., 31.]
+    #ret.longitudinalTuning.kiV = [0.27, 0.24, 0.23, 0.2, 0.17, 0.15]
+    #ret.longitudinalTuning.deadzoneBP = [0., 4.]
+    #ret.longitudinalTuning.deadzoneV = [.0, 0.1]
 
     #ret.longitudinalTuning.kpBP = [0., .3, 10., 35.]
     #ret.longitudinalTuning.kpV = [1.8, 1.2, .8, .6]
