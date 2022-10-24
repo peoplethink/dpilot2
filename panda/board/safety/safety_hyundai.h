@@ -1,3 +1,5 @@
+#include "safety_hyundai_common.h"
+
 const SteeringLimits HYUNDAI_STEERING_LIMITS = {
   .max_steer = 408,
   .max_rt_delta = 200,
@@ -7,9 +9,14 @@ const SteeringLimits HYUNDAI_STEERING_LIMITS = {
   .driver_torque_allowance = 50,
   .driver_torque_factor = 2,
   .type = TorqueDriverLimited,
+  
+  // the EPS faults when the steering angle is above a certain threshold for too long. to prevent this,
+  // we allow setting CF_Lkas_ActToi bit to 0 while maintaining the requested torque value for two consecutive frames
+  .min_valid_request_frames = 89,
+  .max_invalid_request_frames = 2,
+  .min_valid_request_rt_interval = 810000,  // 810ms; a ~10% buffer on cutting every 90 frames
+  .has_steer_req_tolerance = true,
 };
-
-const int HYUNDAI_STANDSTILL_THRSLD = 30;  // ~1kph
 
 const int HYUNDAI_MAX_ACCEL = 200;  // 1/100 m/s2
 const int HYUNDAI_MIN_ACCEL = -350; // 1/100 m/s2
@@ -215,7 +222,7 @@ static int hyundai_rx_hook(CANPacket_t *to_push) {
 
     // sample wheel speed, averaging opposite corners
     if (addr == 902) {
-      int hyundai_speed = (GET_BYTES_04(to_push) & 0x3FFFU) + ((GET_BYTES_48(to_push) >> 16) & 0x3FFFU);  // FL + RR
+      uint32_t hyundai_speed = (GET_BYTES_04(to_push) & 0x3FFFU) + ((GET_BYTES_48(to_push) >> 16) & 0x3FFFU);  // FL + RR
       hyundai_speed /= 2;
       vehicle_moving = hyundai_speed > HYUNDAI_STANDSTILL_THRSLD;
     }

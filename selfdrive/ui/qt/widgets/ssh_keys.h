@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QPushButton>
+#include <QComboBox>
 
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
@@ -70,4 +71,19 @@ private:
   QLabel local_hash;
   QLabel remote_hash;
   Params params;
+};
+
+class TimeZoneSelectCombo : public AbstractControl 
+{
+  Q_OBJECT
+
+public:
+  TimeZoneSelectCombo();
+
+private:
+  QPushButton btn;
+  QComboBox combobox;
+  Params params;
+
+  void refresh();
 };

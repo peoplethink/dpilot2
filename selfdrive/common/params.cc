@@ -202,6 +202,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"PutPrebuilt", PERSISTENT},
     {"DynamicLaneProfile", PERSISTENT},
     {"SoftRestartTriggered", CLEAR_ON_MANAGER_START},
+    {"OPKRTimeZone", PERSISTENT},
     {"AutoSetOpt", PERSISTENT},
     {"SteerLockout", PERSISTENT},
     {"ShowSteerUI", PERSISTENT},

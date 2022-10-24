@@ -26,8 +26,8 @@ class CarInterface(CarInterfaceBase):
   def get_pid_accel_limits(CP, current_speed, cruise_speed):
     v_current_kph = current_speed * CV.MS_TO_KPH
 
-    gas_max_bp = [10., 20., 50., 70., 130., 150.]
-    gas_max_v = [1.5, 1.2, 0.63, 0.44, 0.15, 0.1]
+    gas_max_bp = [0., 10., 20., 40., 70., 130., 150.]
+    gas_max_v = [1.6, 1.6, 1.35, 0.55, 0.35, 0.15, 0.1]
 
     return CarControllerParams.ACCEL_MIN, interp(v_current_kph, gas_max_bp, gas_max_v)
 
@@ -43,12 +43,9 @@ class CarInterface(CarInterfaceBase):
 
     tire_stiffness_factor = 0.85
     if Params().get_bool('SteerLockout'):
-      ret.maxSteeringAngleDeg = 1000
+      ret.maxSteeringAngleDeg = 1080
     else:
       ret.maxSteeringAngleDeg = 90
-	
-    ret.steerFaultMaxAngle = 85
-    ret.steerFaultMaxFrames = 39
 	
     ret.disableLateralLiveTuning = False
 
@@ -111,8 +108,8 @@ class CarInterface(CarInterfaceBase):
     #ret.longitudinalTuning.kpV = [1.2, 1.05, 1.0, 0.92, 0.55]
     #ret.longitudinalTuning.kiBP = [0., 130. * CV.KPH_TO_MS]
     #ret.longitudinalTuning.kiV = [0.1, 0.05]
-    ret.longitudinalActuatorDelayLowerBound = 0.5
-    ret.longitudinalActuatorDelayUpperBound = 0.5
+    ret.longitudinalActuatorDelayLowerBound = 0.3
+    ret.longitudinalActuatorDelayUpperBound = 0.3
 
     ret.stopAccel = -2.0
     ret.stoppingDecelRate = 0.3 # brake_travel/s while trying to stop

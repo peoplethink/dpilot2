@@ -49,6 +49,7 @@ typedef struct {
 
   // safety around steer req bit
   const int min_valid_request_frames;
+  const int max_invalid_request_frames;
   const uint32_t min_valid_request_rt_interval;
   const bool has_steer_req_tolerance;
 } SteeringLimits;
@@ -147,6 +148,7 @@ int cruise_button_prev = 0;
 int desired_torque_last = 0;       // last desired steer torque
 int rt_torque_last = 0;            // last desired torque for real time check
 int valid_steer_req_count = 0;     // counter for steer request bit matching non-zero torque
+int invalid_steer_req_count = 0;   // counter to allow multiple frames of mismatching torque request bit
 struct sample_t torque_meas;       // last 3 motor torques produced by the eps
 struct sample_t torque_driver;     // last 3 driver torques measured
 uint32_t ts_torque_check_last = 0;
