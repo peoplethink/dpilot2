@@ -224,7 +224,7 @@ class SccSmoother:
       dRel = lead.dRel
 
     # Auto-resume Cruise Set Speed by JangPoo
-    ascc_auto_set = enabled and (clu11_speed > 40 or (CS.obj_valid and dRel > 1)) \
+    ascc_auto_set = enabled and (clu11_speed > 10 or (CS.obj_valid and dRel > 1)) \
                     and CS.gas_pressed and CS.prev_cruiseState_speed and not CS.cruiseState_speed # Auto-resume Cruise Set Speed by JangPoo - 파파
 
     if not self.longcontrol:
