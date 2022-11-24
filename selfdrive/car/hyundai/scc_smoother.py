@@ -218,7 +218,7 @@ class SccSmoother:
     activated_hda = road_speed_limiter_get_active()
 
     # janpoo6427
-    ascc_auto_set = ntune_option_enabled('autoCruiseSet') and enabled and (clu11_speed > 30 or CS.obj_valid) \
+    ascc_auto_set = enabled and (clu11_speed > 30 or CS.obj_valid) \
                   and CS.gas_pressed and CS.prev_cruiseState_speed and not CS.cruiseState_speed
 
     ascc_enabled = CS.acc_mode and enabled and CS.cruiseState_enabled \
