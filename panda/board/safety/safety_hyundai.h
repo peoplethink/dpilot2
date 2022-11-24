@@ -7,7 +7,7 @@ const SteeringLimits HYUNDAI_STEERING_LIMITS = {
   .max_rate_up = 3,
   .max_rate_down = 7,
   .driver_torque_allowance = 50,
-  .driver_torque_factor = 3,
+  .driver_torque_factor = 2,
   .type = TorqueDriverLimited,
   
   // the EPS faults when the steering angle is above a certain threshold for too long. to prevent this,
