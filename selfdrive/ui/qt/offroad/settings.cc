@@ -714,6 +714,12 @@ CommunityPanel::CommunityPanel(QWidget* parent) : QWidget(parent) {
                                             "SCC 설정 시 곡률에 따른 속도 감속 기능을 사용",
                                             "../assets/offroad/icon_road.png",
                                             this));
+  
+  toggles.append(new ParamControl("TurnVisionControl",
+                                  "비젼기반 커브감속",
+                                  "Use vision path predictions to estimate the appropiate speed to drive through turns ahead.",
+                                  "../assets/offroad/icon_road.png",
+                                  this));           
 
   toggles.append(new ParamControl("SccSmootherSyncGasPressed",
                                             "가속 속도 동기화",

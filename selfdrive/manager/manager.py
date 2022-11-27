@@ -67,6 +67,10 @@ def manager_init() -> None:
     ("AutoSetOpt", "1"),
     ("SteerLockout", "1"),
     ("ShowSteerUI", "1"),
+    ("SpeedLimitControl", "0"),
+    ("SpeedLimitPercOffset", "0"),
+    ("TurnSpeedControl", "0"),
+    ("TurnVisionControl", "0"),
     ("PutPrebuilt", "0"), 
   ]
   if not PC:

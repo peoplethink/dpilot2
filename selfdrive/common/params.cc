@@ -206,6 +206,10 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"AutoSetOpt", PERSISTENT},
     {"SteerLockout", PERSISTENT},
     {"ShowSteerUI", PERSISTENT},
+    {"SpeedLimitControl", PERSISTENT},
+    {"SpeedLimitPercOffset", PERSISTENT},
+    {"TurnSpeedControl", PERSISTENT},
+    {"TurnVisionControl", PERSISTENT},
     {"ShowEngRPMUI", PERSISTENT},
 };
 
