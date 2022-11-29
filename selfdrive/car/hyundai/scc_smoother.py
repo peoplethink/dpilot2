@@ -215,9 +215,6 @@ class SccSmoother:
     CC.sccSmoother.autoTrGap = AUTO_TR_CRUISE_GAP
     
     # janpoo6427
-    activated_hda = road_speed_limiter_get_active()
-
-    # janpoo6427
     ascc_auto_set = enabled and (clu11_speed > 30 or CS.obj_valid) \
                   and CS.gas_pressed and CS.prev_cruiseState_speed and not CS.cruiseState_speed
 
@@ -242,11 +239,13 @@ class SccSmoother:
     elif (ascc_enabled and not CS.out.cruiseState.standstill) or ascc_auto_set:
       if self.alive_timer == 0:
         if ascc_enabled: 
-          self.btn = self.get_button(CS.cruiseState_speed * self.speed_conv_to_clu)
-        elif ascc_auto_set:
-          if activated_hda == 1: # when nda connected# if clu11_speed < 60:
-                self.btn = Buttons.SET_DECEL
-          else:                                        # active hda(nda from openpilot)
+          if self.autosetopt:  
+            self.btn = self.get_button(CS.cruiseState_speed * self.speed_conv_to_clu)
+        elif ascc_auto_set and clu11_speed < 40:
+          if self.autosetopt:  
+            self.btn = Buttons.SET_DECEL
+        else:
+          if self.autosetopt:
             self.btn = Buttons.RES_ACCEL
         self.alive_count = SccSmoother.get_alive_count()
 
