@@ -106,6 +106,25 @@ signals:
 
 };
 
+class CValueControl : public AbstractControl {
+    Q_OBJECT
+
+public:
+    CValueControl(const QString& params, const QString& title, const QString& desc, const QString& icon, int min, int max, int unit = 1);
+
+private:
+    QPushButton btnplus;
+    QPushButton btnminus;
+    QLabel label;
+
+    QString m_params;
+    int     m_min;
+    int     m_max;
+    int     m_unit;
+
+    void refresh();
+};
+
 class CommunityPanel : public QWidget {
   Q_OBJECT
 
@@ -118,6 +137,19 @@ private:
 
 public:
   explicit CommunityPanel(QWidget *parent = nullptr);
+};
+
+class LONGTuningPanel : public QWidget {
+    Q_OBJECT
+
+private:
+    QStackedLayout* main_layout = nullptr;
+    QWidget* homeScreen = nullptr;
+
+    QWidget* homeWidget;
+
+public:
+    explicit LONGTuningPanel(QWidget* parent = nullptr);
 };
 
 class VIPPanel : public QWidget {

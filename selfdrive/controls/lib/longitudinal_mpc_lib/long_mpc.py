@@ -8,6 +8,9 @@ from selfdrive.swaglog import cloudlog
 from selfdrive.modeld.constants import index_function
 from selfdrive.controls.lib.radar_helpers import _LEAD_ACCEL_TAU
 from common.conversions import Conversions as CV
+from common.params import Params
+from common.realtime import DT_MDL
+from common.filter_simple import FirstOrderFilter
 
 if __name__ == '__main__':  # generating code
   from pyextra.acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
@@ -60,8 +63,8 @@ T_IDXS = np.array(T_IDXS_LST)
 T_DIFFS = np.diff(T_IDXS, prepend=[0.])
 MIN_ACCEL = -3.5
 T_FOLLOW = 1.45
-COMFORT_BRAKE = 2.4
-STOP_DISTANCE = 7.0
+COMFORT_BRAKE = 2.35
+STOP_DISTANCE = 6.5
 
 def get_stopped_equivalence_factor(v_lead, v_ego, tr):
   # KRKeegan this offset rapidly decreases the following distance when the lead pulls
@@ -212,8 +215,19 @@ class LongitudinalMpc:
   def __init__(self, e2e=False):
     self.e2e = e2e
     self.param_tr = T_FOLLOW
+    self.stopDistance = STOP_DISTANCE
+    self.applyLongDynamicCost = False
+    self.XEgoObstacleCost = 3.
+    self.applyDynamicTFollow = 1.0
+    self.applyDynamicTFollowDecel = 1.0
     self.solver = AcadosOcpSolverCython(MODEL_NAME, ACADOS_SOLVER_TYPE, N)
     self.reset()
+    self.lo_timer = 0
+    self.filter_x = FirstOrderFilter(0., 2.0, DT_MDL)
+    self.filter_aRel = FirstOrderFilter(0., 0.1, DT_MDL)
+    self.vRel_prev = 1000
+    self.vEgo_prev = 0
+    
     self.source = SOURCES[2]
 
   def reset(self):
@@ -353,6 +367,15 @@ class LongitudinalMpc:
 
   def update(self, carstate, radarstate, v_cruise, prev_accel_constraint=True):
     v_ego = self.x0[1]
+    self.lo_timer += 1
+    if self.lo_timer > 100:
+      self.lo_timer = 0
+      self.applyLongDynamicCost = Params().get_bool("ApplyLongDynamicCost")
+      self.stopDistance = float(int(Params().get("StopDistance", encoding="utf8"))) / 100.
+      self.XEgoObstacleCost = float(int(Params().get("XEgoObstacleCost", encoding="utf8")))
+      self.applyDynamicTFollow = float(int(Params().get("ApplyDynamicTFollow", encoding="utf8"))) / 100.
+      self.applyDynamicTFollowDecel = float(int(Params().get("ApplyDynamicTFollowDecel", encoding="utf8"))) / 100.
+      
     self.status = radarstate.leadOne.status or radarstate.leadTwo.status
 
     lead_xv_0 = self.process_lead(radarstate.leadOne)
@@ -372,6 +395,17 @@ class LongitudinalMpc:
     else:
       tr = interp(float(cruise_gap), CRUISE_GAP_BP, CRUISE_GAP_V)
 
+    aRel = 0.
+    if radarstate.leadOne.status:
+      tr *= interp(radarstate.leadOne.vRel*3.6, [-100., 0, 100.], [self.applyDynamicTFollow, 1.0, 2.0 - self.applyDynamicTFollow])
+      tr *= interp(self.prev_a[0], [-4, 0], [self.applyDynamicTFollowDecel, 1.0])
+      if self.vRel_prev < 1000:
+        aRel = self.filter_aRel.update((self.vRel_prev - radarstate.leadOne.vRel) / DT_MDL)
+      self.vRel_prev = radarstate.leadOne.vRel
+    else:
+      self.vRel_prev = 1000
+      self.filter_aRel.update(0)
+      
     self.param_tr = tr
 
     # To estimate a safe distance from a moving lead, we calculate how much stopping

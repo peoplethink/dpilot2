@@ -34,6 +34,7 @@
 #include <QScroller>
 #include <QListView>
 #include <QListWidget>
+#include <QFileInfo> // opkr
 
 TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
   // param, title, desc, icon
@@ -548,19 +549,22 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   QList<QPair<QString, QWidget *>> panels = {
     {"장치", device},
     {"VIP메뉴", new VIPPanel(this)},
+    {"LONG튜닝", new LONGTuningPanel(this)},
     {"네트워크", network_panel(this)},
     {"토글메뉴", new TogglesPanel(this)},
     {"소프트웨어", new SoftwarePanel(this)},
     {"커뮤니티", new CommunityPanel(this)},
   };
 
+  sidebar_layout->addSpacing(45);
+  
 #ifdef ENABLE_MAPS
   auto map_panel = new MapPanel(this);
   panels.push_back({"Navigation", map_panel});
   QObject::connect(map_panel, &MapPanel::closeSettings, this, &SettingsWindow::closeSettings);
 #endif
 
-  const int padding = panels.size() > 3 ? 25 : 35;
+  const int padding = panels.size() > 3 ? 0 : 15;
 
   nav_btns = new QButtonGroup(this);
   for (auto &[name, panel] : panels) {
@@ -572,7 +576,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
         color: grey;
         border: none;
         background: none;
-        font-size: 60px;
+        font-size: 54px;
         font-weight: 500;
         padding-top: %1px;
         padding-bottom: %1px;
@@ -599,12 +603,12 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
       panel_widget->setCurrentWidget(w);
     });
   }
-  sidebar_layout->setContentsMargins(50, 50, 100, 50);
+  sidebar_layout->setContentsMargins(5, 50, 10, 50);
 
   // main settings layout, sidebar + main panel
   QHBoxLayout *main_layout = new QHBoxLayout(this);
 
-  sidebar_widget->setFixedWidth(500);
+  sidebar_widget->setFixedWidth(350);
   main_layout->addWidget(sidebar_widget);
   main_layout->addWidget(panel_widget);
 
@@ -701,12 +705,6 @@ CommunityPanel::CommunityPanel(QWidget* parent) : QWidget(parent) {
                                             "HKG 롱컨트롤 사용",
                                             "N 롱컨트롤 기능 사용. 오픈파일럿이 속도를 조절합니다. 주의 하시길 바랍니다.",
                                             "../assets/offroad/icon_road.png",
-                                            this));
-
-  toggles.append(new ParamControl("IsLdwsCar",
-                                            "LDWS",
-                                            "If your car only supports LDWS, turn it on.",
-                                            "../assets/offroad/icon_openpilot.png",
                                             this));
 
   toggles.append(new ParamControl("SccSmootherSlowOnCurves",
@@ -809,4 +807,107 @@ SelectCar::SelectCar(QWidget* parent): QWidget(parent) {
     });
 
   main_layout->addWidget(list);
+}
+
+LONGTuningPanel::LONGTuningPanel(QWidget* parent) : QWidget(parent) {
+
+    main_layout = new QStackedLayout(this);
+
+    homeScreen = new QWidget(this);
+    QVBoxLayout* vlayout = new QVBoxLayout(homeScreen);
+    vlayout->setContentsMargins(0, 20, 0, 20);
+
+    homeWidget = new QWidget(this);
+    QVBoxLayout* toggleLayout = new QVBoxLayout(homeWidget);
+    homeWidget->setObjectName("homeWidget");
+
+    ScrollView* scroller = new ScrollView(homeWidget, this);
+    scroller->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+
+    main_layout->addWidget(homeScreen);
+
+    vlayout->addWidget(scroller, 1);
+    
+    toggleLayout->addWidget(new CValueControl("StopDistance", "StopDistance(600cm)", "선행차와 정지하는 거리를 입력합니다.", "../assets/offroad/icon_road.png", 200, 1000, 50));
+    toggleLayout->addWidget(new CValueControl("XEgoObstacleCost", "X_EGO_COST(5)", "증가할수록 정지선정지가 정확해지나, 급감속이 강해집니다.", "../assets/offroad/icon_road.png", 3, 50, 1));
+    toggleLayout->addWidget(new CValueControl("AChangeCost", "A_CHANGE_COST(150)", "적으면 선행차에 대한 반응이 강해집니다. ", "../assets/offroad/icon_road.png", 20, 400, 10));
+    toggleLayout->addWidget(new ParamControl("ApplyLongDynamicCost", "차량간격유지 동적제어(OFF)", "전방차량의 간격을 최대한 유지하도록 응답속도가 빨라집니다.", "../assets/offroad/icon_road.png", this));
+    toggleLayout->addWidget(new CValueControl("ApplyDynamicTFollow", "차량간격동적제어:상대속도(110%)", "선행차와의 상대속도에 의해 차량간격을 동적으로 제어합니다. 점점가까와지면 점점 멀리~", "../assets/offroad/icon_road.png", 100, 150, 1));
+    toggleLayout->addWidget(new CValueControl("ApplyDynamicTFollowDecel", "차량간격동적제어:감속(110%)", "차량의 감속도에 따라 차량간격을 동적으로 제어합니다. 감속이 급하면 급할수록 점점 멀리~", "../assets/offroad/icon_road.png", 100, 150, 1));
+}
+
+CValueControl::CValueControl(const QString& params, const QString& title, const QString& desc, const QString& icon, int min, int max, int unit/*=1*/) : AbstractControl(title, desc, icon)
+{
+
+    m_params = params;
+    m_min = min;
+    m_max = max;
+    m_unit = unit;
+
+    label.setAlignment(Qt::AlignVCenter | Qt::AlignRight);
+    label.setStyleSheet("color: #e0e879");
+    hlayout->addWidget(&label);
+
+    btnminus.setStyleSheet(R"(
+    padding: 0;
+    border-radius: 50px;
+    font-size: 35px;
+    font-weight: 500;
+    color: #E4E4E4;
+    background-color: #393939;
+  )");
+    btnplus.setStyleSheet(R"(
+    padding: 0;
+    border-radius: 50px;
+    font-size: 35px;
+    font-weight: 500;
+    color: #E4E4E4;
+    background-color: #393939;
+  )");
+    btnminus.setFixedSize(150, 100);
+    btnplus.setFixedSize(150, 100);
+    hlayout->addWidget(&btnminus);
+    hlayout->addWidget(&btnplus);
+
+    QObject::connect(&btnminus, &QPushButton::released, [=]() {
+        auto str = QString::fromStdString(Params().get(m_params.toStdString()));
+        int value = str.toInt();
+        value = value - m_unit;
+        if (value < m_min) {
+            value = m_min;
+        }
+        else {
+        }
+
+        //UIScene& scene = uiState()->scene;//QUIState::ui_state.scene;
+        //scene.scr.autoFocus = value;
+        QString values = QString::number(value);
+        Params().put(m_params.toStdString(), values.toStdString());
+        refresh();
+    });
+
+    QObject::connect(&btnplus, &QPushButton::released, [=]() {
+        auto str = QString::fromStdString(Params().get(m_params.toStdString()));
+        int value = str.toInt();
+        value = value + m_unit;
+        if (value > m_max) {
+            value = m_max;
+        }
+        else {
+        }
+
+        //UIScene& scene = uiState()->scene;//QUIState::ui_state.scene;
+        //scene.scr.autoFocus = value;
+        QString values = QString::number(value);
+        Params().put(m_params.toStdString(), values.toStdString());
+        refresh();
+    });
+    refresh();
+}
+  
+void CValueControl::refresh()
+{
+    label.setText(QString::fromStdString(Params().get(m_params.toStdString())));
+    btnminus.setText("－");
+    btnplus.setText("＋");
 }

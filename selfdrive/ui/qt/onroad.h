@@ -135,6 +135,8 @@ protected:
   const int radius = 192;
   const int img_size = (radius / 2) * 1.5;
   
+  float m_cur_speed = 0;
+  
 signals:
   void resizeSignal(int w);  
 };

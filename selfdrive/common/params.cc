@@ -210,6 +210,11 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"SpeedLimitPercOffset", PERSISTENT},
     {"TurnSpeedControl", PERSISTENT},
     {"TurnVisionControl", PERSISTENT},
+    {"StopDistance", PERSISTENT},
+    {"XEgoObstacleCost", PERSISTENT},
+    {"ApplyDynamicTFollow", PERSISTENT},
+    {"ApplyDynamicTFollowDecel", PERSISTENT},
+    {"ApplyLongDynamicCost", PERSISTENT},
     {"ShowEngRPMUI", PERSISTENT},
 };
 

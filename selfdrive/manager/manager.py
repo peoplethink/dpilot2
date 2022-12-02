@@ -71,6 +71,11 @@ def manager_init() -> None:
     ("SpeedLimitPercOffset", "0"),
     ("TurnSpeedControl", "0"),
     ("TurnVisionControl", "0"),
+    ("StopDistance", "600"),
+    ("XEgoObstacleCost", "6"),
+    ("ApplyLongDynamicCost", "0"),
+    ("ApplyDynamicTFollow", "110"), 
+    ("ApplyDynamicTFollowDecel", "110"),
     ("PutPrebuilt", "0"), 
   ]
   if not PC:
