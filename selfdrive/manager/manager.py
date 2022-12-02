@@ -73,8 +73,12 @@ def manager_init() -> None:
     ("TurnVisionControl", "0"),
     ("StopDistance", "600"),
     ("XEgoObstacleCost", "6"),
+    ("JEgoCost", "5"),
+    ("AChangeCost", "150"),
+    ("DangerZoneCost", "100"),
     ("ApplyLongDynamicCost", "0"),
-    ("ApplyDynamicTFollow", "110"), 
+    ("ApplyDynamicTFollow", "110"),
+    ("ApplyDynamicTFollowApart", "95"),
     ("ApplyDynamicTFollowDecel", "110"),
     ("PutPrebuilt", "0"), 
   ]

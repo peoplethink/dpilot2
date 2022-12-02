@@ -38,8 +38,8 @@ X_EGO_COST = 0.
 V_EGO_COST = 0.
 A_EGO_COST = 0.
 J_EGO_COST = 5.0
-A_CHANGE_COST = 50.
-DANGER_ZONE_COST = 110.
+A_CHANGE_COST = 200.
+DANGER_ZONE_COST = 100.
 CRASH_DISTANCE = .5
 LIMIT_COST = 1e6
 ACADOS_SOLVER_TYPE = 'SQP_RTI'
@@ -216,17 +216,19 @@ class LongitudinalMpc:
     self.e2e = e2e
     self.param_tr = T_FOLLOW
     self.stopDistance = STOP_DISTANCE
+    self.JEgoCost = 5.
+    self.AChangeCost = 200.
+    self.DangerZoneCost = 100.
     self.applyLongDynamicCost = False
     self.XEgoObstacleCost = 3.
     self.applyDynamicTFollow = 1.0
+    self.applyDynamicTFollowApart = 1.0
     self.applyDynamicTFollowDecel = 1.0
     self.solver = AcadosOcpSolverCython(MODEL_NAME, ACADOS_SOLVER_TYPE, N)
     self.reset()
     self.lo_timer = 0
-    self.filter_x = FirstOrderFilter(0., 2.0, DT_MDL)
-    self.filter_aRel = FirstOrderFilter(0., 0.1, DT_MDL)
-    self.vRel_prev = 1000
-    self.vEgo_prev = 0
+    self.v_cruise = 0.
+    self.comfort_brake = COMFORT_BRAKE
     
     self.source = SOURCES[2]
 
@@ -370,10 +372,12 @@ class LongitudinalMpc:
     self.lo_timer += 1
     if self.lo_timer > 100:
       self.lo_timer = 0
-      self.applyLongDynamicCost = Params().get_bool("ApplyLongDynamicCost")
-      self.stopDistance = float(int(Params().get("StopDistance", encoding="utf8"))) / 100.
       self.XEgoObstacleCost = float(int(Params().get("XEgoObstacleCost", encoding="utf8")))
+      self.applyLongDynamicCost = Params().get_bool("ApplyLongDynamicCost")
+    if self.lo_timer == 50:  
+      self.stopDistance = float(int(Params().get("StopDistance", encoding="utf8"))) / 100.
       self.applyDynamicTFollow = float(int(Params().get("ApplyDynamicTFollow", encoding="utf8"))) / 100.
+      self.applyDynamicTFollowApart = float(int(Params().get("ApplyDynamicTFollowApart", encoding="utf8"))) / 100.
       self.applyDynamicTFollowDecel = float(int(Params().get("ApplyDynamicTFollowDecel", encoding="utf8"))) / 100.
       
     self.status = radarstate.leadOne.status or radarstate.leadTwo.status
@@ -395,16 +399,9 @@ class LongitudinalMpc:
     else:
       tr = interp(float(cruise_gap), CRUISE_GAP_BP, CRUISE_GAP_V)
 
-    aRel = 0.
     if radarstate.leadOne.status:
-      tr *= interp(radarstate.leadOne.vRel*3.6, [-100., 0, 100.], [self.applyDynamicTFollow, 1.0, 2.0 - self.applyDynamicTFollow])
+      tr *= interp(radarstate.leadOne.vRel*3.6, [-100., 0, 100.], [self.applyDynamicTFollow, 1.0, self.applyDynamicTFollowApart])
       tr *= interp(self.prev_a[0], [-4, 0], [self.applyDynamicTFollowDecel, 1.0])
-      if self.vRel_prev < 1000:
-        aRel = self.filter_aRel.update((self.vRel_prev - radarstate.leadOne.vRel) / DT_MDL)
-      self.vRel_prev = radarstate.leadOne.vRel
-    else:
-      self.vRel_prev = 1000
-      self.filter_aRel.update(0)
       
     self.param_tr = tr
 
