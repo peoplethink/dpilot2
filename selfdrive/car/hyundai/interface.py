@@ -92,7 +92,7 @@ class CarInterface(CarInterfaceBase):
         set_torque_tune(ret.lateralTuning, torque_params['LAT_ACCEL_FACTOR'], torque_params['FRICTION'])
 
 
-    ret.steerActuatorDelay = 0.0
+    ret.steerActuatorDelay = 0.1
     ret.steerLimitTimer = 0.8
     ret.steerRatio = 15.3
 	
@@ -112,7 +112,7 @@ class CarInterface(CarInterfaceBase):
     ret.longitudinalActuatorDelayUpperBound = 0.3
 
     ret.stopAccel = -2.0
-    ret.stoppingDecelRate = 0.3 # brake_travel/s while trying to stop
+    ret.stoppingDecelRate = 0.25 # brake_travel/s while trying to stop
     ret.vEgoStopping = 0.5
     ret.vEgoStarting = 0.5
 
