@@ -67,7 +67,7 @@ class SccSmoother:
     self.slow_on_curves = False if Params().get_bool("TurnVisionControl") else Params().get_bool('SccSmootherSlowOnCurves')
     self.sync_set_speed_while_gas_pressed = Params().get_bool('SccSmootherSyncGasPressed')
     self.is_metric = Params().get_bool('IsMetric')
-    self.autosetopt = Params().get_bool('AutoSetOpt')
+    self.autoascc = Params().get_bool('AutoAscc')
 
     self.speed_conv_to_ms = CV.KPH_TO_MS if self.is_metric else CV.MPH_TO_MS
     self.speed_conv_to_clu = CV.MS_TO_KPH if self.is_metric else CV.MS_TO_MPH
@@ -159,7 +159,7 @@ class SccSmoother:
 
     max_speed_log = ""
 
-    if apply_limit_speed >= self.kph_to_clu(10):
+    if apply_limit_speed >= self.kph_to_clu(10):  
 
       if first_started:
         self.max_speed_clu = clu11_speed
@@ -213,7 +213,11 @@ class SccSmoother:
     CC.sccSmoother.cruiseMaxSpeed = controls.v_cruise_kph
 
     CC.sccSmoother.autoTrGap = AUTO_TR_CRUISE_GAP
-    
+
+    ascc_enabled = CS.acc_mode and enabled and CS.cruiseState_enabled \
+                   and 1 < CS.cruiseState_speed < 255 and not CS.brake_pressed  
+
+    # Auto-resume Cruise Set Speed by JangPoo 
     dRel = 0.
     lead = self.get_lead(controls.sm)
     if lead is not None:
@@ -221,10 +225,7 @@ class SccSmoother:
 
     # Auto-resume Cruise Set Speed by JangPoo
     ascc_auto_set = enabled and (clu11_speed > 30 or (CS.obj_valid and dRel > 1)) \
-                    and CS.gas_pressed and CS.prev_cruiseState_speed and not CS.cruiseState_speed # Auto-resume Cruise Set Speed by JangPoo - ÆÄÆÄ
-
-    ascc_enabled = CS.acc_mode and enabled and CS.cruiseState_enabled \
-                   and 1 < CS.cruiseState_speed < 255 and not CS.brake_pressed
+                    and CS.gas_pressed and CS.prev_cruiseState_speed and not CS.cruiseState_speed # Auto-resume Cruise Set Speed by JangPoo - ??
 
     if not self.longcontrol:
       if (not ascc_enabled or CS.standstill or CS.cruise_buttons != Buttons.NONE) and not ascc_auto_set:
@@ -244,14 +245,13 @@ class SccSmoother:
     elif (ascc_enabled and not CS.out.cruiseState.standstill) or ascc_auto_set:
       if self.alive_timer == 0:
         if ascc_enabled: 
-          if self.autosetopt:  
+          if self.autoascc:  
             self.btn = self.get_button(CS.cruiseState_speed * self.speed_conv_to_clu)
-        elif ascc_auto_set and clu11_speed < 32:
-          if self.autosetopt:  
+        elif ascc_auto_set and clu11_speed < 30:
+          if self.autoascc:  
             self.btn = Buttons.SET_DECEL
         else:
-          if self.autosetopt:
-            self.btn = Buttons.RES_ACCEL
+          self.btn = Buttons.RES_ACCEL
         self.alive_count = SccSmoother.get_alive_count()
 
       if self.btn != Buttons.NONE:

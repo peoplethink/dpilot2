@@ -53,6 +53,7 @@ class CarState(CarStateBase):
     
     # janpoo6427
     self.prev_cruiseState_speed = 0
+    self.obj_valid = 0
 
   def update(self, cp, cp2, cp_cam):
     cp_mdps = cp2 if self.mdps_bus else cp
