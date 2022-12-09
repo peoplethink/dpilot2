@@ -5,6 +5,7 @@ from selfdrive.controls.lib.drive_helpers import CONTROL_N, apply_deadzone
 from selfdrive.controls.lib.pid import PIDController
 from selfdrive.modeld.constants import T_IDXS
 from common.conversions import Conversions as CV
+from common.params import Params
 
 LongCtrlState = car.CarControl.Actuators.LongControlState
 
@@ -54,13 +55,29 @@ class LongControl:
                              derivative_period=0.5, rate=1 / DT_CTRL)
     self.v_pid = 0.0
     self.last_output_accel = 0.0
-
+    self.readParamCount = 0
+    self.accelBoost = 1.0
+    self.longitudinalTuningKf = 1.0
+    self.longitudinalTuningKpV = 1.0
+    self.stoppingDecelRate = 0.3
+    
   def reset(self, v_pid):
     """Reset PID controller and change setpoint"""
     self.pid.reset()
     self.v_pid = v_pid
 
   def update(self, active, CS, long_plan, accel_limits, t_since_plan):
+    self.readParamCount += 1
+    if self.readParamCount >= 100:
+      self.readParamCount = 0
+      self.accelBoost = float(int(Params().get("AccelBoost", encoding="utf8"))) / 100.
+      self.stoppingDecelRate = float(int(Params().get("StoppingDecelRate", encoding="utf8"))) / 100.
+      self.longitudinalTuningKf = float(int(Params().get("LongitudinalTuningKf", encoding="utf8"))) / 100.
+      self.longitudinalTuningKpV = float(int(Params().get("LongitudinalTuningKpV", encoding="utf8"))) * 0.01
+      self.longitudinalTuningKiV = float(int(Params().get("LongitudinalTuningKiV", encoding="utf8"))) * 0.001
+      self.CP.longitudinalTuning.kpV = [self.longitudinalTuningKpV]
+      self.CP.longitudinalTuning.kiV = [self.longitudinalTuningKiV]
+      self.pid._k_p = (self.CP.longitudinalTuning.kpBP, self.CP.longitudinalTuning.kpV)
     """Update longitudinal control. This updates the state machine and runs a PID loop"""
     # Interp control trajectory
     speeds = long_plan.speeds
@@ -75,6 +92,9 @@ class LongControl:
       a_target_upper = 2 * (v_target_upper - v_target) / self.CP.longitudinalActuatorDelayUpperBound - a_target
       a_target = min(a_target_lower, a_target_upper)
 
+      if speeds[-1] < v_target:
+        a_target *= self.longitudinalTuningKf
+        
       v_target_future = speeds[-1]
     else:
       v_target = 0.0
@@ -85,7 +105,7 @@ class LongControl:
     a_target = clip(a_target, ACCEL_MIN_ISO, ACCEL_MAX_ISO)
 
     self.pid.neg_limit = accel_limits[0]
-    self.pid.pos_limit = accel_limits[1]
+    self.pid.pos_limit = accel_limits[1] * self.accelBoost
 
     # Update state machine
     output_accel = self.last_output_accel
@@ -119,10 +139,10 @@ class LongControl:
       # Keep applying brakes until the car is stopped
       if not CS.standstill or output_accel > self.CP.stopAccel:
         output_accel -= self.CP.stoppingDecelRate * DT_CTRL
-      output_accel = clip(output_accel, accel_limits[0], accel_limits[1])
+      output_accel = clip(output_accel, accel_limits[0], accel_limits[1] * self.accelBoost)
       self.reset(CS.vEgo)
 
     self.last_output_accel = output_accel
-    final_accel = clip(output_accel, accel_limits[0], accel_limits[1])
+    final_accel = clip(output_accel, accel_limits[0], accel_limits[1] * self.accelBoost)
 
     return final_accel

@@ -44,14 +44,16 @@ CRASH_DISTANCE = .5
 LIMIT_COST = 1e6
 ACADOS_SOLVER_TYPE = 'SQP_RTI'
 
-
 CRUISE_GAP_BP = [1., 2., 3., 4.]
-CRUISE_GAP_V = [1.0, 1.45, 1.8, 1.8]
+CRUISE_GAP_V = [0.8, 0.9, 1.0, 1.1]
 
-AUTO_TR_BP = [0., 50.*CV.KPH_TO_MS, 90.*CV.KPH_TO_MS, 120.*CV.KPH_TO_MS]
-AUTO_TR_V = [1.1, 1.25, 1.35, 1.5]
+AUTO_TR_BP = [0., 50.*CV.KPH_TO_MS, 100.*CV.KPH_TO_MS, 130.*CV.KPH_TO_MS]
+#AUTO_TR_V = [1.0, 1.2, 1.35, 1.45]
+AUTO_TR_V = [1.2, 1.2, 1.3, 1.40]
 
 AUTO_TR_CRUISE_GAP = 4
+
+DIFF_RADAR_VISION = 2.0
 
 # Fewer timestamps don't hurt performance and lead to
 # much better convergence of the MPC with low iterations
@@ -63,10 +65,13 @@ T_IDXS = np.array(T_IDXS_LST)
 T_DIFFS = np.diff(T_IDXS, prepend=[0.])
 MIN_ACCEL = -3.5
 T_FOLLOW = 1.45
-COMFORT_BRAKE = 2.35
+COMFORT_BRAKE = 2.3
 STOP_DISTANCE = 6.5
 
-def get_stopped_equivalence_factor(v_lead, v_ego, tr):
+def get_stopped_equivalence_factor(v_lead, v_ego, tr, krkeegan=False):
+  if not krkeegan:
+    return (v_lead**2) / (2 * COMFORT_BRAKE)
+  
   # KRKeegan this offset rapidly decreases the following distance when the lead pulls
   # away, resulting in an early demand for acceleration.
   v_diff_offset = 0
@@ -228,7 +233,6 @@ class LongitudinalMpc:
     self.reset()
     self.lo_timer = 0
     self.v_cruise = 0.
-    self.comfort_brake = COMFORT_BRAKE
     
     self.source = SOURCES[2]
 
@@ -343,6 +347,7 @@ class LongitudinalMpc:
   def process_lead(self, lead):
     v_ego = self.x0[1]
     if lead is not None and lead.status:
+      #x_lead = lead.dRel if lead.radar else max(lead.dRel-DIFF_RADAR_VISION, 0.)
       x_lead = lead.dRel
       v_lead = lead.vLead
       a_lead = lead.aLeadK
@@ -369,6 +374,8 @@ class LongitudinalMpc:
 
   def update(self, carstate, radarstate, v_cruise, prev_accel_constraint=True):
     v_ego = self.x0[1]
+    a_ego = carstate.aEgo
+    
     self.lo_timer += 1
     if self.lo_timer > 100:
       self.lo_timer = 0
@@ -392,7 +399,7 @@ class LongitudinalMpc:
     self.params[:,0] = interp(float(self.status), [0.0, 1.0], [self.cruise_min_a, MIN_ACCEL])
     self.params[:,1] = self.cruise_max_a
 
-    # neokii
+    v_ego_kph = v_ego * CV.MS_TO_KPH
     cruise_gap = int(clip(carstate.cruiseGap, 1., 4.))
     if cruise_gap == AUTO_TR_CRUISE_GAP:
       tr = interp(carstate.vEgo, AUTO_TR_BP, AUTO_TR_V)
@@ -401,15 +408,15 @@ class LongitudinalMpc:
 
     if radarstate.leadOne.status:
       tr *= interp(radarstate.leadOne.vRel*3.6, [-100., 0, 100.], [self.applyDynamicTFollow, 1.0, self.applyDynamicTFollowApart])
-      tr *= interp(self.prev_a[0], [-4, 0], [self.applyDynamicTFollowDecel, 1.0])
+      tr *= interp(radarstate.leadOne.aLeadK, [-4, 0], [self.applyDynamicTFollowDecel, 1.0])
       
     self.param_tr = tr
 
     # To estimate a safe distance from a moving lead, we calculate how much stopping
     # distance that lead needs as a minimum. We can add that to the current distance
     # and then treat that as a stopped car/obstacle at this new distance.
-    lead_0_obstacle = lead_xv_0[:,0] + get_stopped_equivalence_factor(lead_xv_0[:,1], self.x_sol[:,1], tr)
-    lead_1_obstacle = lead_xv_1[:,0] + get_stopped_equivalence_factor(lead_xv_1[:,1], self.x_sol[:,1], tr)
+    lead_0_obstacle = lead_xv_0[:,0] + get_stopped_equivalence_factor(lead_xv_0[:,1], self.x_sol[:,1], tr, krkeegan=self.applyLongDynamicCost)
+    lead_1_obstacle = lead_xv_1[:,0] + get_stopped_equivalence_factor(lead_xv_1[:,1], self.x_sol[:,1], tr, krkeegan=self.applyLongDynamicCost)
 
 
     # Fake an obstacle for cruise, this ensures smooth acceleration to set speed

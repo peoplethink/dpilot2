@@ -219,6 +219,11 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"ApplyDynamicTFollowApart", PERSISTENT},
     {"ApplyDynamicTFollowDecel", PERSISTENT},
     {"ApplyLongDynamicCost", PERSISTENT},
+    {"StoppingDecelRate", PERSISTENT},
+    {"AccelBoost", PERSISTENT},
+    {"LongitudinalTuningKf", PERSISTENT},
+    {"LongitudinalTuningKpV", PERSISTENT},
+    {"LongitudinalTuningKiV", PERSISTENT},
     {"ShowEngRPMUI", PERSISTENT},
 };
 

@@ -80,6 +80,11 @@ def manager_init() -> None:
     ("ApplyDynamicTFollow", "110"),
     ("ApplyDynamicTFollowApart", "95"),
     ("ApplyDynamicTFollowDecel", "110"),
+    ("StoppingDecelRate", "30"),
+    ("AccelBoost", "100"),
+    ("LongitudinalTuningKf", "110"),
+    ("LongitudinalTuningKpV", "100"),
+    ("LongitudinalTuningKiV", "0"),
     ("PutPrebuilt", "0"), 
   ]
   if not PC:

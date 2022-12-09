@@ -552,7 +552,7 @@ void NvgWindow::drawLead(QPainter &painter, const cereal::ModelDataV2::LeadDataV
   if (radar_detected) {
       float radar_rel_speed = lead_radar.getVRel();
       str.sprintf("%.0fkm/h", m_cur_speed + radar_rel_speed * 3.6);
-      if (radar_rel_speed < -0.1) textColor = QColor(255, 0, 0, 150);
+      if (radar_rel_speed < -0.1) textColor = QColor(255, 105, 180, 200);
       else if (radar_rel_speed > 0.1) textColor = QColor(0, 255, 0, 200);
       else textColor = QColor(255, 255, 255, 200);
       configFont(painter, "Inter", 60, "Bold");
