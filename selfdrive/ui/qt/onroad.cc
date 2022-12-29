@@ -673,9 +673,6 @@ void NvgWindow::drawCommunity(QPainter &p) {
                       controls_state.getSteerActuatorDelay(),
                       //mdps_bus, 
 		      //scc_bus,
-                      controls_state.getSccGasFactor(),
-                      controls_state.getSccBrakeFactor(),
-                      controls_state.getSccCurvatureFactor(),
 	              cpuTemp
                       );
 
@@ -816,10 +813,10 @@ void NvgWindow::drawBrake(QPainter &p) {
   auto car_state = sm["carState"].getCarState();
   bool brake_valid = car_state.getBrakeLights();
 	
-  int w = 1440;
-  int h = 35;
+  int w = 3200;
+  int h = 70;
   int x = (width() + (bdr_s*2))/2 - w/2 - bdr_s;
-  int y = 40 - bdr_s + 25;
+  int y = 40 - bdr_s + 960;
   
   if (brake_valid) {
     p.drawPixmap(x, y, w, h, ic_brake);
