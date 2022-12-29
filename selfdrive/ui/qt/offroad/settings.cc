@@ -828,7 +828,7 @@ LONGTuningPanel::LONGTuningPanel(QWidget* parent) : QWidget(parent) {
 
     vlayout->addWidget(scroller, 1);
     toggleLayout->addWidget(new CValueControl("StoppingDecelRate", "StoppingDecelRate(30)", "StoppingDecelRate를 제어합니다. ", "../assets/offroad/icon_road.png", 10, 80, 5));
-    toggleLayout->addWidget(new CValueControl("AccelBoost", "가속도 제어(100%)", "가속도를 제어합니다. ", "../assets/offroad/icon_road.png", 50, 200, 10));
+    toggleLayout->addWidget(new CValueControl("AccelBoost", "가속도 제어(100%)", "가속도를 제어합니다. ", "../assets/offroad/icon_road.png", 50, 200, 1));
     toggleLayout->addWidget(new CValueControl("LongitudinalTuningKf", "롱컨: FF게인(110%)", "ACCEL을 좀 더 강력하게 적용합니다.", "../assets/offroad/icon_road.png", 100, 120, 1));
     toggleLayout->addWidget(new CValueControl("LongitudinalTuningKpV", "롱컨: P게인(100)", "", "../assets/offroad/icon_road.png", 50, 150, 1));
     toggleLayout->addWidget(new CValueControl("LongitudinalTuningKiV", "롱컨: I게인(0)", "", "../assets/offroad/icon_road.png", 0, 200, 1));
