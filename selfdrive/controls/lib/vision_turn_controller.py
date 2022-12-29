@@ -14,7 +14,7 @@ _MIN_V = 5.6  # Do not operate under 20km/h
 _ENTERING_PRED_LAT_ACC_TH = 1.3  # Predicted Lat Acc threshold to trigger entering turn state. //default 1.3 #1.4
 _ABORT_ENTERING_PRED_LAT_ACC_TH = 1.1  # Predicted Lat Acc threshold to abort entering state if speed drops.
 
-_TURNING_LAT_ACC_TH = 1.4  # Lat Acc threshold to trigger turning turn state. //default 1.6 : not working, =< 1.4 : working
+_TURNING_LAT_ACC_TH = 1.3  # Lat Acc threshold to trigger turning turn state. //default 1.6 : not working, =< 1.4 : working
 
 _LEAVING_LAT_ACC_TH = 1.2  # Lat Acc threshold to trigger leaving turn state. //default 1.3 : too long
 _FINISH_LAT_ACC_TH = 1.1  # Lat Acc threshold to trigger end of turn cycle.
@@ -24,7 +24,7 @@ _EVAL_START = 20.  # mts. Distance ahead where to start evaluating vision curvat
 _EVAL_LENGHT = 150.  # mts. Distance ahead where to stop evaluating vision curvature.
 _EVAL_RANGE = np.arange(_EVAL_START, _EVAL_LENGHT, _EVAL_STEP)
 
-_A_LAT_REG_MAX = 2.
+_A_LAT_REG_MAX = 1.95
 # Maximum lateral acceleration
 
 _NO_OVERSHOOT_TIME_HORIZON = 4.  # s. Time to use for velocity desired based on a_target when not overshooting.
