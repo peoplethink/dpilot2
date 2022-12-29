@@ -665,7 +665,7 @@ void NvgWindow::drawCommunity(QPainter &p) {
   //int scc_bus = car_params.getSccBus();
 
   QString infoText;
-  infoText.sprintf(" %s  AO(%.2f/%.2f) SR(%.2f) SD(%.2f) (A%.2f/B%.2f/C%.2f)  CPU온도 %.1f° ",
+  infoText.sprintf(" %s  AO(%.2f/%.2f) SR(%.2f) SD(%.2f) CPU온도 %.1f° ",
 		      lateral_state[lateralControlState],
                       live_params.getAngleOffsetDeg(),
                       live_params.getAngleOffsetAverageDeg(),
