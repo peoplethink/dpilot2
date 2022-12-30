@@ -224,6 +224,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"LongitudinalTuningKf", PERSISTENT},
     {"LongitudinalTuningKpV", PERSISTENT},
     {"LongitudinalTuningKiV", PERSISTENT},
+    {"Lane_Change", PERSISTENT},
     {"ShowEngRPMUI", PERSISTENT},
 };
 
