@@ -7,7 +7,8 @@ from common.params import Params
 LaneChangeState = log.LateralPlan.LaneChangeState
 LaneChangeDirection = log.LateralPlan.LaneChangeDirection
 
-LANE_CHANGE_SPEED_MIN = 55 * CV.KPH_TO_MS
+lanechangeset = float(int(Params().get("Lane_Change", encoding="utf8")))
+LANE_CHANGE_SPEED_MIN = lanechangeset * CV.KPH_TO_MS
 LANE_CHANGE_TIME_MAX = 10.
 
 DESIRES = {
