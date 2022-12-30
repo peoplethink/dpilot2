@@ -85,7 +85,7 @@ def manager_init() -> None:
     ("LongitudinalTuningKf", "110"),
     ("LongitudinalTuningKpV", "100"),
     ("LongitudinalTuningKiV", "0"),
-    ("Lane_Change", "50")
+    ("Lane_Change", "50"),
     ("PutPrebuilt", "0"), 
   ]
   if not PC:
