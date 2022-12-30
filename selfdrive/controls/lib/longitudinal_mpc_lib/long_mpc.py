@@ -49,7 +49,7 @@ CRUISE_GAP_V = [0.8, 0.9, 1.0, 1.1]
 
 AUTO_TR_BP = [0., 50.*CV.KPH_TO_MS, 100.*CV.KPH_TO_MS, 130.*CV.KPH_TO_MS]
 #AUTO_TR_V = [1.0, 1.2, 1.35, 1.45]
-AUTO_TR_V = [1.2, 1.2, 1.3, 1.40]
+AUTO_TR_V = [1.1, 1.2, 1.3, 1.40]
 
 AUTO_TR_CRUISE_GAP = 4
 
@@ -65,7 +65,7 @@ T_IDXS = np.array(T_IDXS_LST)
 T_DIFFS = np.diff(T_IDXS, prepend=[0.])
 MIN_ACCEL = -3.5
 T_FOLLOW = 1.45
-COMFORT_BRAKE = 2.3
+COMFORT_BRAKE = 2.35
 STOP_DISTANCE = 6.5
 
 def get_stopped_equivalence_factor(v_lead, v_ego, tr, krkeegan=False):
