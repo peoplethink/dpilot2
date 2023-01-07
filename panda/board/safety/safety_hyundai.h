@@ -2,7 +2,7 @@
 
 const SteeringLimits HYUNDAI_STEERING_LIMITS = {
   .max_steer = 409,
-  .max_rt_delta = 120,
+  .max_rt_delta = 112,
   .max_rt_interval = 250000,
   .max_rate_up = 3,
   .max_rate_down = 7,
@@ -297,7 +297,7 @@ static int hyundai_tx_hook(CANPacket_t *to_send, bool longitudinal_allowed) {
     bool steer_req = GET_BIT(to_send, 27U) != 0U;
 
     if (steer_torque_cmd_checks(desired_torque, steer_req, HYUNDAI_STEERING_LIMITS)) { 
-      //tx = 0;
+      tx = 0;
     }
   }
 
