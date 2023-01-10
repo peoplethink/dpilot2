@@ -94,7 +94,7 @@ class CarInterface(CarInterfaceBase):
 
     ret.steerActuatorDelay = 0.1
     ret.steerLimitTimer = 0.8
-    ret.steerRatio = 15.5
+    ret.steerRatio = 15.8
 	
     # longitudinal
     ret.longitudinalTuning.kpV = [0.5]
@@ -113,6 +113,7 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 2060. + STD_CARGO_KG
       ret.wheelbase = 3.01
       ret.centerToFront = ret.wheelbase * 0.4
+      ret.steerRatio = 15.8
     elif candidate == CAR.GENESIS_G70:
       ret.mass = 1640. + STD_CARGO_KG
       ret.wheelbase = 2.84
