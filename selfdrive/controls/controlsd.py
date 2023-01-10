@@ -32,6 +32,9 @@ from selfdrive.manager.process_config import managed_processes
 from selfdrive.car.hyundai.scc_smoother import SccSmoother
 from selfdrive.ntune import ntune_common_get, ntune_common_enabled, ntune_scc_get
 
+SR_SCALE_BP = [0., 05., 10., 15., 20., 25., 30., 35., 40., 45., 50., 55., 60., 65., 70., 75., 80., 85., 90., 95., 100., 105., 110., 115., 120., 125., 130.]
+SR_SCALE_V = [15.5, 15.5, 15.5, 15.5, 16.2, 16.2, 16.2, 16.2, 15.5, 15.5, 15.5, 15.8, 15.8, 15.8, 15.8, 15.8, 15.8, 14.5, 14.2, 13.8, 13.3, 13.3, 13.3, 13.3, 13.0, 13.0, 13.0]
+
 SOFT_DISABLE_TIME = 3  # seconds
 LDW_MIN_SPEED = 31 * CV.MPH_TO_MS
 LANE_DEPARTURE_THRESHOLD = 0.1
@@ -584,6 +587,10 @@ class Controls:
     else:
       sr = max(ntune_common_get('steerRatio'), 0.1)
 
+    if Params().get_bool('Steer_SRTune'):
+      sr_v = float(int(Params().get("Steer_SRTune_v", encoding="utf8"))) * 0.01
+      sr = interp(CS.vEgo * 3.6, SR_SCALE_BP, SR_SCALE_V) * sr_v
+      
     self.VM.update_params(x, sr)
 
     lat_plan = self.sm['lateralPlan']
