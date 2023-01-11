@@ -25,11 +25,9 @@ class CarInterface(CarInterfaceBase):
   @staticmethod
   def get_pid_accel_limits(CP, current_speed, cruise_speed):
     v_current_kph = current_speed * CV.MS_TO_KPH
-
-    gas_max_bp = [0., 10., 20., 40., 70., 130., 150.]
-    gas_max_v = [1.6, 1.6, 1.35, 0.55, 0.35, 0.15, 0.1]
-
-    return CarControllerParams.ACCEL_MIN, interp(v_current_kph, gas_max_bp, gas_max_v)
+    return CarControllerParams.ACCEL_MIN, interp(v_current_kph,
+						 CarControllerParams.ACCEL_MAX_DH_BP,
+                                                 CarControllerParams.ACCEL_MAX_DH_VALS)
 
   @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=[], disable_radar=False):  # pylint: disable=dangerous-default-value
