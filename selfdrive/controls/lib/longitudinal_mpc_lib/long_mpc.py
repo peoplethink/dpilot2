@@ -44,15 +44,6 @@ CRASH_DISTANCE = .5
 LIMIT_COST = 1e6
 ACADOS_SOLVER_TYPE = 'SQP_RTI'
 
-CRUISE_GAP_BP = [1., 2., 3., 4.]
-CRUISE_GAP_V = [0.8, 0.9, 1.0, 1.1]
-
-AUTO_TR_BP = [0., 50.*CV.KPH_TO_MS, 100.*CV.KPH_TO_MS, 130.*CV.KPH_TO_MS]
-#AUTO_TR_V = [1.0, 1.2, 1.35, 1.45]
-AUTO_TR_V = [1.1, 1.2, 1.3, 1.40]
-
-AUTO_TR_CRUISE_GAP = 4
-
 DIFF_RADAR_VISION = 2.0
 
 # Fewer timestamps don't hurt performance and lead to
@@ -66,9 +57,9 @@ T_DIFFS = np.diff(T_IDXS, prepend=[0.])
 MIN_ACCEL = -3.5
 T_FOLLOW = 1.45
 COMFORT_BRAKE = 2.35
-STOP_DISTANCE = 6.5
+STOP_DISTANCE = 6.0
 
-def get_stopped_equivalence_factor(v_lead, v_ego, tr, krkeegan=False):
+def get_stopped_equivalence_factor(v_lead, v_ego, t_follow=T_FOLLOW, krkeegan=False):
   if not krkeegan:
     return (v_lead**2) / (2 * COMFORT_BRAKE)
   
@@ -82,11 +73,11 @@ def get_stopped_equivalence_factor(v_lead, v_ego, tr, krkeegan=False):
   distance = (v_lead**2) / (2 * COMFORT_BRAKE) + v_diff_offset
   return distance
 
-def get_safe_obstacle_distance(v_ego, tr):
+def get_safe_obstacle_distance(v_ego, t_follow=T_FOLLOW):
   return (v_ego**2) / (2 * COMFORT_BRAKE) + tr * v_ego + STOP_DISTANCE
 
-def desired_follow_distance(v_ego, v_lead, tr):
-  return get_safe_obstacle_distance(v_ego, tr) - get_stopped_equivalence_factor(v_lead, v_ego, tr)
+def desired_follow_distance(v_ego, v_lead, t_follow=T_FOLLOW):
+  return get_safe_obstacle_distance(v_ego, t_follow) - get_stopped_equivalence_factor(v_lead, v_ego, t_follow)
 
 
 def gen_long_model():
@@ -114,8 +105,8 @@ def gen_long_model():
   a_max = SX.sym('a_max')
   x_obstacle = SX.sym('x_obstacle')
   prev_a = SX.sym('prev_a')
-  tr = SX.sym('tr')
-  model.p = vertcat(a_min, a_max, x_obstacle, prev_a, tr)
+  desired_TF = SX.sym('desired_TF')
+  model.p = vertcat(a_min, a_max, x_obstacle, prev_a, desired_TF)
 
   # dynamics model
   f_expl = vertcat(v_ego, a_ego, j_ego)
@@ -149,12 +140,12 @@ def gen_long_ocp():
   a_min, a_max = ocp.model.p[0], ocp.model.p[1]
   x_obstacle = ocp.model.p[2]
   prev_a = ocp.model.p[3]
-  tr = ocp.model.p[4]
+  desired_TF = ocp.model.p[4]
 
   ocp.cost.yref = np.zeros((COST_DIM, ))
   ocp.cost.yref_e = np.zeros((COST_E_DIM, ))
 
-  desired_dist_comfort = get_safe_obstacle_distance(v_ego, tr)
+  desired_dist_comfort = get_safe_obstacle_distance(v_ego, desired_TF)
 
   # The main cost in normal operation is how close you are to the "desired" distance
   # from an obstacle at every timestep. This obstacle can be a lead car
@@ -219,7 +210,7 @@ def gen_long_ocp():
 class LongitudinalMpc:
   def __init__(self, e2e=False):
     self.e2e = e2e
-    self.param_tr = T_FOLLOW
+    self.desired_TF = T_FOLLOW
     self.stopDistance = STOP_DISTANCE
     self.JEgoCost = 5.
     self.AChangeCost = 200.
@@ -251,7 +242,6 @@ class LongitudinalMpc:
     self.x_sol = np.zeros((N+1, X_DIM))
     self.u_sol = np.zeros((N,1))
     self.params = np.zeros((N+1, PARAM_DIM))
-    self.param_tr = T_FOLLOW
     for i in range(N+1):
       self.solver.set(i, 'x', np.zeros(X_DIM))
     self.last_cloudlog_t = 0
@@ -401,22 +391,27 @@ class LongitudinalMpc:
 
     v_ego_kph = v_ego * CV.MS_TO_KPH
     cruise_gap = int(clip(carstate.cruiseGap, 1., 4.))
-    if cruise_gap == AUTO_TR_CRUISE_GAP:
-      tr = interp(carstate.vEgo, AUTO_TR_BP, AUTO_TR_V)
+    if cruise_gap == 1:
+      x_vel = [0, 2.25, 4.5, 6.75, 9, 11.25, 13.5, 15.75, 18, 20.25, 22.5, 24.75, 27, 29.25, 31.5, 33.75, 36, 38.25, 40.5]
+      y_dist = [1.25, 1.24, 1.23, 1.22, 1.21, 1.20, 1.18, 1.16, 1.13, 1.11, 1.09, 1.07, 1.05, 1.05, 1.05, 1.05, 1.05, 1.05, 1.05]
+      self.desired_TF = np.interp(carstate.vEgo, x_vel, y_dist)
+    elif cruise_gap == 2:
+      self.desired_TF = 1.2
+    elif cruise_gap == 3:
+      self.desired_TF = 1.45  
     else:
-      tr = interp(float(cruise_gap), CRUISE_GAP_BP, CRUISE_GAP_V)
-
-    if radarstate.leadOne.status:
-      tr *= interp(radarstate.leadOne.vRel*3.6, [-100., 0, 100.], [self.applyDynamicTFollow, 1.0, self.applyDynamicTFollowApart])
-      tr *= interp(radarstate.leadOne.aLeadK, [-4, 0], [self.applyDynamicTFollowDecel, 1.0])
+      self.desired_TF = 1.8
       
-    self.param_tr = tr
-
+    if radarstate.leadOne.status:
+      self.desired_TF *= interp(radarstate.leadOne.vRel*3.6, [-100., 0, 100.], [self.applyDynamicTFollow, 1.0, self.applyDynamicTFollowApart])
+      self.desired_TF *= interp(radarstate.leadOne.aLeadK, [-4, 0], [self.applyDynamicTFollowDecel, 1.0])
+      self.desired_TF *= interp(a_ego, [-4, 0], [self.applyDynamicTFollowDecel, 1.0])
+      
     # To estimate a safe distance from a moving lead, we calculate how much stopping
     # distance that lead needs as a minimum. We can add that to the current distance
     # and then treat that as a stopped car/obstacle at this new distance.
-    lead_0_obstacle = lead_xv_0[:,0] + get_stopped_equivalence_factor(lead_xv_0[:,1], self.x_sol[:,1], tr, krkeegan=self.applyLongDynamicCost)
-    lead_1_obstacle = lead_xv_1[:,0] + get_stopped_equivalence_factor(lead_xv_1[:,1], self.x_sol[:,1], tr, krkeegan=self.applyLongDynamicCost)
+    lead_0_obstacle = lead_xv_0[:,0] + get_stopped_equivalence_factor(lead_xv_0[:,1], self.x_sol[:,1], self.desired_TF, krkeegan=self.applyLongDynamicCost)
+    lead_1_obstacle = lead_xv_1[:,0] + get_stopped_equivalence_factor(lead_xv_1[:,1], self.x_sol[:,1], self.desired_TF, krkeegan=self.applyLongDynamicCost)
 
 
     # Fake an obstacle for cruise, this ensures smooth acceleration to set speed
@@ -426,15 +421,14 @@ class LongitudinalMpc:
     v_cruise_clipped = np.clip(v_cruise * np.ones(N+1),
                                v_lower,
                                v_upper)
-    cruise_obstacle = np.cumsum(T_DIFFS * v_cruise_clipped) + get_safe_obstacle_distance(v_cruise_clipped, tr)
+    cruise_obstacle = np.cumsum(T_DIFFS * v_cruise_clipped) + get_safe_obstacle_distance(v_cruise_clipped, self.desired_TF)
 
     x_obstacles = np.column_stack([lead_0_obstacle, lead_1_obstacle, cruise_obstacle])
     self.source = SOURCES[np.argmin(x_obstacles[0])]
     self.params[:,2] = np.min(x_obstacles, axis=1)
     self.params[:,3] = np.copy(self.prev_a)
-
-    self.params[:,4] = self.param_tr
-
+    self.params[:,4] = self.desired_TF
+    
     self.run()
     if (np.any(lead_xv_0[:,0] - self.x_sol[:,0] < CRASH_DISTANCE) and
             radarstate.leadOne.modelProb > 0.9):
@@ -455,7 +449,6 @@ class LongitudinalMpc:
       self.solver.cost_set(i, "yref", self.yref[i])
     self.solver.cost_set(N, "yref", self.yref[N][:COST_E_DIM])
     self.params[:,3] = np.copy(self.prev_a)
-    self.params[:,4] = self.param_tr
     self.run()
 
   def run(self):
