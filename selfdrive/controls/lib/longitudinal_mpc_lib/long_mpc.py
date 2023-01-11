@@ -362,6 +362,19 @@ class LongitudinalMpc:
     self.cruise_min_a = min_a
     self.cruise_max_a = max_a
 
+  def update_TF(self, carstate):
+    cruise_gap = int(clip(carstate.cruiseGap, 1., 4.))
+    if cruise_gap == 1:
+      x_vel = [0, 2.25, 4.5, 6.75, 9, 11.25, 13.5, 15.75, 18, 20.25, 22.5, 24.75, 27, 29.25, 31.5, 33.75, 36, 38.25, 40.5]
+      y_dist = [1.25, 1.24, 1.23, 1.22, 1.21, 1.20, 1.18, 1.16, 1.13, 1.11, 1.09, 1.07, 1.05, 1.05, 1.05, 1.05, 1.05, 1.05, 1.05]
+      self.desired_TF = np.interp(carstate.vEgo, x_vel, y_dist)
+    elif cruise_gap == 2:
+      self.desired_TF = 1.2
+    elif cruise_gap == 3:
+      self.desired_TF = 1.45  
+    else:
+      self.desired_TF = 1.8
+      
   def update(self, carstate, radarstate, v_cruise, prev_accel_constraint=True):
     v_ego = self.x0[1]
     a_ego = carstate.aEgo
@@ -382,30 +395,17 @@ class LongitudinalMpc:
     lead_xv_0 = self.process_lead(radarstate.leadOne)
     lead_xv_1 = self.process_lead(radarstate.leadTwo)
     
-    # Use the processed leads which always have a velocity
+    if radarstate.leadOne.status:
+      self.desired_TF *= interp(radarstate.leadOne.vRel*3.6, [-100., 0, 100.], [self.applyDynamicTFollow, 1.0, self.applyDynamicTFollowApart])
+      self.desired_TF *= interp(radarstate.leadOne.aLeadK, [-4, 0], [self.applyDynamicTFollowDecel, 1.0])
+      self.desired_TF *= interp(a_ego, [-4, 0], [self.applyDynamicTFollowDecel, 1.0])
+    
+    self.update_TF(carstate)
     self.set_weights(prev_accel_constraint=prev_accel_constraint, v_lead0=lead_xv_0[0,1], v_lead1=lead_xv_1[0,1])
 
     # set accel limits in params
     self.params[:,0] = interp(float(self.status), [0.0, 1.0], [self.cruise_min_a, MIN_ACCEL])
     self.params[:,1] = self.cruise_max_a
-
-    v_ego_kph = v_ego * CV.MS_TO_KPH
-    cruise_gap = int(clip(carstate.cruiseGap, 1., 4.))
-    if cruise_gap == 1:
-      x_vel = [0, 2.25, 4.5, 6.75, 9, 11.25, 13.5, 15.75, 18, 20.25, 22.5, 24.75, 27, 29.25, 31.5, 33.75, 36, 38.25, 40.5]
-      y_dist = [1.25, 1.24, 1.23, 1.22, 1.21, 1.20, 1.18, 1.16, 1.13, 1.11, 1.09, 1.07, 1.05, 1.05, 1.05, 1.05, 1.05, 1.05, 1.05]
-      self.desired_TF = np.interp(carstate.vEgo, x_vel, y_dist)
-    elif cruise_gap == 2:
-      self.desired_TF = 1.2
-    elif cruise_gap == 3:
-      self.desired_TF = 1.45  
-    else:
-      self.desired_TF = 1.8
-      
-    if radarstate.leadOne.status:
-      self.desired_TF *= interp(radarstate.leadOne.vRel*3.6, [-100., 0, 100.], [self.applyDynamicTFollow, 1.0, self.applyDynamicTFollowApart])
-      self.desired_TF *= interp(radarstate.leadOne.aLeadK, [-4, 0], [self.applyDynamicTFollowDecel, 1.0])
-      self.desired_TF *= interp(a_ego, [-4, 0], [self.applyDynamicTFollowDecel, 1.0])
       
     # To estimate a safe distance from a moving lead, we calculate how much stopping
     # distance that lead needs as a minimum. We can add that to the current distance
