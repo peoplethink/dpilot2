@@ -267,7 +267,7 @@ class LongitudinalMpc:
 
   def get_cost_multipliers(self, v_lead0, v_lead1):
     v_ego = self.x0[1]
-    v_ego_bps = [0, 10]self.desired_TF
+    v_ego_bps = [0, 10]
     TFs = [1.0, 1.25, T_FOLLOW, 1.8]
     # KRKeegan adjustments to costs for different TFs
     # these were calculated using the test_longitudial.py deceleration tests
