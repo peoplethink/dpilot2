@@ -55,8 +55,6 @@ class LongControl:
     self.last_output_accel = 0.0
     self.readParamCount = 0
     self.accelBoost = 1.0
-    self.longitudinalTuningKf = 1.0
-    self.longitudinalTuningKpV = 1.0
     self.stoppingDecelRate = 0.3
     
   def reset(self, v_pid):
@@ -70,12 +68,6 @@ class LongControl:
       self.readParamCount = 0
       self.accelBoost = float(int(Params().get("AccelBoost", encoding="utf8"))) / 100.
       self.stoppingDecelRate = float(int(Params().get("StoppingDecelRate", encoding="utf8"))) / 100.
-      self.longitudinalTuningKf = float(int(Params().get("LongitudinalTuningKf", encoding="utf8"))) / 100.
-      self.longitudinalTuningKpV = float(int(Params().get("LongitudinalTuningKpV", encoding="utf8"))) * 0.01
-      self.longitudinalTuningKiV = float(int(Params().get("LongitudinalTuningKiV", encoding="utf8"))) * 0.001
-      self.CP.longitudinalTuning.kpV = [self.longitudinalTuningKpV]
-      self.CP.longitudinalTuning.kiV = [self.longitudinalTuningKiV]
-      self.pid._k_p = (self.CP.longitudinalTuning.kpBP, self.CP.longitudinalTuning.kpV)
     """Update longitudinal control. This updates the state machine and runs a PID loop"""
     # Interp control trajectory
     speeds = long_plan.speeds
@@ -90,9 +82,6 @@ class LongControl:
       a_target_upper = 2 * (v_target_upper - v_target) / self.CP.longitudinalActuatorDelayUpperBound - a_target
       a_target = min(a_target_lower, a_target_upper)
 
-      if speeds[-1] < v_target:
-        a_target *= self.longitudinalTuningKf
-        
       v_target_future = speeds[-1]
     else:
       v_target = 0.0
