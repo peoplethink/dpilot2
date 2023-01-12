@@ -95,20 +95,20 @@ class CarInterface(CarInterfaceBase):
     ret.steerRatio = 15.8
 	
     # longitudinal
-    ret.longitudinalTuning.kpBP = [0., 10., 40.]
-    ret.longitudinalTuning.kpV = [1.2, 0.6, 0.2]
-    ret.longitudinalTuning.kiBP = [0., 10., 30., 40.]
-    ret.longitudinalTuning.kiV = [0.05, 0.02, 0.01, 0.005]
-    ret.longitudinalTuning.deadzoneBP = [0., 40]
-    ret.longitudinalTuning.deadzoneV = [0., 0.02]
+    ret.longitudinalTuning.kpBP = [0., 5., 20., 30.]
+    ret.longitudinalTuning.kpV = [1.3, 1.0, 0.7, 0.1]
+    ret.longitudinalTuning.kiBP = [0., 0.07, 5, 8, 11., 18., 20., 24., 33.]
+    ret.longitudinalTuning.kiV = [.001, .01, .1, .18, .21, .22, .23, .22, .001]
+    ret.longitudinalTuning.deadzoneBP = [0., 8.05]
+    ret.longitudinalTuning.deadzoneV = [0., .14]
 
-    ret.longitudinalActuatorDelayLowerBound = 0.3
-    ret.longitudinalActuatorDelayUpperBound = 0.3
+    ret.longitudinalActuatorDelayLowerBound = 0.15
+    ret.longitudinalActuatorDelayUpperBound = 0.15
 
     ret.stopAccel = -2.0
-    ret.stoppingDecelRate = 0.25
-    ret.vEgoStopping = 0.4
-    ret.vEgoStarting = 0.4
+    ret.stoppingDecelRate = 0.3
+    ret.vEgoStopping = 0.25
+    ret.vEgoStarting = 0.25
 
     # genesis
     if candidate == CAR.GENESIS:
