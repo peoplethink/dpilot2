@@ -211,8 +211,6 @@ class SccSmoother:
     CC.sccSmoother.applyMaxSpeed = controls.applyMaxSpeed
     CC.sccSmoother.cruiseMaxSpeed = controls.v_cruise_kph
 
-    CC.sccSmoother.autoTrGap = AUTO_TR_CRUISE_GAP
-
     ascc_enabled = CS.acc_mode and enabled and CS.cruiseState_enabled \
                    and 1 < CS.cruiseState_speed < 255 and not CS.brake_pressed  
 
