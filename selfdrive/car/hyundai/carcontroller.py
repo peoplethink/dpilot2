@@ -82,8 +82,9 @@ class CarController:
     self.prev_active_cam = False
     self.active_cam_timer = 0
     self.last_active_cam_frame = 0
-
     self.angle_limit_counter = 0
+    self.steerDeltaUp = 3
+    self.steerDeltaDown = 7
 
   def update(self, CC, CS, controls):
     actuators = CC.actuators
@@ -92,6 +93,8 @@ class CarController:
 
     # Steering Torque
     new_steer = int(round(actuators.steer * self.params.STEER_MAX))
+    self.params.STEER_DELTA_UP = self.steerDeltaUp
+    self.params.STEER_DELTA_DOWN = self.steerDeltaDown
     apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, self.params)
 
     # disable when temp fault is active, or below LKA minimum speed
@@ -150,6 +153,7 @@ class CarController:
       self.angle_limit_counter = 0
 
     can_sends = []
+    
     can_sends.append(create_lkas11(self.packer, self.frame, self.car_fingerprint, apply_steer, lat_active,
                                    torque_fault, CS.lkas11, sys_warning, sys_state, CC.enabled, hud_control.leftLaneVisible, hud_control.rightLaneVisible,
                                    left_lane_warning, right_lane_warning, 0, self.ldws_opt))
@@ -162,6 +166,10 @@ class CarController:
     if self.frame % 2 and CS.mdps_bus: # send clu11 to mdps if it is not on bus 0
       can_sends.append(create_clu11(self.packer, CS.mdps_bus, CS.clu11, Buttons.NONE, enabled_speed))
 
+    if self.frame % 100 == 0:
+      self.steerDeltaUp = int(Params().get("SteerDeltaUp", encoding="utf8"))
+      self.steerDeltaDown = int(Params().get("SteerDeltaDown", encoding="utf8"))
+ 
     #if pcm_cancel_cmd and (self.longcontrol and not self.mad_mode_enabled):
     #  can_sends.append(hyundaican.create_clu11(self.packer, CS.scc_bus, CS.clu11, Buttons.CANCEL, clu11_speed))
 
