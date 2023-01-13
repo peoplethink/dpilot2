@@ -829,6 +829,8 @@ LONGTuningPanel::LONGTuningPanel(QWidget* parent) : QWidget(parent) {
     vlayout->addWidget(scroller, 1);
     toggleLayout->addWidget(new ParamControl("Steer_SRTune", "SR가변 사용", "SR값을 속도대비 가변으로 사용하기", "../assets/offroad/icon_shell.png", this));
     toggleLayout->addWidget(new CValueControl("Steer_SRTune_v", "SR가변 비율", "SR가변시 비율값.", "../assets/offroad/icon_road.png", 80, 120, 1));
+    toggleLayout->addWidget(new CValueControl("SteerDeltaUp", "종컨: SteerDeltaUp(3)", "", "../assets/offroad/icon_road.png", 1, 20, 1));
+    toggleLayout->addWidget(new CValueControl("SteerDeltaDown", "종컨: SteerDeltaDown(7)", "", "../assets/offroad/icon_road.png", 1, 20, 1));
     toggleLayout->addWidget(new CValueControl("Lane_Change", "차선변경 속도", "자동 차선 변경 가능 속도.", "../assets/offroad/icon_road.png", 0, 200, 5));
     toggleLayout->addWidget(new CValueControl("StoppingDecelRate", "StoppingDecelRate(30)", "StoppingDecelRate를 제어합니다. ", "../assets/offroad/icon_road.png", 10, 80, 5));
     toggleLayout->addWidget(new CValueControl("AccelBoost", "가속도 제어(100%)", "가속도를 제어합니다. ", "../assets/offroad/icon_road.png", 50, 200, 1));
