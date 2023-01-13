@@ -644,21 +644,17 @@ CommunityPanel::CommunityPanel(QWidget* parent) : QWidget(parent) {
 
   QPushButton* selectCarBtn = new QPushButton(selected.length() ? selected : "Select your car");
   selectCarBtn->setObjectName("selectCarBtn");
-  selectCarBtn->setStyleSheet("margin-right: 30px;");
+  //selectCarBtn->setStyleSheet("margin-right: 30px;");
   //selectCarBtn->setFixedSize(350, 100);
   connect(selectCarBtn, &QPushButton::clicked, [=]() { main_layout->setCurrentWidget(selectCar); });
-  vlayout->addSpacing(10);
-  vlayout->addWidget(selectCarBtn, 0, Qt::AlignRight);
-  vlayout->addSpacing(10);
-
+  
   homeWidget = new QWidget(this);
   QVBoxLayout* toggleLayout = new QVBoxLayout(homeWidget);
   homeWidget->setObjectName("homeWidget");
 
   ScrollView *scroller = new ScrollView(homeWidget, this);
   scroller->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-  vlayout->addWidget(scroller, 1);
-
+  
   main_layout->addWidget(homeScreen);
 
   selectCar = new SelectCar(this);
@@ -670,24 +666,21 @@ CommunityPanel::CommunityPanel(QWidget* parent) : QWidget(parent) {
      main_layout->setCurrentWidget(homeScreen);
   });
   main_layout->addWidget(selectCar);
+  QHBoxLayout* layoutBtn = new QHBoxLayout(homeWidget);
 
-  QPalette pal = palette();
-  pal.setColor(QPalette::Background, QColor(0x29, 0x29, 0x29));
-  setAutoFillBackground(true);
-  setPalette(pal);
+  layoutBtn->addWidget(selectCarBtn);
+  vlayout->addSpacing(10);
+  vlayout->addLayout(layoutBtn, 0);
+  
+  auto tmuxlog_btn = new ButtonControl("Tmux error log", tr("RUN"));
+  QObject::connect(tmuxlog_btn, &ButtonControl::clicked, [=]() {
+    const std::string txt = util::read_file("/data/tmux_error.log");
+    ConfirmationDialog::alert(QString::fromStdString(txt), this);
+  });
+  vlayout->addWidget(tmuxlog_btn);
 
-  setStyleSheet(R"(
-    #back_btn, #selectCarBtn {
-      font-size: 50px;
-      margin: 0px;
-      padding: 20px;
-      border-width: 0;
-      border-radius: 30px;
-      color: #dddddd;
-      background-color: #444444;
-    }
-  )");
-
+  vlayout->addWidget(scroller, 1);
+  
   QList<ParamControl*> toggles;
   toggles.append(new ParamControl("PutPrebuilt", 
                                            "Smart Prebuilt 실행 ",
