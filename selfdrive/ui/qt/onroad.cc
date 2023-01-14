@@ -914,6 +914,7 @@ void NvgWindow::drawMaxSpeed(QPainter &p) {
       int h = 54;
       int x = (width() + (bdr_s*2))/2 - w/2 - bdr_s;
       int y = 40 - bdr_s;
+
       p.setOpacity(1.f);
       p.drawPixmap(x, y, w, h, activeNDA == 1 ? ic_nda : ic_hda);
   }
