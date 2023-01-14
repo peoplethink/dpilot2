@@ -910,11 +910,10 @@ void NvgWindow::drawMaxSpeed(QPainter &p) {
 
   if(activeNDA > 0)
   {
-      int w = 205;
-      int h = 35;
-      int x = (width() + (bdr_s*2))/2 - w/2 - bdr_s + 820;
-      int y = bdr_s + 970;
-
+      int w = 150;
+      int h = 54;
+      int x = (width() + (bdr_s*2))/2 - w/2 - bdr_s;
+      int y = 40 - bdr_s;
       p.setOpacity(1.f);
       p.drawPixmap(x, y, w, h, activeNDA == 1 ? ic_nda : ic_hda);
   }
