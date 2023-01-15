@@ -641,7 +641,8 @@ void NvgWindow::drawCommunity(QPainter &p) {
 	
   if(s->show_bsd && width() > 1200)
     drawBsd(p);//bsd
-
+  
+  	
   char str[1024];
   const auto car_state = sm["carState"].getCarState();
   const auto controls_state = sm["controlsState"].getControlsState();
@@ -825,7 +826,8 @@ void NvgWindow::drawBrake(QPainter &p) {
 }
 	  
 void NvgWindow::drawTpms(QPainter &p) {
-  const SubMaster &sm = *(uiState()->sm);
+  UIState *s = uiState();
+  const SubMaster &sm = *(uiState()->sm);	
   auto car_state = sm["carState"].getCarState();
 
   const int w = 58;
