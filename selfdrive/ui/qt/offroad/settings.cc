@@ -825,15 +825,16 @@ TUNINGPanel::TUNINGPanel(QWidget* parent) : QWidget(parent) {
     main_layout->addWidget(homeScreen);
 
     vlayout->addWidget(scroller, 1);
-    toggleLayout->addWidget(new LabelControl("조향메뉴", ""));
-    toggleLayout->addWidget(new ParamControl("Steer_SRTune", "SR가변 사용", "SR값을 속도대비 가변으로 사용하기", "../assets/offroad/icon_shell.png", this));
+    toggleLayout->addWidget(new LabelControl("〓〓〓〓〓〓〓〓【 조향메뉴 】〓〓〓〓〓〓〓〓", ""));
+    toggleLayout->addWidget(new ParamControl("Steer_SRTune", "SR가변 사용", "SR값을 속도대비 가변으로 사용하기", "../assets/offroad/icon_.png", this));
     toggleLayout->addWidget(new CValueControl("Steer_SRTune_v", "SR가변 비율", "SR가변시 비율값.", "../assets/offroad/icon_road.png", 80, 120, 1));
     toggleLayout->addWidget(new CValueControl("SteerDeltaUp", "SteerDeltaUp(3)", "", "../assets/offroad/icon_road.png", 1, 20, 1));
     toggleLayout->addWidget(new CValueControl("SteerDeltaDown", "SteerDeltaDown(7)", "", "../assets/offroad/icon_road.png", 1, 20, 1));
     toggleLayout->addWidget(new CValueControl("Lane_Change", "차선변경 속도", "자동 차선 변경 가능 속도.", "../assets/offroad/icon_road.png", 0, 200, 5));
     toggleLayout->addWidget(new CValueControl("PathOffset", "차선치우침 좌우보정", "(-)좌측, (+)우측", "../assets/offroad/icon_road.png", -200, 200, 1));
     toggleLayout->addWidget(horizontal_line());
-    toggleLayout->addWidget(new LabelControl("메뉴", ""));
+    toggleLayout->addWidget(horizontal_line());
+    toggleLayout->addWidget(new LabelControl("〓〓〓〓〓〓〓〓【 롱컨메뉴 】〓〓〓〓〓〓〓〓", ""));
     toggleLayout->addWidget(new CValueControl("StoppingDecelRate", "StoppingDecelRate(30)", "StoppingDecelRate를 제어합니다. ", "../assets/offroad/icon_road.png", 10, 80, 5));
     toggleLayout->addWidget(new CValueControl("AccelBoost", "가속도 제어(100%)", "가속도를 제어합니다. ", "../assets/offroad/icon_road.png", 50, 200, 1));
     toggleLayout->addWidget(new CValueControl("StopDistance", "StopDistance(600cm)", "선행차와 정지하는 거리를 입력합니다.", "../assets/offroad/icon_road.png", 200, 1000, 50));
