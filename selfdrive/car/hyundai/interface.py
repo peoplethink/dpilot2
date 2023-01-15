@@ -58,7 +58,7 @@ class CarInterface(CarInterfaceBase):
         ret.lateralTuning.pid.kiV = [0.0018, 0.0038, 0.0088]
         ret.lateralTuning.pid.kdBP = [0.]
         ret.lateralTuning.pid.kdV = [0.6]
-        ret.lateralTuning.pid.newKfTuned = True
+        #ret.lateralTuning.pid.newKfTuned = True
           
     # -------------INDI
     elif Params().get("LateralControlSelect", encoding='utf8') == "1":
