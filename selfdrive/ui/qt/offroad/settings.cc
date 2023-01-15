@@ -425,6 +425,11 @@ VIPPanel::VIPPanel(QWidget* parent) : QWidget(parent) {
                                             "가감속 등 디버그 내용을 화면에 띄웁니다.",
                                             "../assets/offroad/icon_shell.png",
                                             this));
+  layout->addWidget(new ParamControl("ShowDateTime", 
+                                            "시간정보표시",
+                                            "",
+                                            "../assets/offroad/icon_shell.png",
+                                            this));
   layout->addWidget(new ParamControl("ShowCgearUI",
                                             "주행기어단수 활성화",
                                             "기어레버 위치와 기어단수를 볼수 있습니다..",
