@@ -455,12 +455,12 @@ VIPPanel::VIPPanel(QWidget* parent) : QWidget(parent) {
                                             "",
                                             "../assets/offroad/icon_shell.png",
                                             this));
+  layout->addWidget(new TimeZoneSelectCombo());
   
   layout->addWidget(horizontal_line());
   layout->addWidget(new LabelControl("제어메뉴", ""));
   layout->addWidget(new LateralControlSelect());
   layout->addWidget(new AutoLaneChangeTimer());
-  layout->addWidget(new TimeZoneSelectCombo());
   layout->addWidget(new ParamControl("AutoAscc",
                                             "Ascc auto set",
                                             "Ascc auto set 적용",
