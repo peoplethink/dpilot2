@@ -9,7 +9,6 @@ from selfdrive.car.hyundai.hyundaican import create_lkas11, create_clu11, \
   create_mdps12, create_lfahda_mfc, create_hda_mfc
 from selfdrive.car.hyundai.scc_smoother import SccSmoother
 from selfdrive.car.hyundai.values import Buttons, CAR, FEATURES, CarControllerParams
-from selfdrive.car.hyundai.interface import CarInterface
 from opendbc.can.packer import CANPacker
 from common.conversions import Conversions as CV
 from common.params import Params
@@ -237,9 +236,7 @@ class CarController:
         set_speed *= CV.MS_TO_MPH if CS.is_set_speed_in_mph else CV.MS_TO_KPH
 
         stopping = controls.LoC.long_control_state == LongCtrlState.stopping
-        pid_accel_limits = CarInterface.get_pid_accel_limits(self.CP, CS.out.vEgo, None)
-        apply_accel = clip(actuators.accel if CC.longActive else 0,
-                           pid_accel_limits[0], pid_accel_limits[1])
+        apply_accel = clip(actuators.accel if CC.longActive else 0, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
         apply_accel = self.scc_smoother.get_apply_accel(CS, controls.sm, apply_accel, stopping)
 
         self.accel = apply_accel
