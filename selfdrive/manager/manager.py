@@ -88,6 +88,7 @@ def manager_init() -> None:
     ("SteerDeltaUp", "3"),       
     ("SteerDeltaDown", "7"),
     ("PathOffset", "0"),
+    ("ShowDateTime", "1"),
     ("PutPrebuilt", "0"), 
   ]
   if not PC:
