@@ -554,7 +554,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   QList<QPair<QString, QWidget *>> panels = {
     {"장치", device},
     {"VIP메뉴", new VIPPanel(this)},
-    {"LONG튜닝", new LONGTuningPanel(this)},
+    {"TUNING", new TUNINGPanel(this)},
     {"네트워크", network_panel(this)},
     {"토글메뉴", new TogglesPanel(this)},
     {"소프트웨어", new SoftwarePanel(this)},
@@ -807,7 +807,7 @@ SelectCar::SelectCar(QWidget* parent): QWidget(parent) {
   main_layout->addWidget(list);
 }
 
-LONGTuningPanel::LONGTuningPanel(QWidget* parent) : QWidget(parent) {
+TUNINGPanel::TUNINGPanel(QWidget* parent) : QWidget(parent) {
 
     main_layout = new QStackedLayout(this);
 
@@ -833,6 +833,7 @@ LONGTuningPanel::LONGTuningPanel(QWidget* parent) : QWidget(parent) {
     toggleLayout->addWidget(new CValueControl("Lane_Change", "차선변경 속도", "자동 차선 변경 가능 속도.", "../assets/offroad/icon_road.png", 0, 200, 5));
     toggleLayout->addWidget(new CValueControl("PathOffset", "차선치우침 좌우보정", "(-)좌측, (+)우측", "../assets/offroad/icon_road.png", -200, 200, 1));
     toggleLayout->addWidget(horizontal_line());
+    toggleLayout->addWidget(new LabelControl("메뉴", ""));
     toggleLayout->addWidget(new CValueControl("StoppingDecelRate", "StoppingDecelRate(30)", "StoppingDecelRate를 제어합니다. ", "../assets/offroad/icon_road.png", 10, 80, 5));
     toggleLayout->addWidget(new CValueControl("AccelBoost", "가속도 제어(100%)", "가속도를 제어합니다. ", "../assets/offroad/icon_road.png", 50, 200, 1));
     toggleLayout->addWidget(new CValueControl("StopDistance", "StopDistance(600cm)", "선행차와 정지하는 거리를 입력합니다.", "../assets/offroad/icon_road.png", 200, 1000, 50));
