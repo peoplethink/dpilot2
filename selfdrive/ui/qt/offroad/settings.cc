@@ -419,7 +419,7 @@ QWidget *network_panel(QWidget *parent) {
 //VIP menu
 VIPPanel::VIPPanel(QWidget* parent) : QWidget(parent) {
   QVBoxLayout *layout = new QVBoxLayout(this);
-  layout->addWidget(new LabelControl("UI설정", ""));
+  layout->addWidget(new LabelControl("〓〓〓〓〓〓〓〓【 UI메뉴 】〓〓〓〓〓〓〓〓", ""));
   layout->addWidget(new ParamControl("ShowDebugUI",
                                             "디버그 내용 활성화",
                                             "가감속 등 디버그 내용을 화면에 띄웁니다.",
@@ -458,7 +458,8 @@ VIPPanel::VIPPanel(QWidget* parent) : QWidget(parent) {
   layout->addWidget(new TimeZoneSelectCombo());
   
   layout->addWidget(horizontal_line());
-  layout->addWidget(new LabelControl("제어메뉴", ""));
+  layout->addWidget(horizontal_line());
+  layout->addWidget(new LabelControl("〓〓〓〓〓〓〓〓【 제어메뉴 】〓〓〓〓〓〓〓〓", ""));
   layout->addWidget(new LateralControlSelect());
   layout->addWidget(new ParamControl("AutoAscc",
                                             "Ascc auto set",
