@@ -139,7 +139,7 @@ public:
   explicit CommunityPanel(QWidget *parent = nullptr);
 };
 
-class LONGTuningPanel : public QWidget {
+class TUNINGPanel : public QWidget {
     Q_OBJECT
 
 private:
@@ -149,7 +149,7 @@ private:
     QWidget* homeWidget;
 
 public:
-    explicit LONGTuningPanel(QWidget* parent = nullptr);
+    explicit TUNINGPanel(QWidget* parent = nullptr);
 };
 
 class VIPPanel : public QWidget {
