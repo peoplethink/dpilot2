@@ -857,11 +857,14 @@ void NvgWindow::drawTpms(QPainter &p) {
   drawText2(p, center_x-marginX, center_y+marginY, Qt::AlignRight, get_tpms_text(rl), get_tpms_color(rl));
   drawText2(p, center_x+marginX, center_y+marginY, Qt::AlignLeft, get_tpms_text(rr), get_tpms_color(rr));
 
-  QTextOption  textOpt = QTextOption(Qt::AlignLeft);
-    configFont(p, "Open Sans", 60, "Bold");
-    p.drawText(QRect(270, 30, width(), 100), QDateTime::currentDateTime().toString("hh시mm분"), textOpt);
-    configFont(p, "Open Sans", 60, "Bold");
-    p.drawText(QRect(270, 150, width(), 100), QDateTime::currentDateTime().toString("MM월dd일(ddd)"), textOpt);
+  if (s->show_datetime && width() > 1200) {
+      // ajouatom: 현재시간표시
+      QTextOption  textOpt = QTextOption(Qt::AlignLeft);
+      configFont(p, "Open Sans", 60, "Bold");
+      p.drawText(QRect(270, 30, width(), 100), QDateTime::currentDateTime().toString("hh:mm"), textOpt);
+      configFont(p, "Open Sans", 60, "Bold");
+      p.drawText(QRect(270, 150, width(), 100), QDateTime::currentDateTime().toString("MM월 dd일 (ddd)"), textOpt);
+  }
 
   p.restore();
 }
