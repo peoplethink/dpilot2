@@ -87,6 +87,7 @@ def manager_init() -> None:
     ("Lane_Change", "50"),
     ("SteerDeltaUp", "3"),       
     ("SteerDeltaDown", "7"),
+    ("PathOffset", "0"),
     ("PutPrebuilt", "0"), 
   ]
   if not PC:
