@@ -226,6 +226,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"Lane_Change", PERSISTENT},
     {"SteerDeltaUp", PERSISTENT},
     {"SteerDeltaDown", PERSISTENT},
+    {"PathOffset", PERSISTENT},
     {"ShowEngRPMUI", PERSISTENT},
 };
 
