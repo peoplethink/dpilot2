@@ -115,8 +115,6 @@ protected:
   QPixmap ic_turn_signal_l;
   QPixmap ic_turn_signal_r;
   QPixmap ic_satellite;
-  QPixmap ic_bsd_l;
-  QPixmap ic_bsd_r;
   
   QMap<QString, QPixmap> ic_oil_com;
   
@@ -130,7 +128,6 @@ protected:
   void drawGpsStatus(QPainter &p);
   void drawDebugText(QPainter &p);
   void drawCgear(QPainter &p);//기어
-  void drawBsd(QPainter &p);//bsd
   void drawTpms(QPainter &p);
   void drawBrake(QPainter &p);
   void drawCommunity(QPainter &p);
