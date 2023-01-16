@@ -81,7 +81,11 @@ class NvgWindow : public CameraViewWidget {
 
 public:
   explicit NvgWindow(VisionStreamType type, QWidget* parent = 0);
+  void updateState(const UIState &s);
   OnroadHud *hud;
+ 
+private:
+  void ui_draw_line(QPainter &painter, const line_vertices_data &vd);
   
 protected:
   void paintGL() override;
