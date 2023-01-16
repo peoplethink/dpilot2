@@ -481,8 +481,7 @@ void NvgWindow::drawLaneLines(QPainter &painter, const UIState *s) {
   int steerOverride = (*s->sm)["carState"].getCarState().getSteeringPressed();
 
   // paint blindspot line
-  painter.setBrush( QColor::fromRgbF(1.0, 0.1, 0.1, 0.2) );
-
+  painter.setBrush(QColor(255, 215, 000, 150));
 
   if( scene.leftblindspot  )
   {
@@ -493,7 +492,6 @@ void NvgWindow::drawLaneLines(QPainter &painter, const UIState *s) {
   {
    //  if( right_cnt > 1 )
         ui_draw_line( painter, scene.lane_blindspot_vertices[1] );
-        //painter.drawPolygon(scene.lane_blindspot_vertices[1].v, right_cnt);
   }
 	
   // lanelines
