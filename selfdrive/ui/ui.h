@@ -8,7 +8,6 @@
 #include <QTimer>
 #include <QColor>
 #include <QFuture>
-#include <QPolygonF>
 #include <QTransform>
 
 #include "cereal/messaging/messaging.h"
