@@ -486,12 +486,12 @@ void NvgWindow::drawLaneLines(QPainter &painter, const UIState *s) {
   painter.setBrush( QColor::fromRgbF(1.0, 0.1, 0.1, 0.2) );
 
 
-  if( scene.scr.leftblindspot  )
+  if( scene.leftblindspot  )
   {
        ui_draw_line(  painter, scene.lane_blindspot_vertices[0] );
   }
 
-  if( scene.scr.rightblindspot  )
+  if( scene.rightblindspot  )
   {
    //  if( right_cnt > 1 )
         ui_draw_line( painter, scene.lane_blindspot_vertices[1] );
