@@ -62,10 +62,7 @@ static void update_line_data(const UIState *s, const cereal::ModelDataV2::XYZTDa
                              float y_off, float z_off, QPolygonF *pvd, int max_idx, bool allow_invert=true) {
   const auto line_x = line.getX(), line_y = line.getY(), line_z = line.getZ();
   
-  QPolygonF left_points, right_points;
-  left_points.reserve(max_idx + 1);
-  right_points.reserve(max_idx + 1);
-  
+  std::vector<QPointF> left_points, right_points;
   for (int i = 0; i <= max_idx; i++) {
     QPointF left, right;
     bool l = calib_frame_to_full_frame(s, line_x[i], line_y[i] - y_off, line_z[i] + z_off, &left);
@@ -76,10 +73,54 @@ static void update_line_data(const UIState *s, const cereal::ModelDataV2::XYZTDa
         continue;
       }
       left_points.push_back(left);
-      right_points.push_front(right);
+      right_points.push_back(right);
     }
   }
-  *pvd = left_points + right_points;
+
+  pvd->cnt = 2 * left_points.size();
+  assert(left_points.size() == right_points.size());
+  assert(pvd->cnt <= std::size(pvd->v));
+
+  for (int left_idx = 0; left_idx < left_points.size(); left_idx++){
+    int right_idx = 2 * left_points.size() - left_idx - 1;
+    pvd->v[left_idx] = left_points[left_idx];
+    pvd->v[right_idx] = right_points[left_idx];
+  }
+}
+
+
+
+static void update_blindspot_data(const UIState *s, int lr, const cereal::ModelDataV2::XYZTData::Reader &line,
+                             float y_off,  line_vertices_data *pvd, int max_idx ) {
+  float  y_off1, y_off2;
+
+  float z_off_left = 0;  //def:0.0
+  float z_off_right = 0;
+
+  if( lr == 0 ) // left
+  {
+    y_off1 = y_off;
+    y_off2 = 0;
+  }
+  else  // left
+  {
+      y_off1 = 0;
+      y_off2 = y_off;  
+  }
+
+
+  const auto line_x = line.getX(), line_y = line.getY(), line_z = line.getZ();
+  QPointF *v = &pvd->v[0]; // *v = &pvd->v[0];
+  for (int i = 0; i <= max_idx; i++) {
+    v += calib_frame_to_full_frame(s, line_x[i], line_y[i] - y_off1, line_z[i] + z_off_left, v);
+  }
+  for (int i = max_idx; i >= 0; i--) {
+    v += calib_frame_to_full_frame(s, line_x[i], line_y[i] + y_off2, line_z[i] + z_off_right, v);
+  }
+
+  pvd->cnt = v - pvd->v;
+  assert(pvd->cnt <= std::size(pvd->v));
+
 }
 
 static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
@@ -97,6 +138,12 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
     update_line_data(s, lane_lines[i], 0.025 * scene.lane_line_probs[i], 0, &scene.lane_line_vertices[i], max_idx);
   }
 
+  / lane barriers for blind spot
+  int max_distance_barrier =  40;
+  int max_idx_barrier = std::min(max_idx, get_path_length_idx(lane_lines[0], max_distance_barrier));
+  update_blindspot_data(s, 0, lane_lines[1], 2.5, &scene.lane_blindspot_vertices[0], max_idx_barrier);
+  update_blindspot_data(s, 1, lane_lines[2], 2.5, &scene.lane_blindspot_vertices[1], max_idx_barrier);
+  
   // update road edges
   const auto road_edges = model.getRoadEdges();
   const auto road_edge_stds = model.getRoadEdgeStds();
@@ -109,10 +156,10 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
   auto lead_one = (*s->sm)["radarState"].getRadarState().getLeadOne();
   if (lead_one.getStatus()) {
     const float lead_d = lead_one.getDRel() * 2.;
-    max_distance = std::clamp((float)(lead_d - fmin(lead_d * 0.35, 10.)), 0.0f, max_distance);
+    max_distance = std::clamp((float)(lead_d - fmin(lead_d * 0.35, 5.)), 0.0f, max_distance);
   }
   max_idx = get_path_length_idx(model_position, max_distance);
-  update_line_data(s, model_position, 0.8, 1.22, &scene.track_vertices, max_idx, false);
+  update_line_data(s, model_position, scene.end_to_end ? 0.9 : 0.5, 1.22, &scene.track_vertices, max_idx, false);
 }
 
 static void update_sockets(UIState *s) {
@@ -127,6 +174,8 @@ static void update_state(UIState *s) {
     scene.car_state = sm["carState"].getCarState();
     auto cs_data = sm["carState"].getCarState();
     scene.angleSteers = cs_data.getSteeringAngleDeg();
+    scene.scr.leftblindspot = scene.car_state.getLeftBlindspot();
+    scene.scr.rightblindspot = scene.car_state.getRightBlindspot();
   }
   
   if (scene.started && sm.updated("controlsState")) {
