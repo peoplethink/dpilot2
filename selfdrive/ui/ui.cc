@@ -282,7 +282,6 @@ void ui_update_params(UIState *s) {
   s->scene.is_metric = params.getBool("IsMetric");
   s->show_debug = params.getBool("ShowDebugUI");
   s->show_gear = params.getBool("ShowCgearUI");//기어
-  s->show_bsd = params.getBool("ShowBsdUI");//bsd
   s->show_tpms = params.getBool("ShowTpmsUI");
   s->show_brake = params.getBool("ShowBrakeUI");
   s->show_engrpm = params.getBool("ShowEngRPMUI");
