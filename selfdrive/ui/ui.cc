@@ -138,7 +138,7 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
     update_line_data(s, lane_lines[i], 0.025 * scene.lane_line_probs[i], 0, &scene.lane_line_vertices[i], max_idx);
   }
 
-  / lane barriers for blind spot
+  // lane barriers for blind spot
   int max_distance_barrier =  40;
   int max_idx_barrier = std::min(max_idx, get_path_length_idx(lane_lines[0], max_distance_barrier));
   update_blindspot_data(s, 0, lane_lines[1], 2.5, &scene.lane_blindspot_vertices[0], max_idx_barrier);
