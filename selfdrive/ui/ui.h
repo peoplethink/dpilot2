@@ -166,7 +166,6 @@ public:
   bool recording = false;
   bool show_debug = false;
   bool show_gear = false;//기어
-  bool show_bsd = false;//bsd
   bool show_tpms = false;
   bool show_brake = false;
   bool show_engrpm = false;
