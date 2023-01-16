@@ -174,8 +174,8 @@ static void update_state(UIState *s) {
     scene.car_state = sm["carState"].getCarState();
     auto cs_data = sm["carState"].getCarState();
     scene.angleSteers = cs_data.getSteeringAngleDeg();
-    scene.scr.leftblindspot = scene.car_state.getLeftBlindspot();
-    scene.scr.rightblindspot = scene.car_state.getRightBlindspot();
+    scene.leftblindspot = scene.car_state.getLeftBlindspot();
+    scene.rightblindspot = scene.car_state.getRightBlindspot();
   }
   
   if (scene.started && sm.updated("controlsState")) {
