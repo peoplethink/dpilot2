@@ -435,11 +435,6 @@ VIPPanel::VIPPanel(QWidget* parent) : QWidget(parent) {
                                             "기어레버 위치와 기어단수를 볼수 있습니다..",
                                             "../assets/offroad/icon_shell.png"
                                             ));
-  layout->addWidget(new ParamControl("ShowBsdUI",
-                                            "후측방감지기 활성화",
-                                            "후측방 감지기 이미지를 볼수 있습니다..",
-                                            "../assets/offroad/icon_shell.png"
-                                            ));
   layout->addWidget(new ParamControl("ShowTpmsUI",
                                             "타이어공기압 정보 활성화",
                                             "타이어공기압 를 볼수 있습니다..",
@@ -712,10 +707,10 @@ CommunityPanel::CommunityPanel(QWidget* parent) : QWidget(parent) {
                                             this));
   
   toggles.append(new ParamControl("TurnVisionControl",
-                                  "비젼기반 커브감속",
-                                  "Use vision path predictions to estimate the appropiate speed to drive through turns ahead.",
-                                  "../assets/offroad/icon_road.png",
-                                  this));           
+                                            "비젼기반 커브감속",
+                                            "Use vision path predictions to estimate the appropiate speed to drive through turns ahead.",
+                                            "../assets/offroad/icon_road.png",
+                                            this));           
 
   toggles.append(new ParamControl("SccSmootherSyncGasPressed",
                                             "가속 속도 동기화",
@@ -723,31 +718,6 @@ CommunityPanel::CommunityPanel(QWidget* parent) : QWidget(parent) {
                                             "../assets/offroad/icon_road.png",
                                             this));
 
-  /*toggles.append(new ParamControl("StockNaviDecelEnabled",
-                                            "Stock Navi based deceleration",
-                                            "Use the stock navi based deceleration for longcontrol",
-                                            "../assets/offroad/icon_road.png",
-                                            this));*/
-
-
-  /*toggles.append(new ParamControl("NewRadarInterface",
-                                            "Use new radar interface",
-                                            "",
-                                            "../assets/offroad/icon_road.png",
-                                            this));*/
-
-  /*toggles.append(new ParamControl("DisableOpFcw",
-                                            "Disable Openpilot FCW",
-                                            "",
-                                            "../assets/offroad/icon_shell.png",
-                                            this));*/
-
-
-  /*toggles.append(new ParamControl("CustomLeadMark",
-                                            "레이더표시를 개조",
-                                            "레이더 삼각형 이미지를 커스텀 이미지로 개조합니다.",
-                                            "../assets/offroad/icon_road.png",
-                                            this));*/
 
   for(ParamControl *toggle : toggles) {
     if(main_layout->count() != 0) {
