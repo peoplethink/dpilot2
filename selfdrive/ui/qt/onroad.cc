@@ -462,49 +462,85 @@ void NvgWindow::updateFrameMat(int w, int h) {
       .translate(-intrinsic_matrix.v[2], -intrinsic_matrix.v[5]);
 }
 
-void NvgWindow::drawLaneLines(QPainter &painter, const UIScene &scene) {
-  UIState *s = uiState();
-  int steerOverride = (*s->sm)["carState"].getCarState().getSteeringPressed();
+void NvgWindow::ui_draw_line(QPainter &painter, const line_vertices_data &vd) 
+{
+  if (vd.cnt == 0) return;
+ 
+  QPainterPath path = QPainterPath();
+
+  const QPointF *v = &vd.v[0];
+  path.moveTo( v[0].x(), v[0].y() );
+  for (int i = 1; i < vd.cnt; i++) {
+    path.lineTo( v[i].x(), v[i].y());
+  }
+  painter.drawPath( path );
+}
+
+void NvgWindow::drawLaneLines(QPainter &painter, const UIState *s) {
+  painter.save();
+
+  const UIScene &scene = s->scene;
+
+
+  // paint blindspot line
+  painter.setBrush( QColor::fromRgbF(1.0, 0.1, 0.1, 0.2) );
+
+
+  if( scene.scr.leftblindspot  )
+  {
+       ui_draw_line(  painter, scene.lane_blindspot_vertices[0] );
+  }
+
+  if( scene.scr.rightblindspot  )
+  {
+   //  if( right_cnt > 1 )
+        ui_draw_line( painter, scene.lane_blindspot_vertices[1] );
+        //painter.drawPolygon(scene.lane_blindspot_vertices[1].v, right_cnt);
+  }
+	
   // lanelines
   for (int i = 0; i < std::size(scene.lane_line_vertices); ++i) {
-    if (i == 1 || i == 2) {
-      // TODO: can we just use the projected vertices somehow?
-      const cereal::ModelDataV2::XYZTData::Reader &line = (*s->sm)["modelV2"].getModelV2().getLaneLines()[i];
-      const float default_pos = 1.4;  // when lane poly isn't available
-      const float lane_pos = line.getY().size() > 0 ? std::abs(line.getY()[5]) : default_pos;  // get redder when line is closer to car
-      float hue = 332.5 * lane_pos - 332.5;  // equivalent to {1.4, 1.0}: {133, 0} (green to red)
-      hue = std::fmin(133, fmax(0, hue)) / 360.;  // clip and normalize
-      painter.setBrush(QColor(255, 255, 255, 250));
-    } else {
-      painter.setBrush(QColor(255, 255, 255, 250));
-    }
-    painter.drawPolygon(scene.lane_line_vertices[i]);
+    painter.setBrush(QColor::fromRgbF(1.0, 1.0, 1.0, std::clamp<float>(scene.lane_line_probs[i], 0.0, 0.7)));
+    ui_draw_line( painter, scene.lane_line_vertices[i] );
   }
+	
   // road edges
   for (int i = 0; i < std::size(scene.road_edge_vertices); ++i) {
-    painter.setBrush(QColor(255, 0, 0, 250));
-    painter.drawPolygon(scene.road_edge_vertices[i]);
+    painter.setBrush(QColor::fromRgbF(1.0, 0, 0, std::clamp<float>(1.0 - scene.road_edge_stds[i], 0.0, 1.0)));
+
+    ui_draw_line( painter, scene.road_edge_vertices[i] );
+    //painter.drawPolygon(scene.road_edge_vertices[i].v, scene.road_edge_vertices[i].cnt);
   }
 	
   // paint path
   QLinearGradient bg(0, height(), 0, height() / 4);
-  if ((*s->sm)["controlsState"].getControlsState().getEnabled()) {
-  if (steerOverride) {
-      bg.setColorAt(0, redColor(60));
-      bg.setColorAt(1, redColor(0));
-    } else {
-      bg.setColorAt(0, scene.lateralPlan.dynamicLaneProfileStatus ? greenColor() : skyBlueColor());
-      bg.setColorAt(1, scene.lateralPlan.dynamicLaneProfileStatus ? greenColor(0) : skyBlueColor(0));
-    } 
+  if (scene.end_to_end) {
+    const auto &orientation = (*s->sm)["modelV2"].getModelV2().getOrientation();
+    float orientation_future = 0;
+    if (orientation.getZ().size() > 16) {
+      orientation_future = std::abs(orientation.getZ()[16]);  // 2.5 seconds
+    }
+    // straight: 112, in turns: 70
+    float curve_hue = fmax(70, 112 - (orientation_future * 420));
+    // FIXME: painter.drawPolygon can be slow if hue is not rounded
+    curve_hue = int(curve_hue * 100 + 0.5) / 100;
+
+    bg.setColorAt(0.0, QColor::fromHslF(148 / 360., 0.94, 0.51, 0.4));
+    bg.setColorAt(0.75 / 1.5, QColor::fromHslF(curve_hue / 360., 1.0, 0.68, 0.35));
+    bg.setColorAt(1.0, QColor::fromHslF(curve_hue / 360., 1.0, 0.68, 0.0));
   } else {
-    bg.setColorAt(0, QColor(255, 255, 255));
-    bg.setColorAt(1, QColor(255, 255, 255, 0));
-  }  
+    bg.setColorAt(0, whiteColor());
+    bg.setColorAt(1, whiteColor(0));
+  }
   painter.setBrush(bg);
-  painter.drawPolygon(scene.track_vertices);
+  ui_draw_line( painter, scene.track_vertices );
+	
+  painter.restore();
 }
 
 void NvgWindow::drawLead(QPainter &painter, const cereal::ModelDataV2::LeadDataV3::Reader &lead_data, const QPointF &vd, bool is_radar) {
+  painter.save();
+	
   const float speedBuff = 10.;
   const float leadBuff = 40.;
   const float d_rel = lead_data.getX()[0];
