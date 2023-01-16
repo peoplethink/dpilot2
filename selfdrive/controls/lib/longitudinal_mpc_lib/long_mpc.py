@@ -361,7 +361,6 @@ class LongitudinalMpc:
 
   def update_TF(self, carstate):
     cruise_gap = int(clip(carstate.cruiseGap, 1., 4.))
-    AUTO_TR_CRUISE_GAP = 4
     if cruise_gap == 1:
       self.desired_TF = 1.0
     elif cruise_gap == 2:
