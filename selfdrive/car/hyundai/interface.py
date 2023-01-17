@@ -107,7 +107,7 @@ class CarInterface(CarInterfaceBase):
 
     ret.stopAccel = -2.0
     ret.stoppingDecelRate = float(int(Params().get("StoppingDecelRate", encoding="utf8"))) * 0.01
-    ret.vEgoStopping = 0.25
+    ret.vEgoStopping = float(int(Params().get("SccStoppingCost", encoding="utf8"))) * 0.01
     ret.vEgoStarting = 0.25
 
     # genesis
