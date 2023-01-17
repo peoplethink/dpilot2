@@ -885,7 +885,7 @@ void NvgWindow::drawTpms(QPainter &p) {
       // ajouatom: 현재시간표시
       QTextOption  textOpt = QTextOption(Qt::AlignBottom);
       configFont(p, "Open Sans", 60, "Bold");
-      p.drawText(QRect(670, 30, width(), 100), QDateTime::currentDateTime().toString("MM월 dd일 (ddd) hh:mm"), textOpt);
+      p.drawText(QRect(670, 0, width(), 100), QDateTime::currentDateTime().toString("MM월 dd일 (ddd) hh:mm"), textOpt);
       //configFont(p, "Open Sans", 60, "Bold");
       //p.drawText(QRect(270, 150, width(), 100), QDateTime::currentDateTime().toString("MM월 dd일 (ddd)"), textOpt);
   }
