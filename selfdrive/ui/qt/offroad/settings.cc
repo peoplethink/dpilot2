@@ -134,6 +134,25 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
     });
   });
 
+  // 고장코드 삭제 메뉴
+  QPushButton *dtc_btn = new QPushButton("MDPS 복구");
+  dtc_btn->setStyleSheet("height: 120px;border-radius: 15px;background-color: #E22C2C;");
+  reset_layout->addWidget(dtc_btn);
+  const char* dtc_run = "/data/openpilot/selfdrive/assets/dtc/dtc.sh ''";
+  QObject::connect(dtc_btn, &QPushButton::released, [=]() {
+    if (ConfirmationDialog::confirm("MDPS 고장코드 복구버튼! \n 10초후 무조건 재부팅할까요?", this)) {
+      std::system(dtc_run);
+      std::system("touch /data/openpilot/prebuilt");
+      QProcess::execute("/data/openpilot/selfdrive/assets/dtc/restart.sh");
+
+      std::system("touch /data/openpilot/prebuilt");
+      if (Hardware::TICI())
+        std::system("sudo reboot");
+      else
+        std::system("reboot");
+    }
+
+  });
   // reset calibration button
   QPushButton *reset_calib_btn = new QPushButton("캘리 및 학습값 초기화");
   reset_calib_btn->setStyleSheet("height: 120px;border-radius: 15px;background-color: #008299;");
