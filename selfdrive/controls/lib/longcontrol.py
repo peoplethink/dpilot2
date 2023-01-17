@@ -55,7 +55,6 @@ class LongControl:
     self.last_output_accel = 0.0
     self.readParamCount = 0
     self.accelBoost = 1.0
-    self.stoppingDecelRate = 0.3
     
   def reset(self, v_pid):
     """Reset PID controller and change setpoint"""
@@ -67,7 +66,6 @@ class LongControl:
     if self.readParamCount >= 100:
       self.readParamCount = 0
       self.accelBoost = float(int(Params().get("AccelBoost", encoding="utf8"))) / 100.
-      self.stoppingDecelRate = float(int(Params().get("StoppingDecelRate", encoding="utf8"))) / 100.
     """Update longitudinal control. This updates the state machine and runs a PID loop"""
     # Interp control trajectory
     speeds = long_plan.speeds
