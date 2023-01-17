@@ -701,14 +701,14 @@ CommunityPanel::CommunityPanel(QWidget* parent) : QWidget(parent) {
                                             this));
 
   toggles.append(new ParamControl("SccSmootherSlowOnCurves",
-                                            "커브 감속 사용",
+                                            "SCC기반 커브감속",
                                             "SCC 설정 시 곡률에 따른 속도 감속 기능을 사용",
                                             "../assets/offroad/icon_road.png",
                                             this));
   
   toggles.append(new ParamControl("TurnVisionControl",
                                             "비젼기반 커브감속",
-                                            "Use vision path predictions to estimate the appropiate speed to drive through turns ahead.",
+                                            "비젼커브 활성화시 우선순위 ",
                                             "../assets/offroad/icon_road.png",
                                             this));           
 
