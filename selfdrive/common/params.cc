@@ -220,6 +220,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"ApplyDynamicTFollowDecel", PERSISTENT},
     {"ApplyLongDynamicCost", PERSISTENT},
     {"StoppingDecelRate", PERSISTENT},
+    {"SccStoppingCost", PERSISTENT},
     {"AccelBoost", PERSISTENT},
     {"Steer_SRTune", PERSISTENT},
     {"Steer_SRTune_v", PERSISTENT},
