@@ -90,6 +90,7 @@ def manager_init() -> None:
     ("SteerDeltaDown", "7"),
     ("PathOffset", "0"),
     ("ShowDateTime", "1"),
+    ("Sound_Mdpserr", "1"),
     ("PutPrebuilt", "0"), 
   ]
   if not PC:
