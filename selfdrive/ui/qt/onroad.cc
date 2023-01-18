@@ -688,19 +688,19 @@ void NvgWindow::drawCommunity(QPainter &p) {
   //int scc_bus = car_params.getSccBus();
 
   QString infoText;
-  infoText.sprintf(" %s  AO(%.2f/%.2f) SR(%.2f) SD(%.2f) CPU온도 %.1f° ",
+  infoText.sprintf(" %s  SR%.2f  CPU %.1f° ",
 		      lateral_state[lateralControlState],
-                      live_params.getAngleOffsetDeg(),
-                      live_params.getAngleOffsetAverageDeg(),
+                      //live_params.getAngleOffsetDeg(),
+                      //live_params.getAngleOffsetAverageDeg(),
                       controls_state.getSteerRatio(),
-                      controls_state.getSteerActuatorDelay(),
+                      //controls_state.getSteerActuatorDelay(),
                       //mdps_bus, 
 		      //scc_bus,
 	              cpuTemp
                       );
 
   // info
-  configFont(p, "Open Sans", 36, "Bold");
+  configFont(p, "Open Sans", 35, "Bold");
   p.setPen(QColor(0xff, 0xff, 0xff, 0xff));
   p.drawText(rect().left() + 180, rect().height() - 15, infoText);	
   const int h = 60;
@@ -785,7 +785,7 @@ void NvgWindow::drawBottomIcons(QPainter &p) {
   p.drawEllipse(x - radius / 2, y - radius / 2, radius, radius);
 
   QString str;
-  float textSize = 50.f;
+  float textSize = 35.f;
   QColor textColor = QColor(255, 255, 255, 200);
 
   if(gap <= 0) {
@@ -798,7 +798,7 @@ void NvgWindow::drawBottomIcons(QPainter &p) {
   else {
     str.sprintf("%d", (int)gap);
     textColor = QColor(120, 255, 120, 200);
-    textSize = 60.f;
+    textSize = 35.f;
   }
 
   configFont(p, "Open Sans", 35, "Bold");
@@ -806,6 +806,14 @@ void NvgWindow::drawBottomIcons(QPainter &p) {
 
   configFont(p, "Open Sans", textSize, "Bold");
   drawTextWithColor(p, x-290, y+140, str, textColor);
+	
+  if (s->show_datetime && width() > 1200) {
+      // ajouatom: 현재시간표시
+      QTextOption  textOpt = QTextOption(Qt::AlignLeft);
+      configFont(p, "Open Sans", 35, "Bold");
+      p.drawText(QRect(270, 30, width(), 100), QDateTime::currentDateTime().toString("MM월 dd일 (ddd).    hh:mm."), textOpt);
+      //configFont(p, "Open Sans", 60, "Bold");
+      //p.drawText(QRect(270, 150, width(), 100), QDateTime::currentDateTime().toString("MM월 dd일 (ddd)"), textOpt);	
 /*	
   // brake
   int w = 1600;
@@ -880,15 +888,6 @@ void NvgWindow::drawTpms(QPainter &p) {
   drawText2(p, center_x+marginX, center_y-marginY-rcFont.height(), Qt::AlignLeft, get_tpms_text(fr), get_tpms_color(fr));
   drawText2(p, center_x-marginX, center_y+marginY, Qt::AlignRight, get_tpms_text(rl), get_tpms_color(rl));
   drawText2(p, center_x+marginX, center_y+marginY, Qt::AlignLeft, get_tpms_text(rr), get_tpms_color(rr));
-
-  if (s->show_datetime && width() > 1200) {
-      // ajouatom: 현재시간표시
-      QTextOption  textOpt = QTextOption(Qt::AlignLeft);
-      configFont(p, "Open Sans", 60, "Bold");
-      p.drawText(QRect(270, 30, width(), 100), QDateTime::currentDateTime().toString("hh:mm"), textOpt);
-      configFont(p, "Open Sans", 60, "Bold");
-      p.drawText(QRect(270, 150, width(), 100), QDateTime::currentDateTime().toString("MM월 dd일 (ddd)"), textOpt);
-  }
 
   p.restore();
 }
@@ -1247,9 +1246,9 @@ void NvgWindow::drawGpsStatus(QPainter &p) {
   int y = 30;
 
   p.setOpacity(0.8);
-  p.drawPixmap(x, y, w, h, ic_satellite);
+  //p.drawPixmap(x, y, w, h, ic_satellite);
 
-  configFont(p, "Open Sans", 40, "Bold");
+  configFont(p, "Open Sans", 35, "Bold");
   p.setPen(QColor(255, 255, 255, 200));
   p.setRenderHint(QPainter::TextAntialiasing);
 
@@ -1257,7 +1256,7 @@ void NvgWindow::drawGpsStatus(QPainter &p) {
   rect.adjust(-30, 0, 30, 0);
 
   QString str;
-  str.sprintf("%.1fm", accuracy);
+  str.sprintf("GPS%.1fm", accuracy);
   p.drawText(rect, Qt::AlignHCenter, str);
   p.setOpacity(1.);
 }
