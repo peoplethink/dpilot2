@@ -515,11 +515,11 @@ void NvgWindow::drawLaneLines(QPainter &painter, const UIState *s) {
       bg.setColorAt(0, redColor(60));
       bg.setColorAt(1, redColor(0));
     } else {
-      bg.setColorAt(0, scene.lateralPlan.dynamicLaneProfileStatus ? greenColor() : skyBlueColor());
+      bg.setColorAt(0, scene.lateralPlan.dynamicLaneProfileStatus ? greenColor(60) : skyBlueColor(60));
       bg.setColorAt(1, scene.lateralPlan.dynamicLaneProfileStatus ? greenColor(0) : skyBlueColor(0));
     }
   } else {
-    bg.setColorAt(0, whiteColor());
+    bg.setColorAt(0, whiteColor(60));
     bg.setColorAt(1, whiteColor(0));
   }
   painter.setBrush(bg);
