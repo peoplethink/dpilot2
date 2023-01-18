@@ -688,7 +688,7 @@ void NvgWindow::drawCommunity(QPainter &p) {
   //int scc_bus = car_params.getSccBus();
 
   QString infoText;
-  infoText.sprintf("       %s           SR%.2f           CPU %.1f° ",
+  infoText.sprintf("     %s           SR%.2f           CPU %.1f° ",
 		      lateral_state[lateralControlState],
                       //live_params.getAngleOffsetDeg(),
                       //live_params.getAngleOffsetAverageDeg(),
@@ -797,13 +797,13 @@ void NvgWindow::drawBottomIcons(QPainter &p) {
     textColor = QColor(255, 255, 255, 250);
   }
   else {
-    str.sprintf("%d", (int)gap);
+    str.sprintf("GAP%d", (int)gap);
     textColor = QColor(120, 255, 120, 200);
     textSize = 35.f;
   }
 
   configFont(p, "Open Sans", 35, "Bold");
-  drawText(p, x, y-20, "", 200);
+  drawText(p, x, y-23, "", 200);
 
   configFont(p, "Open Sans", textSize, "Bold");
   drawTextWithColor(p, x-290, y+140, str, textColor);
