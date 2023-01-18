@@ -427,6 +427,8 @@ class CarInterface(CarInterfaceBase):
       events.add(EventName.belowSteerSpeed)
     if self.CC.turning_indicator_alert:
       events.add(EventName.turningIndicatorOn)
+    if self.CS.dhmdps_err == 1 and Params().get_bool('Sound_Mdpserr'):
+      events.add(EventName.mdpserr)
 
   # handle button presses
     for b in ret.buttonEvents:
