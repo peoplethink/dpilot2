@@ -705,7 +705,7 @@ void NvgWindow::drawCommunity(QPainter &p) {
   p.drawText(rect().left() + 180, rect().height() - 15, infoText);	
   const int h = 60;
   QRect bar_rc(rect().left(), rect().bottom() - h, rect().width(), h);
-  p.setBrush(QColor(0, 0, 0, 0));
+  p.setBrush(QColor(0, 0, 0, 150));
   p.drawRect(bar_rc);
   drawBottomIcons(p);
 }
@@ -1220,8 +1220,8 @@ void NvgWindow::drawGpsStatus(QPainter &p) {
   if(accuracy < 0.01f || accuracy > 20.f)
     return;
   
-  int x = (width() + (bdr_s*2))/2 - bdr_s - 7;
-  int y = bdr_s + 290 + 800;
+  int x = 200;
+  int y = 200;
 
   QString str;
 	
