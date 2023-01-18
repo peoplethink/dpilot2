@@ -815,28 +815,7 @@ void NvgWindow::drawBottomIcons(QPainter &p) {
       p.drawText(QRect(270, 30, width(), 100), QDateTime::currentDateTime().toString("MM월 dd일 (ddd).    hh:mm."), textOpt);
       //configFont(p, "Open Sans", 60, "Bold");
       //p.drawText(QRect(270, 150, width(), 100), QDateTime::currentDateTime().toString("MM월 dd일 (ddd)"), textOpt);	
-/*	
-  // brake
-  int w = 1600;
-  int h = 33;
-  int x = (width() + (bdr_s*2))/2 - w/2 - bdr_s;
-  int y = 40 - bdr_s + 25;
-
-  bool brake_valid = car_state.getBrakeLights();
-  float img_alpha = brake_valid ? 1.0f : 0.15f;
-  float bg_alpha = brake_valid ? 0.0f : 0.0f;
-  drawIcon(p, w, h, x, y, ic_brake, QColor(0, 0, 0, (255 * bg_alpha)), img_alpha);
-
-  // auto hold
-  int autohold = car_state.getAutoHold();
-  if(autohold >= 0) {
-    x = radius / 2 + (bdr_s * 2) + (radius + 50) * 3;
-    img_alpha = autohold > 0 ? 1.0f : 0.15f;
-    bg_alpha = autohold > 0 ? 0.0f : 0.0f;
-    drawIcon(p, x, y, autohold > 1 ? ic_autohold_warning : ic_autohold_active,
-            QColor(0, 0, 0, (255 * bg_alpha)), img_alpha);
-  }
-*/	
+  }	
   p.setOpacity(1.);
 }
 
