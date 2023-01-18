@@ -1226,7 +1226,7 @@ void NvgWindow::drawGpsStatus(QPainter &p) {
   QString str;
 	
   str.sprintf("GPS%.1fm", accuracy);
-  configFont(p, "Open Sans", textSize, "Bold");
+  configFont(p, "Open Sans", 35, "Bold");
   p.setPen(QColor(255, 255, 255, 200));
 }
 
