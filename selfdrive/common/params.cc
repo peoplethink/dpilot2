@@ -229,6 +229,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"SteerDeltaDown", PERSISTENT},
     {"PathOffset", PERSISTENT},
     {"ShowDateTime", PERSISTENT},
+    {"Sound_Mdpserr", PERSISTENT},
     {"ShowEngRPMUI", PERSISTENT},
 };
 
