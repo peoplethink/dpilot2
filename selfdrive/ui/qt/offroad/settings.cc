@@ -140,7 +140,7 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   reset_layout->addWidget(dtc_btn);
   const char* dtc_run = "/data/openpilot/selfdrive/assets/dtc/dtc.sh ''";
   QObject::connect(dtc_btn, &QPushButton::released, [=]() {
-    if (ConfirmationDialog::confirm("MDPS 고장코드 복구버튼! \n 10초후 무조건 재부팅할까요?", this)) {
+    if (ConfirmationDialog::confirm("MDPS 복구 실행할까요?", this)) {
       std::system(dtc_run);
       std::system("touch /data/openpilot/prebuilt");
       QProcess::execute("/data/openpilot/selfdrive/assets/dtc/restart.sh");
@@ -490,12 +490,12 @@ VIPPanel::VIPPanel(QWidget* parent) : QWidget(parent) {
                                             "방향지시등 작동시 상시조향 가능",
                                             "../assets/offroad/icon_openpilot.png",
                                             this));
-  layout->addWidget(new ParamControl("Sound_Mdpserr","MDPS 작동불능 음성",
-                                            "DH MDPS 작동 불가시 음성을 끄거나 켭니다.", 
+  layout->addWidget(new ParamControl("Sound_Mdpserr","MDPS에러 음성 활성화",
+                                            "MDPS 에러 발생시 음성을 끄거나 켭니다.", 
                                             "../assets/offroad/icon_shell.png", 
                                             this));
   layout->addWidget(new ParamControl("HapticFeedbackWhenSpeedCamera",
-                                            "NDA 카메라 과속시 핸들진동 선택",
+                                            "NDA 카메라 과속시 핸들진동 ",
                                             "NDA 카메라 과속시 핸들진동 선택",
                                             "../assets/offroad/icon_openpilot.png",
                                             this));
