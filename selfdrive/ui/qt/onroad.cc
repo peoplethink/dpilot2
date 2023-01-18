@@ -811,8 +811,8 @@ void NvgWindow::drawBottomIcons(QPainter &p) {
   if (s->show_datetime && width() > 1200) {
       // ajouatom: 현재시간표시
       QTextOption  textOpt = QTextOption(Qt::AlignLeft);
-      configFont(p, "Open Sans", 35, "Bold");
-      p.drawText(QRect(970, 300, width(), 150), QDateTime::currentDateTime().toString("MM월 dd일 (ddd).        hh:mm."), textOpt);
+      configFont(p, "Open Sans", 37, "Bold");
+      p.drawText(QRect(1270, 700, width(), 150), QDateTime::currentDateTime().toString("MM월 dd일 (ddd)        hh:mm"), textOpt);
       //configFont(p, "Open Sans", 60, "Bold");
       //p.drawText(QRect(270, 150, width(), 100), QDateTime::currentDateTime().toString("MM월 dd일 (ddd)"), textOpt);	
   }	
@@ -1372,8 +1372,8 @@ void NvgWindow::drawEngRpm(QPainter &p) {
   float eng_rpm = car_state.getEngRpm();
   float textSize = 35;
 	
-  int x = (width() + (bdr_s*2))/2 - bdr_s;
-  int y = bdr_s + 290 + 600;
+  int x = (width() + (bdr_s*2))/2 - bdr_s + 10;
+  int y = bdr_s + 290 + 670;
 
   QString rpm;
 
