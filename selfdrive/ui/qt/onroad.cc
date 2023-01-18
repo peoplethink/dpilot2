@@ -688,7 +688,7 @@ void NvgWindow::drawCommunity(QPainter &p) {
   //int scc_bus = car_params.getSccBus();
 
   QString infoText;
-  infoText.sprintf("    %s           SR%.2f           CPU %.1f° ",
+  infoText.sprintf("    %s             SR%.2f             CPU %.1f° ",
 		      lateral_state[lateralControlState],
                       //live_params.getAngleOffsetDeg(),
                       //live_params.getAngleOffsetAverageDeg(),
@@ -812,7 +812,7 @@ void NvgWindow::drawBottomIcons(QPainter &p) {
       // ajouatom: 현재시간표시
       QTextOption  textOpt = QTextOption(Qt::AlignLeft);
       configFont(p, "Open Sans", 37, "Bold");
-      p.drawText(QRect(1180, 1000, width(), 150), QDateTime::currentDateTime().toString("MM/dd/ddd/hh:mm"), textOpt);
+      p.drawText(QRect(1170, 993, width(), 150), QDateTime::currentDateTime().toString("MM/dd/ddd/hh:mm"), textOpt);
       //configFont(p, "Open Sans", 60, "Bold");
       //p.drawText(QRect(270, 150, width(), 100), QDateTime::currentDateTime().toString("MM월 dd일 (ddd)"), textOpt);	
   }	
@@ -1372,8 +1372,8 @@ void NvgWindow::drawEngRpm(QPainter &p) {
   float eng_rpm = car_state.getEngRpm();
   float textSize = 35;
 	
-  int x = (width() + (bdr_s*2))/2 - bdr_s;
-  int y = bdr_s + 290 + 710;
+  int x = (width() + (bdr_s*2))/2 - bdr_s - 10;
+  int y = bdr_s + 290 + 705;
 
   QString rpm;
 
