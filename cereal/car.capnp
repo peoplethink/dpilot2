@@ -138,6 +138,7 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     autoLaneChange @113;
     slowingDownSpeed @114;
     slowingDownSpeedSound @115;
+    mdpserr @122;
     
     speedLimitActive @116;
     speedLimitValueChange @117;
