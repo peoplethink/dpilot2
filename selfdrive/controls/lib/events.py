@@ -576,7 +576,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
       "MDPS ERROR",
       "MDPS 복구버튼을 누르세요!",
       AlertStatus.normal, AlertSize.full,
-      Priority.MID, VisualAlert.none, AudibleAlert.none, 2.),
+      Priority.MID, VisualAlert.none, AudibleAlert.warning_immediate, 2.),
   },
   
   EventName.parkBrake: {
