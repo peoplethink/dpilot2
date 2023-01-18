@@ -768,6 +768,7 @@ void NvgWindow::drawText2(QPainter &p, int x, int y, int flags, const QString &t
 }
 
 void NvgWindow::drawBottomIcons(QPainter &p) {
+  UIState *s = uiState();	
   const SubMaster &sm = *(uiState()->sm);
   auto car_state = sm["carState"].getCarState();
   auto scc_smoother = sm["carControl"].getCarControl().getSccSmoother();
