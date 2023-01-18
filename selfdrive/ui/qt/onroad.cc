@@ -811,8 +811,8 @@ void NvgWindow::drawBottomIcons(QPainter &p) {
   if (s->show_datetime && width() > 1200) {
       // ajouatom: 현재시간표시
       QTextOption  textOpt = QTextOption(Qt::AlignLeft);
-      configFont(p, "Open Sans", 37, "Bold");
-      p.drawText(QRect(1155, 985, width(), 150), QDateTime::currentDateTime().toString("MM/dd/ddd/hh:mm"), textOpt);
+      configFont(p, "Open Sans", 36, "Bold");
+      p.drawText(QRect(1153, 987, width(), 150), QDateTime::currentDateTime().toString("MM/dd/ddd/hh:mm"), textOpt);
       //configFont(p, "Open Sans", 60, "Bold");
       //p.drawText(QRect(270, 150, width(), 100), QDateTime::currentDateTime().toString("MM월 dd일 (ddd)"), textOpt);	
   }	
@@ -1219,26 +1219,15 @@ void NvgWindow::drawGpsStatus(QPainter &p) {
   float accuracy = gps.getAccuracy();
   if(accuracy < 0.01f || accuracy > 20.f)
     return;
-
-  int w = 85;
-  int h = 65;
-  int x = width() - w - 290;
-  int y = 30;
-
-  p.setOpacity(0.8);
-  //p.drawPixmap(x, y, w, h, ic_satellite);
-
-  configFont(p, "Open Sans", 35, "Bold");
-  p.setPen(QColor(255, 255, 255, 200));
-  p.setRenderHint(QPainter::TextAntialiasing);
-
-  QRect rect = QRect(x, y + h + 10, w, 40);
-  rect.adjust(-30, 0, 30, 0);
+  
+  int x = (width() + (bdr_s*2))/2 - bdr_s - 7;
+  int y = bdr_s + 290 + 800;
 
   QString str;
+	
   str.sprintf("GPS%.1fm", accuracy);
-  p.drawText(rect, Qt::AlignHCenter, str);
-  p.setOpacity(1.);
+  configFont(p, "Open Sans", textSize, "Bold");
+  p.setPen(QColor(255, 255, 255, 200));
 }
 
 void NvgWindow::drawDebugText(QPainter &p) {
@@ -1373,7 +1362,7 @@ void NvgWindow::drawEngRpm(QPainter &p) {
   float textSize = 35;
 	
   int x = (width() + (bdr_s*2))/2 - bdr_s - 7;
-  int y = bdr_s + 290 + 713;
+  int y = bdr_s + 290 + 711;
 
   QString rpm;
 
