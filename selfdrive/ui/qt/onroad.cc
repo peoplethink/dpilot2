@@ -1238,8 +1238,8 @@ void NvgWindow::drawGpsStatus(QPainter &p) {
   else if (accuracy == 0)
     accuracy = 0;
 	
-  int x = 200;
-  int y = 200;
+  int x = (width() + (bdr_s*2))/2 - bdr_s + 80;
+  int y = bdr_s + 290 + 715;
 
   QString str;
 	
