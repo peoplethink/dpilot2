@@ -1242,14 +1242,14 @@ void NvgWindow::drawGpsStatus(QPainter &p) {
   int y = 700;
 
   p.setOpacity(0.8);
-  p.drawPixmap(x, y, w, h, ic_satellite);
+  p.drawPixmap(x, y, w, h);
 
   configFont(p, "Open Sans", 40, "Bold");
   p.setPen(QColor(255, 255, 255, 200));
   p.setRenderHint(QPainter::TextAntialiasing);
 
-  //QRect rect = QRect(x, y + h + 10, w, 40);
-  //rect.adjust(-30, 0, 30, 0);
+  QRect rect = QRect(x, y + h + 10, w, 40);
+  rect.adjust(-30, 0, 30, 0);
 
   QString str;
   str.sprintf("%.1fm", accuracy);
@@ -1388,7 +1388,7 @@ void NvgWindow::drawEngRpm(QPainter &p) {
   float eng_rpm = car_state.getEngRpm();
   float textSize = 35;
 	
-  int x = (width() + (bdr_s*2))/2 - bdr_s;
+  int x = (width() + (bdr_s*2))/2 - bdr_s + 5;
   int y = bdr_s + 290 + 715;
 
   QString rpm;
