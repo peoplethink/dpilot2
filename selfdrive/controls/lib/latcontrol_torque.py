@@ -2,7 +2,7 @@ import math
 
 from cereal import log
 from common.numpy_fast import interp
-from selfdrive.controls.lib.latcontrol import LatControl
+from selfdrive.controls.lib.latcontrol import LatControl, MIN_STEER_SPEED
 from selfdrive.controls.lib.pid import PIDController
 from selfdrive.controls.lib.drive_helpers import apply_deadzone
 from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
@@ -51,7 +51,7 @@ class LatControlTorque(LatControl):
     self.tune.check()
     pid_log = log.ControlsState.LateralTorqueState.new_message()
 
-    if not active:
+    if CS.vEgo < MIN_STEER_SPEED or not active:
       output_torque = 0.0
       pid_log.active = False
       angle_steers_des = 0.0
