@@ -641,10 +641,10 @@ void NvgWindow::drawCommunity(QPainter &p) {
   p.save();
 
   // Header gradient
-  QLinearGradient bg(0, header_h - (header_h / 2.5), 0, header_h);
-  bg.setColorAt(0, QColor::fromRgbF(0, 0, 0, 0.45));
-  bg.setColorAt(1, QColor::fromRgbF(0, 0, 0, 0));
-  p.fillRect(0, 0, width(), header_h, bg);
+  //QLinearGradient bg(0, header_h - (header_h / 2.5), 0, header_h);
+  //bg.setColorAt(0, QColor::fromRgbF(0, 0, 0, 0.45));
+  //bg.setColorAt(1, QColor::fromRgbF(0, 0, 0, 0));
+  //p.fillRect(0, 0, width(), header_h, bg);
 
   UIState *s = uiState();
 
@@ -715,11 +715,11 @@ void NvgWindow::drawCommunity(QPainter &p) {
 
   // info
   configFont(p, "Open Sans", 35, "Bold");
-  p.setPen(whiteColor(250));
+  p.setPen(QColor(0xff, 0xff, 0xff, 0xff));
   p.drawText(rect().left() + 180, rect().height() - 15, infoText);	
   const int h = 60;
   QRect bar_rc(rect().left(), rect().bottom() - h, rect().width(), h);
-  p.setBrush(QColor(0, 0, 0, 170));
+  p.setBrush(QColor(0, 0, 0, 50));
   p.drawRect(bar_rc);
   drawBottomIcons(p);
 	
