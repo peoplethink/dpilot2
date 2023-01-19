@@ -1379,8 +1379,8 @@ void NvgWindow::drawEngRpm(QPainter &p) {
   float eng_rpm = car_state.getEngRpm();
   float textSize = 35;
 	
-  int x = (width() + (bdr_s*2))/2 - bdr_s - 7;
-  int y = bdr_s + 290 + 711;
+  int x = (width() + (bdr_s*2))/2 - bdr_s;
+  int y = bdr_s + 290 + 715;
 
   QString rpm;
 
