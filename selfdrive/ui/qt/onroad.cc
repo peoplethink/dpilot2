@@ -1389,11 +1389,11 @@ void NvgWindow::drawEngRpm(QPainter &p) {
   float textSize = 35;
 	
   int x = (width() + (bdr_s*2))/2 - bdr_s + 15;
-  int y = bdr_s + 290 + 715;
+  int y = bdr_s + 290 + 711;
 
   QString rpm;
 
-  rpm.sprintf("RPM%.0f", eng_rpm);
+  rpm.sprintf("RPM %.0f", eng_rpm);
   configFont(p, "Open Sans", textSize, "Bold");
 
   QColor textColor0 = QColor(255, 255, 255, 250);
