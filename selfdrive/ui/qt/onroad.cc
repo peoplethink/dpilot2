@@ -718,8 +718,7 @@ void NvgWindow::drawCommunity(QPainter &p) {
 
   // info
   configFont(p, "Open Sans", 35, "Bold");
-  p.setBrush(QBrush(QColor(255, 255, 255, 255 * 0.0f)));
-  //p.setPen(QColor(0×ff, 0×ff, 0×ff, 250));
+  p.setPen(QColor(0×ff, 0×ff, 0×ff, 250));
   p.drawText(rect().left() + 180, rect().height() - 15, infoText);	
   const int h = 60;
   QRect bar_rc(rect().left(), rect().bottom() - h, rect().width(), h);
@@ -800,7 +799,7 @@ void NvgWindow::drawBottomIcons(QPainter &p) {
   int autoTrGap = scc_smoother.getAutoTrGap();
 
   p.setPen(Qt::NoPen);
-  p.setBrush(QBrush(QColor(255, 255, 255, 255 * 0.0f)));
+  p.setBrush(QBrush(QColor(255, 255, 255, 255 * .1f)));
   p.drawEllipse(x - radius / 2, y - radius / 2, radius, radius);
 
   QString str;
@@ -824,7 +823,7 @@ void NvgWindow::drawBottomIcons(QPainter &p) {
   drawText(p, x, y-30, "", 200);
 
   configFont(p, "Open Sans", textSize, "Bold");
-  drawTextWithColor(p, x-290, y+140, str, textColor);
+  drawTextWithColor(p, x-290, y+135, str, textColor);
 	
   if (s->show_datetime && width() > 1200) {
       // ajouatom: 현재시간표시
