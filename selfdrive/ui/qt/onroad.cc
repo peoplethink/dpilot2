@@ -1241,8 +1241,8 @@ void NvgWindow::drawGpsStatus(QPainter &p) {
   int x = width() - w - 90;
   int y = 700;
 
-  p.setOpacity(0.8);
-  p.drawPixmap(x, y, w, h);
+  p.setOpacity(0.0);
+  p.drawPixmap(x, y, w, h, ic_satellite);
 
   configFont(p, "Open Sans", 40, "Bold");
   p.setPen(QColor(255, 255, 255, 200));
