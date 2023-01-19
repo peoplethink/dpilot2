@@ -718,11 +718,11 @@ void NvgWindow::drawCommunity(QPainter &p) {
 
   // info
   configFont(p, "Open Sans", 35, "Bold");
-  p.setPen(QColor(0xff, 0xff, 0xff, 0xff));
+  p.setPen(QColor(255, 255, 255, 250));
   p.drawText(rect().left() + 180, rect().height() - 15, infoText);	
   const int h = 60;
   QRect bar_rc(rect().left(), rect().bottom() - h, rect().width(), h);
-  p.setBrush(QColor(0, 0, 0, 150));
+  p.setBrush(QColor(0, 0, 0, 170));
   p.drawRect(bar_rc);
   drawBottomIcons(p);
 }
@@ -804,7 +804,7 @@ void NvgWindow::drawBottomIcons(QPainter &p) {
 
   QString str;
   float textSize = 35.f;
-  QColor textColor = QColor(255, 255, 255, 200);
+  QColor textColor = QColor(255, 255, 255, 250);
 
   if(gap <= 0) {
     str = "N/A";
@@ -815,12 +815,12 @@ void NvgWindow::drawBottomIcons(QPainter &p) {
   }
   else {
     str.sprintf("GAP%d", (int)gap);
-    textColor = QColor(120, 255, 120, 200);
+    textColor = QColor(120, 255, 120, 250);
     textSize = 35.f;
   }
 
   configFont(p, "Open Sans", 35, "Bold");
-  drawText(p, x, y-25, "", 200);
+  drawText(p, x, y-30, "", 200);
 
   configFont(p, "Open Sans", textSize, "Bold");
   drawTextWithColor(p, x-290, y+140, str, textColor);
@@ -1388,10 +1388,10 @@ void NvgWindow::drawEngRpm(QPainter &p) {
   rpm.sprintf("RPM%.0f", eng_rpm);
   configFont(p, "Open Sans", textSize, "Bold");
 
-  QColor textColor0 = QColor(255, 255, 255, 200);
-  QColor textColor1 = QColor(120, 255, 120, 200);
-  QColor textColor2 = QColor(255, 255, 0, 200);
-  QColor textColor3 = QColor(255, 0, 0, 200);
+  QColor textColor0 = QColor(255, 255, 255, 250);
+  QColor textColor1 = QColor(120, 255, 120, 250);
+  QColor textColor2 = QColor(255, 255, 0, 250);
+  QColor textColor3 = QColor(255, 0, 0, 250);
 
   if (eng_rpm < 1099) {
    drawTextWithColor(p, x, y, rpm, textColor0);
