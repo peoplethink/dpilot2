@@ -1236,20 +1236,20 @@ void NvgWindow::drawGpsStatus(QPainter &p) {
   if(accuracy < 0.01f || accuracy > 20.f)
     return;
 
-  //int w = 85;
-  //int h = 65;
+  int w = 85;
+  int h = 65;
   int x = width() - w - 290;
   int y = 30;
 
-  //p.setOpacity(0.9);
-  //p.drawPixmap(x, y, w, h, ic_satellite);
+  p.setOpacity(0.0);
+  p.drawPixmap(x, y, w, h, ic_satellite);
 
   configFont(p, "Open Sans", 40, "Bold");
   p.setPen(QColor(255, 255, 255, 200));
-  //p.setRenderHint(QPainter::TextAntialiasing);
+  p.setRenderHint(QPainter::TextAntialiasing);
 
-  //QRect rect = QRect(x, y + h + 10, w, 40);
-  //rect.adjust(-30, 0, 30, 0);
+  QRect rect = QRect(x, y + h + 10, w, 40);
+  rect.adjust(-30, 0, 30, 0);
 
   QString str;
   str.sprintf("GPS%.1fm", accuracy);
