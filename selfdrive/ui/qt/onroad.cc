@@ -1217,9 +1217,11 @@ void NvgWindow::drawGpsStatus(QPainter &p) {
   const SubMaster &sm = *(uiState()->sm);
   auto gps = sm["gpsLocationExternal"].getGpsLocationExternal();
   float accuracy = gps.getAccuracy();
-  if(accuracy < 0.01f || accuracy > 20.f)
-    return;
-  
+  if (accuracy > 100)
+    accuracy = 99.9;
+  else if (accuracy == 0)
+    accuracy = 0;
+	
   int x = 200;
   int y = 200;
 
