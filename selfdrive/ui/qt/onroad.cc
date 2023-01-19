@@ -1233,19 +1233,28 @@ void NvgWindow::drawGpsStatus(QPainter &p) {
   const SubMaster &sm = *(uiState()->sm);
   auto gps = sm["gpsLocationExternal"].getGpsLocationExternal();
   float accuracy = gps.getAccuracy();
-  if (accuracy > 100)
-    accuracy = 99.9;
-  else if (accuracy == 0)
-    accuracy = 0;
-	
-  int x = (width() + (bdr_s*2))/2 - bdr_s + 80;
-  int y = bdr_s + 290 + 715;
+  if(accuracy < 0.01f || accuracy > 20.f)
+    return;
+
+  int w = 85;
+  int h = 65;
+  int x = width() - w - 90;
+  int y = 700;
+
+  p.setOpacity(0.8);
+  p.drawPixmap(x, y, w, h, ic_satellite);
+
+  configFont(p, "Open Sans", 40, "Bold");
+  p.setPen(QColor(255, 255, 255, 200));
+  p.setRenderHint(QPainter::TextAntialiasing);
+
+  //QRect rect = QRect(x, y + h + 10, w, 40);
+  //rect.adjust(-30, 0, 30, 0);
 
   QString str;
-	
-  str.sprintf("GPS%.1fm", accuracy);
-  configFont(p, "Open Sans", 35, "Bold");
-  p.setPen(QColor(255, 255, 255, 200));
+  str.sprintf("%.1fm", accuracy);
+  p.drawText(rect, Qt::AlignHCenter, str);
+  p.setOpacity(1.);
 }
 
 void NvgWindow::drawDebugText(QPainter &p) {
