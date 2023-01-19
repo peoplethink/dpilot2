@@ -718,8 +718,7 @@ void NvgWindow::drawCommunity(QPainter &p) {
 
   // info
   configFont(p, "Open Sans", 35, "Bold");
-  //drawTextColor(p, x, y, infoText, whiteColor(200));
-  p.setPen(QColor(whiteColor(200)));
+  QColor textColor = QColor(255, 255, 255, 250);
   p.drawText(rect().left() + 180, rect().height() - 15, infoText);	
   const int h = 60;
   QRect bar_rc(rect().left(), rect().bottom() - h, rect().width(), h);
@@ -790,7 +789,7 @@ void NvgWindow::drawBottomIcons(QPainter &p) {
   const SubMaster &sm = *(uiState()->sm);
   auto car_state = sm["carState"].getCarState();
   auto scc_smoother = sm["carControl"].getCarControl().getSccSmoother();
-
+	
   int x = radius / 2 + (bdr_s * 2) + (radius + 50);
   const int y = rect().bottom() - footer_h / 2 - 10;
 
@@ -800,7 +799,7 @@ void NvgWindow::drawBottomIcons(QPainter &p) {
   int autoTrGap = scc_smoother.getAutoTrGap();
 
   p.setPen(Qt::NoPen);
-  p.setBrush(QBrush(QColor(255, 255, 255, 255 * .1f)));
+  p.setBrush(QBrush(QColor(255, 255, 255, 255 * 0.0f)));
   p.drawEllipse(x - radius / 2, y - radius / 2, radius, radius);
 
   QString str;
