@@ -638,16 +638,13 @@ void NvgWindow::showEvent(QShowEvent *event) {
 
 
 void NvgWindow::drawCommunity(QPainter &p) {
-
-  p.setRenderHint(QPainter::Antialiasing);
-  p.setPen(Qt::NoPen);
-  p.setOpacity(1.);
+  p.save();
 
   // Header gradient
- // QLinearGradient bg(0, header_h - (header_h / 2.5), 0, header_h);
- // bg.setColorAt(0, QColor::fromRgbF(0, 0, 0, 0.45));
- // bg.setColorAt(1, QColor::fromRgbF(0, 0, 0, 0));
- // p.fillRect(0, 0, width(), header_h, bg);
+  QLinearGradient bg(0, header_h - (header_h / 2.5), 0, header_h);
+  bg.setColorAt(0, QColor::fromRgbF(0, 0, 0, 0.45));
+  bg.setColorAt(1, QColor::fromRgbF(0, 0, 0, 0));
+  p.fillRect(0, 0, width(), header_h, bg);
 
   UIState *s = uiState();
 
@@ -718,13 +715,15 @@ void NvgWindow::drawCommunity(QPainter &p) {
 
   // info
   configFont(p, "Open Sans", 35, "Bold");
-  QColor textColor = QColor(255, 255, 255, 250);
+  p.setPen(whiteColor(250));
   p.drawText(rect().left() + 180, rect().height() - 15, infoText);	
   const int h = 60;
   QRect bar_rc(rect().left(), rect().bottom() - h, rect().width(), h);
   p.setBrush(QColor(0, 0, 0, 170));
   p.drawRect(bar_rc);
   drawBottomIcons(p);
+	
+  p.setOpacity(1.);
 }
 
 void NvgWindow::drawSpeed(QPainter &p) {
