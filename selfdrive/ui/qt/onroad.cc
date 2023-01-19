@@ -719,7 +719,7 @@ void NvgWindow::drawCommunity(QPainter &p) {
   p.drawText(rect().left() + 180, rect().height() - 15, infoText);	
   const int h = 60;
   QRect bar_rc(rect().left(), rect().bottom() - h, rect().width(), h);
-  p.setBrush(QColor(0, 0, 0, 50));
+  p.setBrush(QColor(0, 0, 0, 20));
   p.drawRect(bar_rc);
   drawBottomIcons(p);
 	
