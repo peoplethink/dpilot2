@@ -530,9 +530,9 @@ void NvgWindow::drawLaneLines(QPainter &painter, const UIState *s) {
       bg.setColorAt(0.5, redColor(50));  
       bg.setColorAt(1.0, redColor(0));
     } else {
-      bg.setColorAt(0.0, scene.lateralPlan.dynamicLaneProfileStatus ? QColor::fromHslF(start_hue / 360., 0.97, 0.56, 0.4) : QColor::fromHslF(148 / 360., 0.94, 0.51, 0.4));
-      bg.setColorAt(0.5, scene.lateralPlan.dynamicLaneProfileStatus ? QColor::fromHslF(end_hue / 360., 1.0, 0.68, 0.35) : QColor::fromHslF(112 / 360., 1.0, 0.68, 0.35));
-      bg.setColorAt(1.0, scene.lateralPlan.dynamicLaneProfileStatus ? QColor::fromHslF(end_hue / 360., 1.0, 0.68, 0.0) : QColor::fromHslF(112 / 360., 1.0, 0.68, 0.0));
+      bg.setColorAt(0.0, scene.lateralPlan.dynamicLaneProfileStatus ? QColor::fromHslF(start_hue / 360., 0.97, 0.56, 0.35) : QColor::fromHslF(216 / 360., 0.94, 0.51, 0.35));
+      bg.setColorAt(0.5, scene.lateralPlan.dynamicLaneProfileStatus ? QColor::fromHslF(end_hue / 360., 1.0, 0.68, 0.3) : QColor::fromHslF(190 / 360., 1.0, 0.68, 0.3));
+      bg.setColorAt(1.0, scene.lateralPlan.dynamicLaneProfileStatus ? QColor::fromHslF(end_hue / 360., 1.0, 0.68, 0.0) : QColor::fromHslF(190 / 360., 1.0, 0.68, 0.0));
     }
   } else {
     bg.setColorAt(0.0, whiteColor(100));
