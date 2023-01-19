@@ -718,7 +718,8 @@ void NvgWindow::drawCommunity(QPainter &p) {
 
   // info
   configFont(p, "Open Sans", 35, "Bold");
-  p.setPen(QColor(255, 255, 255, 250));
+  p.setBrush(QBrush(QColor(255, 255, 255, 255 * 0.0f)));
+  //p.setPen(QColor(0×ff, 0×ff, 0×ff, 250));
   p.drawText(rect().left() + 180, rect().height() - 15, infoText);	
   const int h = 60;
   QRect bar_rc(rect().left(), rect().bottom() - h, rect().width(), h);
