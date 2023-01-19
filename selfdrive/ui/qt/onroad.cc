@@ -1238,10 +1238,10 @@ void NvgWindow::drawGpsStatus(QPainter &p) {
 
   int w = 85;
   int h = 65;
-  int x = width() - w - 90;
-  int y = 700;
+  int x = width() - w - 290;
+  int y = 30;
 
-  p.setOpacity(0.5);
+  p.setOpacity(0.9);
   p.drawPixmap(x, y, w, h, ic_satellite);
 
   configFont(p, "Open Sans", 40, "Bold");
