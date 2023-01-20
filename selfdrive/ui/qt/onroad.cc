@@ -708,7 +708,7 @@ void NvgWindow::drawCommunity(QPainter &p) {
                       //live_params.getAngleOffsetAverageDeg(),
                       controls_state.getSteerRatio(),
                       //controls_state.getSteerActuatorDelay(),
-                      mdps_bus, scc_bus,
+                      scc_bus,
 	              cpuTemp
                       );
 
