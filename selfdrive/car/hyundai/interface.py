@@ -23,13 +23,6 @@ class CarInterface(CarInterfaceBase):
     self.cp2 = self.CS.get_can2_parser(CP)
 
   @staticmethod
-  def get_pid_accel_limits(CP, current_speed, cruise_speed):
-    v_current_kph = current_speed * CV.MS_TO_KPH
-    return CarControllerParams.ACCEL_MIN, interp(v_current_kph,
-						 CarControllerParams.ACCEL_MAX_DH_BP,
-                                                 CarControllerParams.ACCEL_MAX_DH_VALS)
-
-  @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=[], disable_radar=False):  # pylint: disable=dangerous-default-value
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
 
