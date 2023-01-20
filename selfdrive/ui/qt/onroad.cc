@@ -699,7 +699,7 @@ void NvgWindow::drawCommunity(QPainter &p) {
   }
 
   //int mdps_bus = car_params.getMdpsBus();
-  int scc_Bus = (int)car_params.getSccBus();
+  int scc_bus = (int)car_params.getSccBus();
 
   QString infoText;
   infoText.sprintf("    %s             SR%.2f             CPU %.1f°            SCC (%d)",
@@ -708,8 +708,8 @@ void NvgWindow::drawCommunity(QPainter &p) {
                       //live_params.getAngleOffsetAverageDeg(),
                       controls_state.getSteerRatio(),
                       //controls_state.getSteerActuatorDelay(),
-                      scc_bus,
-	              cpuTemp
+		      cpuTemp,
+                      scc_bus
                       );
 
   // info
