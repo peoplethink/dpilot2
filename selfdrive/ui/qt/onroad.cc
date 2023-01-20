@@ -699,7 +699,7 @@ void NvgWindow::drawCommunity(QPainter &p) {
   }
 
   //int mdps_bus = car_params.getMdpsBus();
-  int sccBus = (int)car_params.getSccBus();
+  int scc_Bus = (int)car_params.getSccBus();
 
   QString infoText;
   infoText.sprintf("    %s             SR%.2f             CPU %.1f°            SCC (%d)",
