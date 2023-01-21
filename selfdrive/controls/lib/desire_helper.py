@@ -103,8 +103,8 @@ class DesireHelper:
         blindspot_detected = ((carstate.leftBlindspot and self.lane_change_direction == LaneChangeDirection.left) or
                               (carstate.rightBlindspot and self.lane_change_direction == LaneChangeDirection.right))
 
-        road_edge_detected = (((road_edge_stat = -1) and self.lane_change_direction == LaneChangeDirection.left) or
-                              ((road_edge_stat = 1) and self.lane_change_direction == LaneChangeDirection.right))
+        road_edge_detected = (((left_edge_prob > 0.35 and left_nearside_prob < 0.2 and right_nearside_prob >= left_nearside_prob) and self.lane_change_direction == LaneChangeDirection.left) or
+                              ((right_edge_prob > 0.35 and right_nearside_prob < 0.2 and left_nearside_prob >= right_nearside_prob) and self.lane_change_direction == LaneChangeDirection.right))
         
         self.lane_change_wait_timer += DT_MDL
         if not one_blinker or below_lane_change_speed:
