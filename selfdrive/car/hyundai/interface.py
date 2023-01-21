@@ -100,11 +100,11 @@ class CarInterface(CarInterfaceBase):
     #ret.longitudinalTuning.kpV = [0.5]
     #ret.longitudinalTuning.kiV = [0.0]
     ret.longitudinalTuning.kpBP = [0., 5., 20., 30.]
-    ret.longitudinalTuning.kpV = [1.0, 0.7, 0.3, 0.1]
+    ret.longitudinalTuning.kpV = [1.3, 1.0, 0.7, 0.1]
     ret.longitudinalTuning.kiBP = [0., 0.07, 5, 8, 11., 18., 20., 24., 33.]
     ret.longitudinalTuning.kiV = [.001, .01, .1, .18, .21, .22, .23, .22, .001]
-    #ret.longitudinalTuning.deadzoneBP = [0., 9.]
-    #ret.longitudinalTuning.deadzoneV = [0., .15]
+    ret.longitudinalTuning.deadzoneBP = [0., 5.05]
+    ret.longitudinalTuning.deadzoneV = [0., .14]
 
     ret.longitudinalActuatorDelayLowerBound = 0.3
     ret.longitudinalActuatorDelayUpperBound = 0.3
@@ -112,7 +112,7 @@ class CarInterface(CarInterfaceBase):
     ret.stopAccel = -2.0
     ret.stoppingDecelRate = float(int(Params().get("StoppingDecelRate", encoding="utf8"))) * 0.01
     ret.vEgoStopping = float(int(Params().get("SccStoppingCost", encoding="utf8"))) * 0.01
-    ret.vEgoStarting = 0.3
+    ret.vEgoStarting = float(int(Params().get("SccStartingCost", encoding="utf8"))) * 0.01
 
     # genesis
     if candidate == CAR.GENESIS:
