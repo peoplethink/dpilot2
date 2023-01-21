@@ -295,9 +295,6 @@ class Controls:
       if (CS.leftBlindspot and direction == LaneChangeDirection.left) or \
          (CS.rightBlindspot and direction == LaneChangeDirection.right):
         self.events.add(EventName.laneChangeBlocked)
-      elif ((left_edge_prob > 0.35 and left_nearside_prob < 0.2 and right_nearside_prob >= left_nearside_prob) and direction == LaneChangeDirection.left) or \
-         ((right_edge_prob > 0.35 and right_nearside_prob < 0.2 and left_nearside_prob >= right_nearside_prob) and direction == LaneChangeDirection.right):
-        self.events.add(EventName.laneChangeBlocked) 
       else:
         if direction == LaneChangeDirection.left:
           self.events.add(EventName.preLaneChangeLeft) if lane_change_set_timer == 0 else \
