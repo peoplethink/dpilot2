@@ -91,6 +91,7 @@ def manager_init() -> None:
     ("PathOffset", "0"),
     ("ShowDateTime", "1"),
     ("Sound_Mdpserr", "1"),
+    ("SccConnectedBus2", "0"),
     ("PutPrebuilt", "0"), 
   ]
   if not PC:
