@@ -295,8 +295,8 @@ class Controls:
       if (CS.leftBlindspot and direction == LaneChangeDirection.left) or \
          (CS.rightBlindspot and direction == LaneChangeDirection.right):
         self.events.add(EventName.laneChangeBlocked)
-      elif (((road_edge_stat = -1) and direction == LaneChangeDirection.left) or \
-         (((road_edge_stat = 1) and direction == LaneChangeDirection.right):
+      elif ((road_edge_stat = -1) and direction == LaneChangeDirection.left) or \
+         ((road_edge_stat = 1) and direction == LaneChangeDirection.right):
         self.events.add(EventName.laneChangeBlocked) 
       else:
         if direction == LaneChangeDirection.left:
