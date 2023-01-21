@@ -345,7 +345,7 @@ class CarInterface(CarInterfaceBase):
       if Params().get_bool("SccConnectedBus2"):
         ret.sccBus = 2
 	
-    if ret.sccBus >= 0:
+    if ret.sccBus == 2:
       ret.hasScc13 = 1290 in fingerprint[ret.sccBus]
       ret.hasScc14 = 905 in fingerprint[ret.sccBus]
 
