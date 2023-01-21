@@ -437,6 +437,7 @@ void NvgWindow::initializeGL() {
   ic_turn_signal_l = QPixmap("../assets/images/turn_signal_l.png");
   ic_turn_signal_r = QPixmap("../assets/images/turn_signal_r.png");
   ic_satellite = QPixmap("../assets/images/satellite.png");
+  ic_scc2 = QPixmap("../assets/images/img_scc2.png");
 }
 
 void NvgWindow::updateFrameMat(int w, int h) {
@@ -900,6 +901,7 @@ void NvgWindow::drawMaxSpeed(QPainter &p) {
   const SubMaster &sm = *(s->sm);
   const auto scc_smoother = sm["carControl"].getCarControl().getSccSmoother();
   const auto road_limit_speed = sm["roadLimitSpeed"].getRoadLimitSpeed();
+  const auto car_params = sm["carParams"].getCarParams();
 
   bool is_metric = s->scene.is_metric;
   bool long_control = scc_smoother.getLongControl();
@@ -909,7 +911,8 @@ void NvgWindow::drawMaxSpeed(QPainter &p) {
   float cruiseMaxSpeed = scc_smoother.getCruiseMaxSpeed();
 
   bool is_cruise_set = (cruiseMaxSpeed > 0 && cruiseMaxSpeed < 255);
-	
+
+  int sccBus = (int)car_params.getSccBus();
   int activeNDA = road_limit_speed.getActive();
   int roadLimitSpeed = road_limit_speed.getRoadLimitSpeed();
   int camLimitSpeed = road_limit_speed.getCamLimitSpeed();
@@ -939,7 +942,14 @@ void NvgWindow::drawMaxSpeed(QPainter &p) {
       p.setOpacity(1.f);
       p.drawPixmap(x, y, w, h, activeNDA == 1 ? ic_nda : ic_hda);
   }
-
+  if (sccBus == 2) 
+  {
+      int w = 150;
+      int h = 54;
+      int x = (width() + (bdr_s*2))/2 - w/2 - bdr_s + 165;
+      int y = 40 - bdr_s;  
+      p.drawPixmap(x, y, w, h, ic_scc2); 
+  }
   
   const int x_start = 30;
   const int y_start = 30;
