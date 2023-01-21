@@ -830,7 +830,6 @@ TUNINGPanel::TUNINGPanel(QWidget* parent) : QWidget(parent) {
     toggleLayout->addWidget(horizontal_line());
     toggleLayout->addWidget(horizontal_line());
     toggleLayout->addWidget(new LabelControl("〓〓〓〓〓〓〓〓【 롱컨메뉴 】〓〓〓〓〓〓〓〓", ""));
-    toggleLayout->addWidget(new CValueControl("AccelBoost", "가속도 제어(100%)", "가속도를 제어합니다. ", "../assets/offroad/icon_road.png", 50, 200, 1));
     toggleLayout->addWidget(new CValueControl("StopDistance", "StopDistance(600cm)", "선행차와 정지하는 거리를 입력합니다.", "../assets/offroad/icon_road.png", 200, 1000, 50));
     toggleLayout->addWidget(new CValueControl("StoppingDecelRate", "StoppingDecelRate(30)", "StoppingDecelRate조절 단위 * 0.01", "../assets/offroad/icon_road.png", 0, 30, 1));
     toggleLayout->addWidget(new CValueControl("SccStoppingCost", "SccStoppingCost(25)", "vEgoStopping조절 단위 * 0.01", "../assets/offroad/icon_road.png", 0, 25, 1));
