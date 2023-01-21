@@ -46,16 +46,10 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       "../assets/offroad/icon_openpilot.png",
     },
     {
-      "IsLdwEnabled",
-      "차선이탈 경보 사용",
-      "50km/h이상의 속도로 주행하는 동안 방향 지시등이 활성화되지 않은 상태에서 차량이 감지된 차선 위를 넘어갈 경우 원래 차선으로 다시 방향을 전환하도록 경고를 보냅니다.",
+      "SccConnectedBus2",
+      "SCC Module connected BUS2",
+      "",
       "../assets/offroad/icon_warning.png",
-    },
-    {
-      "IsRHD",
-      "우핸들 운전방식 사용",
-      "오픈파일럿이 좌측 교통 규칙을 준수하도록 허용하고 우측 운전석에서 운전자 모니터링을 수행하십시오.",
-      "../assets/offroad/icon_openpilot_mirrored.png",
     },
     {
       "IsMetric",
@@ -714,12 +708,6 @@ CommunityPanel::CommunityPanel(QWidget* parent) : QWidget(parent) {
   toggles.append(new ParamControl("UseClusterSpeed",
                                             "계기판 속도 사용",
                                             "휠스피드 센서 속도를 사용시 오프.",
-                                            "../assets/offroad/icon_road.png",
-                                            this));
-
-  toggles.append(new ParamControl("LongControlEnabled",
-                                            "HKG 롱컨트롤 사용",
-                                            "N 롱컨트롤 기능 사용. 오픈파일럿이 속도를 조절합니다. 주의 하시길 바랍니다.",
                                             "../assets/offroad/icon_road.png",
                                             this));
 
