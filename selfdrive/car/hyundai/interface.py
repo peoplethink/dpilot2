@@ -97,8 +97,8 @@ class CarInterface(CarInterfaceBase):
     #ret.longitudinalTuning.deadzoneBP = [0., 9.]
     #ret.longitudinalTuning.deadzoneV = [0., .15]
 
-    ret.longitudinalActuatorDelayLowerBound = 0.5
-    ret.longitudinalActuatorDelayUpperBound = 0.5
+    ret.longitudinalActuatorDelayLowerBound = 0.3
+    ret.longitudinalActuatorDelayUpperBound = 0.3
 
     ret.stopAccel = -2.0
     ret.stoppingDecelRate = float(int(Params().get("StoppingDecelRate", encoding="utf8"))) * 0.01
