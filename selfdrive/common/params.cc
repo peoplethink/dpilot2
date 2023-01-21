@@ -219,6 +219,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"ApplyDynamicTFollowApart", PERSISTENT},
     {"ApplyDynamicTFollowDecel", PERSISTENT},
     {"ApplyLongDynamicCost", PERSISTENT},
+    {"SccConnectedBus2", PERSISTENT},
     {"StoppingDecelRate", PERSISTENT},
     {"SccStoppingCost", PERSISTENT},
     {"SccStartingCost", PERSISTENT},
