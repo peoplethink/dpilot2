@@ -115,6 +115,7 @@ protected:
   QPixmap ic_turn_signal_l;
   QPixmap ic_turn_signal_r;
   QPixmap ic_satellite;
+  QPixmap ic_scc2;
   
   QMap<QString, QPixmap> ic_oil_com;
   
