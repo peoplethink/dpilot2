@@ -29,8 +29,10 @@ def long_control_state_trans(CP, active, long_control_state, v_ego, v_target,
     long_control_state = LongCtrlState.off
 
   else:
-    if long_control_state in (LongCtrlState.off, LongCtrlState.pid):
+    if long_control_state == LongCtrlState.off:
       long_control_state = LongCtrlState.pid
+
+    elif long_control_state == LongCtrlState.pid:
       if stopping_condition:
         long_control_state = LongCtrlState.stopping
 
@@ -53,8 +55,6 @@ class LongControl:
                              derivative_period=0.5, rate=1 / DT_CTRL)
     self.v_pid = 0.0
     self.last_output_accel = 0.0
-    self.readParamCount = 0
-    self.accelBoost = 1.0
     
   def reset(self, v_pid):
     """Reset PID controller and change setpoint"""
@@ -62,10 +62,6 @@ class LongControl:
     self.v_pid = v_pid
 
   def update(self, active, CS, long_plan, accel_limits, t_since_plan):
-    self.readParamCount += 1
-    if self.readParamCount >= 100:
-      self.readParamCount = 0
-      self.accelBoost = float(int(Params().get("AccelBoost", encoding="utf8"))) / 100.
     """Update longitudinal control. This updates the state machine and runs a PID loop"""
     # Interp control trajectory
     speeds = long_plan.speeds
@@ -90,7 +86,7 @@ class LongControl:
     a_target = clip(a_target, ACCEL_MIN_ISO, ACCEL_MAX_ISO)
 
     self.pid.neg_limit = accel_limits[0]
-    self.pid.pos_limit = accel_limits[1] * self.accelBoost
+    self.pid.pos_limit = accel_limits[1]
 
     # Update state machine
     output_accel = self.last_output_accel
@@ -124,10 +120,10 @@ class LongControl:
       # Keep applying brakes until the car is stopped
       if not CS.standstill or output_accel > self.CP.stopAccel:
         output_accel -= self.CP.stoppingDecelRate * DT_CTRL
-      output_accel = clip(output_accel, accel_limits[0], accel_limits[1] * self.accelBoost)
+      output_accel = clip(output_accel, accel_limits[0], accel_limits[1])
       self.reset(CS.vEgo)
 
     self.last_output_accel = output_accel
-    final_accel = clip(output_accel, accel_limits[0], accel_limits[1] * self.accelBoost)
+    final_accel = clip(output_accel, accel_limits[0], accel_limits[1])
 
     return final_accel
