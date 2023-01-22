@@ -42,6 +42,7 @@ class DesireHelper:
     self.prev_one_blinker = False
     self.desire = log.LateralPlan.Desire.none
     self.lane_change_wait_timer = 0
+    self.ready_to_change = False
 
   def update(self, carstate, lat_active, lane_change_prob, md):
     lane_change_set_timer = int(Params().get("AutoLaneChangeTimer", encoding="utf8"))
