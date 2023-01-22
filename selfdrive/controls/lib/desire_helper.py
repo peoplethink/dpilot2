@@ -117,9 +117,6 @@ class DesireHelper:
 
     self.prev_one_blinker = one_blinker
     self.ready_to_change = False
-    if self.lane_change_state == LaneChangeState.off and road_edge_stat == lane_direction and one_blinker:
-      self.prev_one_blinker = False
-      self.ready_to_change = True
 
     self.desire = DESIRES[self.lane_change_direction][self.lane_change_state]
 
