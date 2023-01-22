@@ -1245,14 +1245,14 @@ void NvgWindow::drawGpsStatus(QPainter &p) {
   if(accuracy < 0.01f || accuracy > 20.f)
     return;
 
-  int w = 85;
-  int h = 65;
-  int x = width() - w - 100;
-  int y = 900;
+  int w = 100;
+  int h = 60;
+  int x = width() - w - 120;
+  int y = 905;
   p.setOpacity(0.9);
   p.drawPixmap(x, y, w, h, ic_satellite);
 
-  configFont(p, "Open Sans", 40, "Bold");
+  configFont(p, "Open Sans", 35, "Bold");
   p.setPen(QColor(255, 255, 255, 200));
   p.setRenderHint(QPainter::TextAntialiasing);
 
