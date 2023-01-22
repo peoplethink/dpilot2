@@ -828,7 +828,7 @@ void NvgWindow::drawBottomIcons(QPainter &p) {
       // ajouatom: 현재시간표시
       QTextOption  textOpt = QTextOption(Qt::AlignLeft);
       configFont(p, "Open Sans", 36, "Bold");
-      p.drawText(QRect(1158, 987, width(), 150), QDateTime::currentDateTime().toString("MM월dd ddd hh:mm"), textOpt);
+      p.drawText(QRect(1158, 985, width(), 150), QDateTime::currentDateTime().toString("MM월dd ddd hh:mm"), textOpt);
       //configFont(p, "Open Sans", 60, "Bold");
       //p.drawText(QRect(270, 150, width(), 100), QDateTime::currentDateTime().toString("MM월 dd일 (ddd)"), textOpt);	
   }	
@@ -1260,7 +1260,7 @@ void NvgWindow::drawGpsStatus(QPainter &p) {
   rect.adjust(-30, 0, 30, 0);
 
   QString str;
-  str.sprintf("GPS %.1fm", accuracy);
+  str.sprintf("GPS %.1f m", accuracy);
   p.drawText(rect, Qt::AlignHCenter, str);
   p.setOpacity(1.5);
 }
