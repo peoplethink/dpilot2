@@ -1248,7 +1248,7 @@ void NvgWindow::drawGpsStatus(QPainter &p) {
   int w = 150;
   int h = 62;
   int x = width() - w - 138;
-  int y = 916;
+  int y = 918;
   p.setOpacity(1.5);
   p.drawPixmap(x, y, w, h, ic_satellite);
 
@@ -1397,7 +1397,7 @@ void NvgWindow::drawEngRpm(QPainter &p) {
   float textSize = 35;
 	
   int x = (width() + (bdr_s*2))/2 - bdr_s + 20;
-  int y = bdr_s + 290 + 715;
+  int y = bdr_s + 290 + 717;
 
   QString rpm;
 
