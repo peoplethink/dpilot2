@@ -1,4 +1,3 @@
-import numpy as np
 from cereal import log
 from common.realtime import DT_MDL
 from common.conversions import Conversions as CV
@@ -55,32 +54,10 @@ class DesireHelper:
     one_blinker = carstate.leftBlinker != carstate.rightBlinker
     below_lane_change_speed = v_ego < LANE_CHANGE_SPEED_MIN
 
-    left_edge_prob = np.clip(1.0 - md.roadEdgeStds[0], 0.0, 1.0)
-    left_nearside_prob = md.laneLineProbs[0]
-    left_close_prob = md.laneLineProbs[1]
-    right_close_prob = md.laneLineProbs[2]
-    right_nearside_prob = md.laneLineProbs[3]
-    right_edge_prob = np.clip(1.0 - md.roadEdgeStds[1], 0.0, 1.0)
+    left_road_edge = -md.roadEdges[0].y[0]
+    right_road_edge = md.roadEdges[1].y[0]
 
-    if right_edge_prob > 0.35 and right_nearside_prob < 0.2 and left_nearside_prob >= right_nearside_prob:
-      road_edge_stat = 1
-    elif left_edge_prob > 0.35 and left_nearside_prob < 0.2 and right_nearside_prob >= left_nearside_prob:
-      road_edge_stat = -1
-    else:
-      road_edge_stat = 0
-    
-    if carstate.leftBlinker:
-      self.lane_change_direction = LaneChangeDirection.left
-      lane_direction = -1
-    elif carstate.rightBlinker:
-      self.lane_change_direction = LaneChangeDirection.right
-      lane_direction = 1
-    else:
-      lane_direction = 2
-    
-    if self.lane_change_state == LaneChangeState.off and road_edge_stat == lane_direction:
-      self.lane_change_direction = LaneChangeDirection.none
-    elif not lat_active or self.lane_change_timer > LANE_CHANGE_TIME_MAX:
+    if not lat_active or self.lane_change_timer > LANE_CHANGE_TIME_MAX:
       self.lane_change_state = LaneChangeState.off
       self.lane_change_direction = LaneChangeDirection.none
     else:
@@ -103,10 +80,13 @@ class DesireHelper:
         blindspot_detected = ((carstate.leftBlindspot and self.lane_change_direction == LaneChangeDirection.left) or
                               (carstate.rightBlindspot and self.lane_change_direction == LaneChangeDirection.right))
         
+        road_edge_detected = (((left_road_edge < 3.5) and self.lane_change_direction == LaneChangeDirection.left) or
+                              ((right_road_edge < 3.5) and self.lane_change_direction == LaneChangeDirection.right))
+        
         self.lane_change_wait_timer += DT_MDL
         if not one_blinker or below_lane_change_speed:
           self.lane_change_state = LaneChangeState.off
-        elif (torque_applied or (lane_change_auto_timer and self.lane_change_wait_timer > lane_change_auto_timer)) and not blindspot_detected:
+        elif (torque_applied or (lane_change_auto_timer and self.lane_change_wait_timer > lane_change_auto_timer)) and not blindspot_detected and not road_edge_detected:
           self.lane_change_state = LaneChangeState.laneChangeStarting
 
       # LaneChangeState.laneChangeStarting
