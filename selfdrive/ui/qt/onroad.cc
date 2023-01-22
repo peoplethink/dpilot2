@@ -642,10 +642,10 @@ void NvgWindow::drawCommunity(QPainter &p) {
   p.save();
 
   // Header gradient
-  //QLinearGradient bg(0, header_h - (header_h / 2.5), 0, header_h);
-  //bg.setColorAt(0, QColor::fromRgbF(0, 0, 0, 0.45));
-  //bg.setColorAt(1, QColor::fromRgbF(0, 0, 0, 0));
-  //p.fillRect(0, 0, width(), header_h, bg);
+  QLinearGradient bg(0, header_h - (header_h / 2.5), 0, header_h);
+  bg.setColorAt(0, QColor::fromRgbF(0, 0, 0, 0.45));
+  bg.setColorAt(1, QColor::fromRgbF(0, 0, 0, 0));
+  p.fillRect(0, 0, width(), header_h, bg);
 
   UIState *s = uiState();
 
