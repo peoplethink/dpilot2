@@ -330,6 +330,8 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
 OnroadHud::OnroadHud(QWidget *parent) : QWidget(parent) {
   engage_img = QPixmap("../assets/img_chffr_wheel.png").scaled(img_size, img_size, Qt::KeepAspectRatio, Qt::SmoothTransformation);
   //dm_img = QPixmap("../assets/img_driver_face.png").scaled(img_size, img_size, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+  compass_inner_img = loadPixmap("../assets/images/compass_inner.png", {img_size, img_size});
+  compass_outer_img = loadPixmap("../assets/images/compass_outer.png", {img_size, img_size});
   connect(this, &OnroadHud::valueChanged, [=] { update(); });
 }
 
@@ -344,6 +346,9 @@ void OnroadHud::updateState(const UIState &s) {
   if (sm.frame % (UI_FREQ / 2) == 0) {
     setProperty("engageable", cs.getEngageable() || cs.getEnabled());
     //setProperty("dmActive", sm["driverMonitoringState"].getDriverMonitoringState().getIsActiveMode());
+    setProperty("compass", s.scene.compass);
+    setProperty("bearingDeg", sm["gpsLocationExternal"].getGpsLocationExternal().getBearingDeg());
+    setProperty("bearingAccuracyDeg", sm["gpsLocationExternal"].getGpsLocationExternal().getBearingAccuracyDeg());  
   }
   if(uiState()->recording) {
     update();
@@ -366,6 +371,11 @@ void OnroadHud::paintEvent(QPaintEvent *event) {
   if (true) {
     drawIcon(p, rect().right() - radius / 2 - bdr_s * 2, radius / 2 + bdr_s,
              engage_img, bg_colors[status], 5.0, true, ang_str );
+  }
+  // compass
+  if (compass && bearingAccuracyDeg != 180.00) {
+    drawCompass(p, rect().right() - radius / 2 + (bdr_s * 2), rect().bottom() - footer_h / 2,
+                compass_outer_img, bg_colors[status], 1.0, bearingDeg);
   }
 }
 
@@ -411,6 +421,44 @@ void OnroadHud::drawIcon(QPainter &p, int x, int y, QPixmap &img, QBrush bg, flo
     p.drawPixmap(x - img_size / 2, y - img_size / 2, img);
   }
 }
+
+void OnroadHud::drawCompass(QPainter &p, int x, int y, QPixmap &img, QBrush bg, float opacity, float bearing_Deg) {
+  // Draw the circle background
+  p.setBrush(bg);
+  p.drawEllipse(x - (radius + 10) / 2, y - (radius + 10) / 2, radius + 10, radius + 10);
+
+  // Rotate the compass_inner_img image
+  p.save();
+  p.translate(x, y);
+  p.rotate(bearing_Deg);
+  p.drawPixmap(-compass_inner_img.width() / 2, -compass_inner_img.height() / 2, compass_inner_img);
+  p.restore();
+
+  // Display compass_outer_img
+  QPixmap imgScaled = img.scaled(img.width() * 2, img.height() * 2, Qt::KeepAspectRatio);
+  p.drawPixmap(x - imgScaled.width() / 2, y - imgScaled.height() / 2, imgScaled);
+
+  // Set the font for the direction labels
+  QFont font = p.font();
+  font.setFamily("Inter");
+  font.setBold(true);
+  font.setPointSize(25);
+  p.setFont(font);
+  p.setPen(Qt::white);
+
+  // Draw the cardinal directions
+  const auto drawDirection = [&](const QString &text, float from, float to, int hAlign, int vAlign) {
+    // Set the opacity based on whether the direction label is currently being pointed at
+    p.setOpacity((bearing_Deg >= from && bearing_Deg < to) ? 1.0 : 0.2);
+    p.drawText(x - radius / 2, y - radius / 2, radius, radius, hAlign | vAlign, text);
+  };
+  drawDirection("N", 0, 67.5, Qt::AlignTop | Qt::AlignHCenter, {});
+  drawDirection("E", 22.5, 157.5, Qt::AlignRight | Qt::AlignVCenter, {});
+  drawDirection("S", 112.5, 247.5, Qt::AlignBottom | Qt::AlignHCenter, {});
+  drawDirection("W", 202.5, 337.5, Qt::AlignLeft | Qt::AlignVCenter, {});
+  drawDirection("N", 292.5, 360, Qt::AlignTop | Qt::AlignHCenter, {});
+}
+
 // NvgWindow
 
 NvgWindow::NvgWindow(VisionStreamType type, QWidget* parent) : fps_filter(UI_FREQ, 3, 1. / UI_FREQ), CameraViewWidget("camerad", type, true, parent) {
@@ -436,7 +484,6 @@ void NvgWindow::initializeGL() {
   ic_tire_pressure = QPixmap("../assets/images/img_tire_pressure.png");
   ic_turn_signal_l = QPixmap("../assets/images/turn_signal_l.png");
   ic_turn_signal_r = QPixmap("../assets/images/turn_signal_r.png");
-  ic_satellite = QPixmap("../assets/images/satellite.png");
   ic_scc2 = QPixmap("../assets/images/img_scc2.png");
 }
 
@@ -662,7 +709,6 @@ void NvgWindow::drawCommunity(QPainter &p) {
   drawMaxSpeed(p);
   drawSpeed(p);
   drawTurnSignals(p);
-  drawGpsStatus(p);
   drawBrake(p);
 	
   if(s->show_steer)
@@ -1248,33 +1294,6 @@ void NvgWindow::drawTurnSignals(QPainter &p) {
   }
 
   p.setOpacity(1.);
-}
-
-void NvgWindow::drawGpsStatus(QPainter &p) {
-  const SubMaster &sm = *(uiState()->sm);
-  auto gps = sm["gpsLocationExternal"].getGpsLocationExternal();
-  float accuracy = gps.getAccuracy();
-  if(accuracy < 0.01f || accuracy > 20.f)
-    return;
-
-  int w = 150;
-  int h = 62;
-  int x = width() - w - 138;
-  int y = 918;
-  p.setOpacity(1.5);
-  p.drawPixmap(x, y, w, h, ic_satellite);
-
-  configFont(p, "Open Sans", 35, "Bold");
-  p.setPen(QColor(255, 255, 255, 200));
-  p.setRenderHint(QPainter::TextAntialiasing);
-
-  QRect rect = QRect(x, y + h + 10, w, 40);
-  rect.adjust(-30, 0, 30, 0);
-
-  QString str;
-  str.sprintf("GPS %.1f m", accuracy);
-  p.drawText(rect, Qt::AlignHCenter, str);
-  p.setOpacity(1.5);
 }
 
 void NvgWindow::drawDebugText(QPainter &p) {
