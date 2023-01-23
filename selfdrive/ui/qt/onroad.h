@@ -38,6 +38,9 @@ class OnroadHud : public QWidget {
   Q_PROPERTY(bool engageable MEMBER engageable NOTIFY valueChanged); 
   Q_PROPERTY(int status MEMBER status NOTIFY valueChanged);
   Q_PROPERTY(float ang_str MEMBER ang_str NOTIFY valueChanged);
+  Q_PROPERTY(bool compass MEMBER compass);
+  Q_PROPERTY(float bearingDeg MEMBER bearingDeg);
+  Q_PROPERTY(float bearingAccuracyDeg MEMBER bearingAccuracyDeg);
 
 public:
   explicit OnroadHud(QWidget *parent);
@@ -47,14 +50,20 @@ private:
   void drawIcon(QPainter &p, int x, int y, QPixmap &img, QBrush bg, float opacity, bool rotation = false, float angle = 0 );
   //void drawText(QPainter &p, int x, int y, const QString &text, int alpha = 255);
   //void drawTextWithColor(QPainter &p, int x, int y, const QString &text, QColor& color);
+  void drawCompass(QPainter &p, int x, int y, QPixmap &img, QBrush bg, float opacity, float bearing_deg = 0);
   void paintEvent(QPaintEvent *event) override;
   
   QPixmap engage_img;
+  QPixmap compass_inner_img;
+  QPixmap compass_outer_img;
   const int radius = 192;
   const int img_size = (radius / 2) * 1.5;
   bool engageable = false;
   int status = STATUS_DISENGAGED;
   float ang_str = 0;
+  bool compass;
+  float bearingDeg = 0;
+  float bearingAccuracyDeg;
   
 signals:
   void valueChanged();
@@ -114,7 +123,6 @@ protected:
   QPixmap ic_tire_pressure;
   QPixmap ic_turn_signal_l;
   QPixmap ic_turn_signal_r;
-  QPixmap ic_satellite;
   QPixmap ic_scc2;
   
   QMap<QString, QPixmap> ic_oil_com;
@@ -126,7 +134,6 @@ protected:
   void drawSpeed(QPainter &p);
   void drawBottomIcons(QPainter &p);
   void drawTurnSignals(QPainter &p);
-  void drawGpsStatus(QPainter &p);
   void drawDebugText(QPainter &p);
   void drawCgear(QPainter &p);//기어
   void drawTpms(QPainter &p);
