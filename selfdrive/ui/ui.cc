@@ -280,6 +280,7 @@ static void update_state(UIState *s) {
 void ui_update_params(UIState *s) {
   Params params;
   s->scene.is_metric = params.getBool("IsMetric");
+  s->scene.compass = params.getBool("Compass");
   s->show_debug = params.getBool("ShowDebugUI");
   s->show_gear = params.getBool("ShowCgearUI");//기어
   s->show_tpms = params.getBool("ShowTpmsUI");
