@@ -816,7 +816,7 @@ void NvgWindow::drawBottomIcons(QPainter &p) {
     str = "NORMAL";
     textColor = QColor(255, 255, 255, 250);
   }
-  else if(longControl && gap == 4) {
+  else if(longControl && gap == 3) {
     str = "ECO";
     textColor = QColor(255, 255, 255, 250);
   }
