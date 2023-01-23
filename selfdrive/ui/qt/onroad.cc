@@ -431,12 +431,12 @@ void OnroadHud::drawCompass(QPainter &p, int x, int y, QPixmap &img, QBrush bg, 
   p.save();
   p.translate(x, y);
   p.rotate(bearing_Deg);
-  p.drawPixmap(-compass_inner_img.width() / 2, -compass_inner_img.height() / 2, compass_inner_img);
+  p.drawPixmap(-compass_inner_img.width() / 4, -compass_inner_img.height() / 4, compass_inner_img);
   p.restore();
 
   // Display compass_outer_img
   QPixmap imgScaled = img.scaled(img.width() * 2, img.height() * 2, Qt::KeepAspectRatio);
-  p.drawPixmap(x - imgScaled.width() / 2, y - imgScaled.height() / 2, imgScaled);
+  p.drawPixmap(x - imgScaled.width() / 4, y - imgScaled.height() / 4, imgScaled);
 
   // Set the font for the direction labels
   QFont font = p.font();
