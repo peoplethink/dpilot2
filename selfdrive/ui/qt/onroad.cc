@@ -808,12 +808,24 @@ void NvgWindow::drawBottomIcons(QPainter &p) {
   if(gap <= 0) {
     str = "N/A";
   }
+  else if(longControl && gap == 1) {
+    str = "SPORT";
+    textColor = QColor(255, 255, 255, 250);
+  }
+  else if(longControl && gap == 2) {
+    str = "NORMAL";
+    textColor = QColor(255, 255, 255, 250);
+  }
   else if(longControl && gap == 4) {
-    str = "AUTO";
+    str = "ECO";
+    textColor = QColor(255, 255, 255, 250);
+  }
+  else if(longControl && gap == 4) {
+    str = "RELAX";
     textColor = QColor(255, 255, 255, 250);
   }
   else {
-    str.sprintf("GAP%d", (int)gap);
+    str.sprintf("%d", (int)gap);
     textColor = QColor(255, 255, 225, 250);
     textSize = 35.f;
   }
