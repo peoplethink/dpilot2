@@ -366,7 +366,9 @@ class LongitudinalMpc:
       y_dist = [0.50, 1.00, 1.05, 1.10, 1.15, 1.20, 1.20, 1.20, 1.20, 1.20, 1.20]
       self.desired_TF = np.interp(carstate.vEgo, x_vel, y_dist)
     elif cruise_gap == 2:
-      self.desired_TF = 1.45
+      x_vel = [    0,  4.5,    9, 13.5,   18, 22.5,   27, 31.5,   36, 40.5,   45]
+      y_dist = [1.25, 1.30, 1.35, 1.40, 1.45, 1.50, 1.50, 1.50, 1.50, 1.50, 1.50]
+      self.desired_TF = np.interp(carstate.vEgo, x_vel, y_dist)
     elif cruise_gap == 3:
       self.desired_TF = 1.8  
     elif cruise_gap == 4:
