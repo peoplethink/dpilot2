@@ -463,6 +463,10 @@ VIPPanel::VIPPanel(QWidget* parent) : QWidget(parent) {
                                             "",
                                             "../assets/offroad/icon_shell.png",
                                             this));
+  layout->addWidget(new ParamControl("Compass",
+                                            "Compass",
+                                            "Add a compass in bottom right corner of the onroad that rotates according to the direction you're driving.",
+                                            "../assets/offroad/icon_compass.png");
   layout->addWidget(new TimeZoneSelectCombo());
   
   layout->addWidget(horizontal_line());
