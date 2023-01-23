@@ -173,7 +173,7 @@ void OffroadHome::hideEvent(QHideEvent *event) {
 
 void OffroadHome::refresh() {
   QString locale_name = QString(uiState()->language).replace("main_", "");
-  QString dateString = QLocale(locale_name).toString(QDateTime::currentDateTime(), "dddd, MMMM d");
+  QString dateString = QLocale(locale_name).toString(QDateTime::currentDateTime(), "M월 d일 dddd");
   date->setText(dateString);
   //date->setText(QDateTime::currentDateTime().toString("\U0001f4c5 M월 d일 dddd"));
 
