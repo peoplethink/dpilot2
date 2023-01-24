@@ -425,18 +425,18 @@ void OnroadHud::drawIcon(QPainter &p, int x, int y, QPixmap &img, QBrush bg, flo
 void OnroadHud::drawCompass(QPainter &p, int x, int y, QPixmap &img, QBrush bg, float opacity, float bearing_Deg) {
   // Draw the circle background
   p.setBrush(bg);
-  p.drawEllipse(x - (radius + 10) / 2, y - (radius + 10) / 2, radius + 10, radius + 10);
+  p.drawEllipse(x - radius / 2, y - radius / 2, radius, radius);
 
   // Rotate the compass_inner_img image
   p.save();
   p.translate(x, y);
   p.rotate(bearing_Deg);
-  p.drawPixmap(-compass_inner_img.width() / 4, -compass_inner_img.height() / 4, compass_inner_img);
+  p.drawPixmap(-compass_inner_img.width() / 2, -compass_inner_img.height() / 2, compass_inner_img);
   p.restore();
 
   // Display compass_outer_img
   QPixmap imgScaled = img.scaled(img.width() * 2, img.height() * 2, Qt::KeepAspectRatio);
-  p.drawPixmap(x - imgScaled.width() / 4, y - imgScaled.height() / 4, imgScaled);
+  p.drawPixmap(x - imgScaled.width() / 2, y - imgScaled.height() / 2, imgScaled);
 
   // Set the font for the direction labels
   QFont font = p.font();
