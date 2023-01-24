@@ -125,9 +125,14 @@ static void update_blindspot_data(const UIState *s, int lr, const cereal::ModelD
 
 static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
   UIScene &scene = s->scene;
+  bool isCustomRoadUI = Params().getBool("CustomRoadUI");
+  bool isUlimitedLength = isCustomRoadUI && Params().getBool("UnlimitedLength");
   auto model_position = model.getPosition();
-  float max_distance = std::clamp(model_position.getX()[TRAJECTORY_SIZE - 1],
+  float max_distance = isUlimitedLength ? model_position.getX()[TRAJECTORY_SIZE - 1] : std::clamp(model_position.getX()[TRAJECTORY_SIZE - 1],
                                   MIN_DRAW_DISTANCE, MAX_DRAW_DISTANCE);
+  const float pwidth = std::stof(Params().get("PathWidth")) / 10 * 0.1524;
+  const float llwidth = std::stof(Params().get("LaneLinesWidth")) / 12 * 0.1524;
+  const float rewidth = std::stof(Params().get("RoadEdgesWidth")) / 12 * 0.1524;
 
   // update lane lines
   const auto lane_lines = model.getLaneLines();
@@ -135,7 +140,7 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
   int max_idx = get_path_length_idx(lane_lines[0], max_distance);
   for (int i = 0; i < std::size(scene.lane_line_vertices); i++) {
     scene.lane_line_probs[i] = lane_line_probs[i];
-    update_line_data(s, lane_lines[i], 0.025 * scene.lane_line_probs[i], 0, &scene.lane_line_vertices[i], max_idx);
+    update_line_data(s, lane_lines[i], isCustomRoadUI ? llwidth * scene.lane_line_probs[i] : 0.025 * scene.lane_line_probs[i], 0, &scene.lane_line_vertices[i], max_idx);
   }
 
   // lane barriers for blind spot
@@ -149,7 +154,7 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
   const auto road_edge_stds = model.getRoadEdgeStds();
   for (int i = 0; i < std::size(scene.road_edge_vertices); i++) {
     scene.road_edge_stds[i] = road_edge_stds[i];
-    update_line_data(s, road_edges[i], 0.025, 0, &scene.road_edge_vertices[i], max_idx);
+    update_line_data(s, road_edges[i], isCustomRoadUI ? rewidth : 0.025, 0, &scene.road_edge_vertices[i], max_idx);
   }
 
   // update path
@@ -159,7 +164,7 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
     max_distance = std::clamp((float)(lead_d - fmin(lead_d * 0.35, 10.)), 0.0f, max_distance);
   }
   max_idx = get_path_length_idx(model_position, max_distance);
-  update_line_data(s, model_position, 0.9, 1.22, &scene.track_vertices, max_idx, false);
+  update_line_data(s, model_position, isCustomRoadUI ? pwidth : 0.9, 1.22, &scene.track_vertices, max_idx, false);
 }
 
 static void update_sockets(UIState *s) {
