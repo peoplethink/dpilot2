@@ -433,6 +433,7 @@ QWidget *network_panel(QWidget *parent) {
 VIPPanel::VIPPanel(QWidget* parent) : QWidget(parent) {
   QVBoxLayout *layout = new QVBoxLayout(this);
   layout->addWidget(new LabelControl("〓〓〓〓〓〓〓〓【 UI메뉴 】〓〓〓〓〓〓〓〓", ""));
+  
   layout->addWidget(new ParamControl("ShowDebugUI",
                                             "디버그 내용 활성화",
                                             "가감속 등 디버그 내용을 화면에 띄웁니다.",
@@ -820,6 +821,11 @@ TUNINGPanel::TUNINGPanel(QWidget* parent) : QWidget(parent) {
     toggleLayout->addWidget(new AutoLaneChangeTimer());
     toggleLayout->addWidget(new CValueControl("PathOffset", "차선 좌우보정", "좌측이동(-), 우측이동(+)", "../assets/offroad/icon_road.png", -200, 200, 1));
     toggleLayout->addWidget(horizontal_line());
+    toggleLayout->addWidget(new ParamControl("CustomRoadUI", "Custom Road UI", "Personalize the road UI of openpilot.", "../assets/offroad/icon_road.png"));
+    toggleLayout->addWidget(new ParamControl("UnlimitedLength", "Unlimited' Length", "Increases the path and road lines", "../assets/offroad/icon_blank.png"));
+    toggleLayout->addWidget(new LaneLinesWidth());
+    toggleLayout->addWidget(new PathWidth());
+    toggleLayout->addWidget(new RoadEdgesWidth());
     toggleLayout->addWidget(horizontal_line());
     toggleLayout->addWidget(horizontal_line());
     toggleLayout->addWidget(new LabelControl("〓〓〓〓〓〓〓〓【 롱컨메뉴 】〓〓〓〓〓〓〓〓", ""));
@@ -989,4 +995,126 @@ void AutoLaneChangeTimer::refresh() {
   }
   btnminus.setText("-");
   btnplus.setText("+");
+}
+
+// Lane Lines Width
+LaneLinesWidth::LaneLinesWidth() : AbstractControl("    Lane Line Width", "Customize the lane lines width in inches. Default matches the MUTCD average of 4 inches.", "../assets/offroad/icon_blank.png") {
+  label.setAlignment(Qt::AlignVCenter | Qt::AlignRight);
+  label.setStyleSheet("color: #e0e879");
+  hlayout->addWidget(&label);
+
+  btnminus.setStyleSheet("QPushButton { background-color: #393939; color: #E4E4E4; border-radius: 50px; font: 500 35px; padding: 0; } QPushButton:pressed { background-color: #4a4a4a; color: #E4E4E4; }");
+  btnplus.setStyleSheet("QPushButton { background-color: #393939; color: #E4E4E4; border-radius: 50px; font: 500 35px; padding: 0; } QPushButton:pressed { background-color: #4a4a4a; color: #E4E4E4; }");
+  btnminus.setText("-");
+  btnplus.setText("+");
+  btnminus.setFixedSize(150, 100);
+  btnplus.setFixedSize(150, 100);
+  hlayout->addWidget(&btnminus);
+  hlayout->addWidget(&btnplus);
+
+  QObject::connect(&btnminus, &QPushButton::clicked, [this]() {
+    auto str = QString::fromStdString(params.get("LaneLinesWidth"));
+    int value = str.toInt();
+    value = std::max(0, value - 1);
+    QString values = QString::number(value);
+    params.put("LaneLinesWidth", values.toStdString());
+    refresh();
+  });
+
+  QObject::connect(&btnplus, &QPushButton::clicked, [this]() {
+    auto str = QString::fromStdString(params.get("LaneLinesWidth"));
+    int value = str.toInt();
+    value = std::min(24, value + 1);
+    QString values = QString::number(value);
+    params.put("LaneLinesWidth", values.toStdString());
+    refresh();
+  });
+
+  refresh();
+}
+
+void LaneLinesWidth::refresh() {
+  label.setText(QString::fromStdString(params.get("LaneLinesWidth")) + " inches");
+}
+
+// Path Width
+PathWidth::PathWidth() : AbstractControl("    Path Width", "Customize the path width in feet to match the width of your car. Default matches a 2019 Lexus ES 350.", "../assets/offroad/icon_blank.png") {
+  label.setAlignment(Qt::AlignVCenter | Qt::AlignRight);
+  label.setStyleSheet("color: #e0e879");
+  hlayout->addWidget(&label);
+
+  btnminus.setStyleSheet("QPushButton { background-color: #393939; color: #E4E4E4; border-radius: 50px; font: 500 35px; padding: 0; } QPushButton:pressed { background-color: #4a4a4a; color: #E4E4E4; }");
+  btnplus.setStyleSheet("QPushButton { background-color: #393939; color: #E4E4E4; border-radius: 50px; font: 500 35px; padding: 0; } QPushButton:pressed { background-color: #4a4a4a; color: #E4E4E4; }");
+  btnminus.setText("-");
+  btnplus.setText("+");
+  btnminus.setFixedSize(150, 100);
+  btnplus.setFixedSize(150, 100);
+  hlayout->addWidget(&btnminus);
+  hlayout->addWidget(&btnplus);
+
+  QObject::connect(&btnminus, &QPushButton::clicked, [this]() {
+    auto str = QString::fromStdString(params.get("PathWidth"));
+    int value = str.toInt();
+    value = std::max(0, value - 1);
+    QString values = QString::number(value);
+    params.put("PathWidth", values.toStdString());
+    refresh();
+  });
+
+  QObject::connect(&btnplus, &QPushButton::clicked, [this]() {
+    auto str = QString::fromStdString(params.get("PathWidth"));
+    int value = str.toInt();
+    value = std::min(120, value + 1);
+    QString values = QString::number(value);
+    params.put("PathWidth", values.toStdString());
+    refresh();
+  });
+
+  refresh();
+}
+
+void PathWidth::refresh() {
+  auto str = QString::fromStdString(params.get("PathWidth"));
+  double value = str.toDouble();
+  label.setText(QString::number(value / 10.0) + " feet");
+}
+
+// Road Edges Width
+RoadEdgesWidth::RoadEdgesWidth() : AbstractControl("    Road Edges Width", "Customize the road edges width in inches. Default is 1/2 of the MUTCD average lane line width of 4 inches.", "../assets/offroad/icon_blank.png") {
+  label.setAlignment(Qt::AlignVCenter | Qt::AlignRight);
+  label.setStyleSheet("color: #e0e879");
+  hlayout->addWidget(&label);
+
+  btnminus.setStyleSheet("QPushButton { background-color: #393939; color: #E4E4E4; border-radius: 50px; font: 500 35px; padding: 0; } QPushButton:pressed { background-color: #4a4a4a; color: #E4E4E4; }");
+  btnplus.setStyleSheet("QPushButton { background-color: #393939; color: #E4E4E4; border-radius: 50px; font: 500 35px; padding: 0; } QPushButton:pressed { background-color: #4a4a4a; color: #E4E4E4; }");
+  btnminus.setText("-");
+  btnplus.setText("+");
+  btnminus.setFixedSize(150, 100);
+  btnplus.setFixedSize(150, 100);
+  hlayout->addWidget(&btnminus);
+  hlayout->addWidget(&btnplus);
+
+  QObject::connect(&btnminus, &QPushButton::clicked, [this]() {
+    auto str = QString::fromStdString(params.get("RoadEdgesWidth"));
+    int value = str.toInt();
+    value = std::max(0, value - 1);
+    QString values = QString::number(value);
+    params.put("RoadEdgesWidth", values.toStdString());
+    refresh();
+  });
+
+  QObject::connect(&btnplus, &QPushButton::clicked, [this]() {
+    auto str = QString::fromStdString(params.get("RoadEdgesWidth"));
+    int value = str.toInt();
+    value = std::min(24, value + 1);
+    QString values = QString::number(value);
+    params.put("RoadEdgesWidth", values.toStdString());
+    refresh();
+  });
+
+  refresh();
+}
+
+void RoadEdgesWidth::refresh() {
+  label.setText(QString::fromStdString(params.get("RoadEdgesWidth")) + " inches");
 }
