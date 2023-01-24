@@ -822,10 +822,10 @@ TUNINGPanel::TUNINGPanel(QWidget* parent) : QWidget(parent) {
     toggleLayout->addWidget(new CValueControl("PathOffset", "차선 좌우보정", "좌측이동(-), 우측이동(+)", "../assets/offroad/icon_road.png", -200, 200, 1));
     toggleLayout->addWidget(horizontal_line());
     toggleLayout->addWidget(new ParamControl("CustomRoadUI", "Custom Road UI", "Personalize the road UI of openpilot.", "../assets/offroad/icon_road.png"));
-    toggleLayout->addWidget(new ParamControl("UnlimitedLength", "Unlimited' Length", "Increases the path and road lines", "../assets/offroad/icon_blank.png"));
     toggleLayout->addWidget(new LaneLinesWidth());
     toggleLayout->addWidget(new PathWidth());
     toggleLayout->addWidget(new RoadEdgesWidth());
+    toggleLayout->addWidget(new ParamControl("UnlimitedLength", "Unlimited Length", "Increases the path and road lines", "../assets/offroad/icon_road.png"));
     toggleLayout->addWidget(horizontal_line());
     toggleLayout->addWidget(horizontal_line());
     toggleLayout->addWidget(new LabelControl("〓〓〓〓〓〓〓〓【 롱컨메뉴 】〓〓〓〓〓〓〓〓", ""));
