@@ -916,7 +916,7 @@ void NvgWindow::drawTpms(QPainter &p) {
 
   const int w = 58;
   const int h = 126;
-  const int x = 110 + 1625;
+  const int x = 110 + 1617;
   const int y = height() - h - 90;
 
   auto tpms = car_state.getTpms();
