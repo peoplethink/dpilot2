@@ -330,8 +330,8 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
 OnroadHud::OnroadHud(QWidget *parent) : QWidget(parent) {
   engage_img = QPixmap("../assets/img_chffr_wheel.png").scaled(img_size, img_size, Qt::KeepAspectRatio, Qt::SmoothTransformation);
   //dm_img = QPixmap("../assets/img_driver_face.png").scaled(img_size, img_size, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-  compass_inner_img = loadPixmap("../assets/images/compass_inner.png", {img_size, img_size});
-  compass_outer_img = loadPixmap("../assets/images/compass_outer.png", {img_size, img_size});
+  compass_inner_img = QPixmap("../assets/images/compass_inner.png").scaled(img_size, img_size, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+  compass_outer_img = QPixmap("../assets/images/compass_outer.png").scaled(img_size, img_size, Qt::KeepAspectRatio, Qt::SmoothTransformation);
   connect(this, &OnroadHud::valueChanged, [=] { update(); });
 }
 
@@ -375,7 +375,7 @@ void OnroadHud::paintEvent(QPaintEvent *event) {
   // compass
   if (compass && bearingAccuracyDeg != 180.00) {
     drawCompass(p, rect().right() - radius / 2 - bdr_s * 2, radius / 2 + bdr_s + 500,
-                compass_outer_img, bg_colors[status], 1.0, bearingDeg);
+                compass_outer_img, bg_colors[status], 5.0, bearingDeg);
   }
 }
 
@@ -435,8 +435,8 @@ void OnroadHud::drawCompass(QPainter &p, int x, int y, QPixmap &img, QBrush bg, 
   p.restore();
 
   // Display compass_outer_img
-  QPixmap imgScaled = img.scaled(img.width() * 2, img.height() * 2, Qt::KeepAspectRatio);
-  p.drawPixmap(x - imgScaled.width() / 2, y - imgScaled.height() / 2, imgScaled);
+  //QPixmap imgScaled = img.scaled(img.width() * 2, img.height() * 2, Qt::KeepAspectRatio);
+  p.drawPixmap(x - img_size / 2, y - img_size / 2, img);
 
   // Set the font for the direction labels
   QFont font = p.font();
