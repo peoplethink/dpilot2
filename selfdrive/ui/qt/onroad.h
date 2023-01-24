@@ -64,6 +64,9 @@ private:
   bool compass;
   float bearingDeg = 0;
   float bearingAccuracyDeg;
+
+protected:
+  inline QColor blackColor(int alpha = 200) { return QColor(0, 0, 0, alpha); }
   
 signals:
   void valueChanged();
