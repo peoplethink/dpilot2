@@ -172,3 +172,48 @@ private:
 
   void refresh();
 };
+
+class LaneLinesWidth : public AbstractControl {
+  Q_OBJECT
+
+public:
+  LaneLinesWidth();
+
+private:
+  QPushButton btnplus;
+  QPushButton btnminus;
+  QLabel label;
+  Params params;
+
+  void refresh();
+};
+
+class PathWidth : public AbstractControl {
+  Q_OBJECT
+
+public:
+  PathWidth();
+
+private:
+  QPushButton btnplus;
+  QPushButton btnminus;
+  QLabel label;
+  Params params;
+
+  void refresh();
+};
+
+class RoadEdgesWidth : public AbstractControl {
+  Q_OBJECT
+
+public:
+  RoadEdgesWidth();
+
+private:
+  QPushButton btnplus;
+  QPushButton btnminus;
+  QLabel label;
+  Params params;
+
+  void refresh();
+};
