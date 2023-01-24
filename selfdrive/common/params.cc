@@ -232,6 +232,11 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"ShowDateTime", PERSISTENT},
     {"Sound_Mdpserr", PERSISTENT},
     {"ShowEngRPMUI", PERSISTENT},
+    {"CustomRoadUI", PERSISTENT},
+    {"LaneLinesWidth", PERSISTENT},
+    {"PathWidth", PERSISTENT},
+    {"RoadEdgesWidth", PERSISTENT},
+    {"UnlimitedLength", PERSISTENT},
     {"Compass", PERSISTENT},
 };
 
