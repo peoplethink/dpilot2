@@ -93,6 +93,11 @@ def manager_init() -> None:
     ("Sound_Mdpserr", "1"),
     ("SccConnectedBus2", "0"),
     ("Compass", "1"),
+    ("CustomRoadUI", "1"),
+    ("LaneLinesWidth", "4"),
+    ("PathWidth", "61"),
+    ("RoadEdgesWidth", "2"),
+    ("UnlimitedLength", "1"),
     ("PutPrebuilt", "0"), 
   ]
   if not PC:
