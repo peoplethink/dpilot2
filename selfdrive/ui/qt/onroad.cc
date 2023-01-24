@@ -374,7 +374,7 @@ void OnroadHud::paintEvent(QPaintEvent *event) {
   }
   // compass
   if (compass && bearingAccuracyDeg != 180.00) {
-    drawCompass(p, rect().right() - radius / 2 - bdr_s + 5 * 2, radius / 2 + bdr_s + 520,
+    drawCompass(p, rect().right() - radius / 2 - bdr_s * 2, radius / 2 + bdr_s + 550,
                 compass_outer_img, blackColor(100), 5.0, bearingDeg);
   }
 }
