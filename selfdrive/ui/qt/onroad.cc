@@ -442,7 +442,7 @@ void OnroadHud::drawCompass(QPainter &p, int x, int y, QPixmap &img, QBrush bg, 
   QFont font = p.font();
   font.setFamily("Inter");
   font.setBold(true);
-  font.setPointSize(25);
+  font.setPointSize(15);
   p.setFont(font);
   p.setPen(Qt::white);
 
@@ -1307,8 +1307,8 @@ void NvgWindow::drawGpsStatus(QPainter &p) {
 
   int w = 150;
   int h = 62;
-  int x = width() - w - 138;
-  int y = 860;
+  int x = width() - w - 120;
+  int y = 700;
   p.setOpacity(1.5);
   p.drawPixmap(x, y, w, h, ic_satellite);
 
