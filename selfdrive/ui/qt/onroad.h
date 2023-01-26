@@ -126,6 +126,7 @@ protected:
   QPixmap ic_tire_pressure;
   QPixmap ic_turn_signal_l;
   QPixmap ic_turn_signal_r;
+  QPixmap ic_satellite;
   QPixmap ic_scc2;
   
   QMap<QString, QPixmap> ic_oil_com;
@@ -142,6 +143,7 @@ protected:
   void drawTpms(QPainter &p);
   void drawBrake(QPainter &p);
   void drawCommunity(QPainter &p);
+  void drawGpsStatus(QPainter &p);
   void drawSteer(QPainter &p);
   void drawEngRpm(QPainter &p);
   
