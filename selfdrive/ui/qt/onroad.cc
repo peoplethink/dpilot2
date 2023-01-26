@@ -484,6 +484,7 @@ void NvgWindow::initializeGL() {
   ic_tire_pressure = QPixmap("../assets/images/img_tire_pressure.png");
   ic_turn_signal_l = QPixmap("../assets/images/turn_signal_l.png");
   ic_turn_signal_r = QPixmap("../assets/images/turn_signal_r.png");
+  ic_satellite = QPixmap("../assets/images/satellite.png");
   ic_scc2 = QPixmap("../assets/images/img_scc2.png");
 }
 
@@ -709,6 +710,7 @@ void NvgWindow::drawCommunity(QPainter &p) {
   drawMaxSpeed(p);
   drawSpeed(p);
   drawTurnSignals(p);
+  drawGpsStatus(p);
   drawBrake(p);
 	
   if(s->show_steer)
@@ -1294,6 +1296,33 @@ void NvgWindow::drawTurnSignals(QPainter &p) {
   }
 
   p.setOpacity(1.);
+}
+
+void NvgWindow::drawGpsStatus(QPainter &p) {
+  const SubMaster &sm = *(uiState()->sm);
+  auto gps = sm["gpsLocationExternal"].getGpsLocationExternal();
+  float accuracy = gps.getAccuracy();
+  if(accuracy < 0.01f || accuracy > 20.f)
+    return;
+
+  int w = 150;
+  int h = 62;
+  int x = width() - w - 138;
+  int y = 860;
+  p.setOpacity(1.5);
+  p.drawPixmap(x, y, w, h, ic_satellite);
+
+  configFont(p, "Open Sans", 32, "Bold");
+  p.setPen(QColor(255, 255, 255, 200));
+  p.setRenderHint(QPainter::TextAntialiasing);
+
+  QRect rect = QRect(x, y + h + 10, w, 40);
+  rect.adjust(-30, 0, 30, 0);
+
+  QString str;
+  str.sprintf("GPS%.1f m", accuracy);
+  p.drawText(rect, Qt::AlignHCenter, str);
+  p.setOpacity(1.0);
 }
 
 void NvgWindow::drawDebugText(QPainter &p) {
