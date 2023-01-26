@@ -575,7 +575,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
     ET.PERMANENT: Alert(
       "MDPS ERROR",
       "MDPS 복구버튼을 누르세요!",
-      AlertStatus.userPrompt, AlertSize.small,
+      AlertStatus.critical, AlertSize.small,
       Priority.LOW, VisualAlert.none, AudibleAlert.prompt, .2),
       #AlertStatus.normal, AlertSize.full,
       #Priority.MID, VisualAlert.none, AudibleAlert.prompt, 2.),
