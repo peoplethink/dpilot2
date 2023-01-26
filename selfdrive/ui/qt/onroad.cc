@@ -374,7 +374,7 @@ void OnroadHud::paintEvent(QPaintEvent *event) {
   }
   // compass
   if (compass && bearingAccuracyDeg != 180.00) {
-    drawCompass(p, rect().right() - radius / 2 - bdr_s * 2, radius / 2 + bdr_s + 550,
+    drawCompass(p, rect().right() - radius / 2 - bdr_s * 2, radius / 2 + bdr_s + 540,
                 compass_outer_img, blackColor(180), 5.0, bearingDeg);
   }
 }
@@ -442,7 +442,7 @@ void OnroadHud::drawCompass(QPainter &p, int x, int y, QPixmap &img, QBrush bg, 
   QFont font = p.font();
   font.setFamily("Inter");
   font.setBold(true);
-  font.setPointSize(16);
+  font.setPointSize(15);
   p.setFont(font);
   p.setPen(Qt::white);
 
@@ -1307,7 +1307,7 @@ void NvgWindow::drawGpsStatus(QPainter &p) {
 
   int w = 150;
   int h = 62;
-  int x = width() - w - 100;
+  int x = width() - w - 75;
   int y = 695;
   p.setOpacity(1.5);
   p.drawPixmap(x, y, w, h, ic_satellite);
