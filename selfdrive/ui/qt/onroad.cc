@@ -1307,8 +1307,8 @@ void NvgWindow::drawGpsStatus(QPainter &p) {
 
   int w = 150;
   int h = 62;
-  int x = width() - w - 70;
-  int y = 695;
+  int x = width() - w - 60;
+  int y = 690;
   p.setOpacity(1.5);
   p.drawPixmap(x, y, w, h, ic_satellite);
 
