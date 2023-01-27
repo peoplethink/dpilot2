@@ -1307,7 +1307,7 @@ void NvgWindow::drawGpsStatus(QPainter &p) {
 
   int w = 150;
   int h = 62;
-  int x = width() - w - 60;
+  int x = width() - w - 57;
   int y = 690;
   p.setOpacity(1.5);
   p.drawPixmap(x, y, w, h, ic_satellite);
@@ -1320,7 +1320,7 @@ void NvgWindow::drawGpsStatus(QPainter &p) {
   rect.adjust(-30, 0, 30, 0);
 
   QString str;
-  str.sprintf("GPS%.1f m", accuracy);
+  str.sprintf("GPS %.1f m", accuracy);
   p.drawText(rect, Qt::AlignHCenter, str);
   p.setOpacity(1.0);
 }
