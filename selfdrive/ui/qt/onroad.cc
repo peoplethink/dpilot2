@@ -442,7 +442,7 @@ void OnroadHud::drawCompass(QPainter &p, int x, int y, QPixmap &img, QBrush bg, 
   QFont font = p.font();
   font.setFamily("Inter");
   font.setBold(true);
-  font.setPointSize(15);
+  font.setPointSize(10);
   p.setFont(font);
   p.setPen(Qt::white);
 
