@@ -637,11 +637,11 @@ void NvgWindow::drawLead(QPainter &painter, const cereal::ModelDataV2::LeadDataV
 
   QString str;
   str.sprintf("%.1fm", radar_detected ? radar_dist : vision_dist);
-  QColor textColor = QColor(255, 255, 255, 200);
-  configFont(painter, "Inter", 75, "Bold");
-  drawTextWithColor(painter, x, y + sz / 1.5f + 160.0, str, textColor);
+  QColor textColor = QColor(255, 255, 255, 250);
+  configFont(painter, "Inter", 50, "Bold");
+  drawTextWithColor(painter, x, y + sz / 1.5f + 80.0, str, textColor);
 
-  if (radar_detected) {
+  /*if (radar_detected) {
       float radar_rel_speed = lead_radar.getVRel();
       str.sprintf("%.0fkm/h", m_cur_speed + radar_rel_speed * 3.6);
       if (radar_rel_speed < -0.1) textColor = QColor(255, 105, 180, 200);
@@ -650,6 +650,7 @@ void NvgWindow::drawLead(QPainter &painter, const cereal::ModelDataV2::LeadDataV
       configFont(painter, "Inter", 60, "Bold");
       drawTextWithColor(painter, x, y + sz / 1.5f + 80.0, str, textColor);
   }
+  */
   painter.restore();
 }
 
@@ -782,25 +783,25 @@ void NvgWindow::drawSpeed(QPainter &p) {
   auto car_state = sm["carState"].getCarState();
   float accel = car_state.getAEgo();
 
-  QColor color = QColor(255, 255, 255, 230);
+  QColor color = QColor(255, 255, 255, 250);
 
   if(accel > 0) {
     int a = (int)(255.f - (180.f * (accel/2.f)));
     a = std::min(a, 255);
     a = std::max(a, 80);
-    color = QColor(a, a, 255, 230);
+    color = QColor(a, a, 255, 250);
   }
   else {
     int a = (int)(255.f - (255.f * (-accel/3.f)));
     a = std::min(a, 255);
     a = std::max(a, 60);
-    color = QColor(255, a, a, 230);
+    color = QColor(255, a, a, 250);
   }
 
   QString speed;
   speed.sprintf("%.0f", cur_speed);
   configFont(p, "Open Sans", 176, "Bold");
-  drawTextWithColor(p, rect().center().x(), 230, speed, color);
+  drawTextWithColor(p, rect().center().x(), 250, speed, color);
 
   configFont(p, "Open Sans", 66, "Regular");
   //drawText(p, rect().center().x(), 310, s->scene.is_metric ? "km/h" : "mph", 200)
