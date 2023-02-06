@@ -1,7 +1,7 @@
 from cereal import log
 from common.realtime import DT_MDL
 from common.conversions import Conversions as CV
-from common.params import Params
+from common.params import Params, put_nonblocking
 
 LaneChangeState = log.LateralPlan.LaneChangeState
 LaneChangeDirection = log.LateralPlan.LaneChangeDirection
@@ -42,13 +42,12 @@ class DesireHelper:
     self.prev_one_blinker = False
     self.desire = log.LateralPlan.Desire.none
     self.lane_change_wait_timer = 0
-    self.ready_to_change = False
 
   def update(self, carstate, lat_active, lane_change_prob, md):
     lane_change_set_timer = int(Params().get("AutoLaneChangeTimer", encoding="utf8"))
-    lane_change_auto_timer = 0.0 if lane_change_set_timer == 0 else 0.2 if lane_change_set_timer == 1 else 0.5 if lane_change_set_timer == 2 \
-      else 1.0 if lane_change_set_timer == 3 else 1.5 if lane_change_set_timer == 4 else 2.0
-
+    lane_change_auto_timer = 0.0 if lane_change_set_timer == 0 else 0.1 if lane_change_set_timer == 1 else \
+                             0.5 if lane_change_set_timer == 2 else 1.0 if lane_change_set_timer == 3 else \
+                             1.5 if lane_change_set_timer == 4 else 2.0
     v_ego = carstate.vEgo
     one_blinker = carstate.leftBlinker != carstate.rightBlinker
     below_lane_change_speed = v_ego < LANE_CHANGE_SPEED_MIN
@@ -91,7 +90,7 @@ class DesireHelper:
       # LaneChangeState.laneChangeStarting
       elif self.lane_change_state == LaneChangeState.laneChangeStarting:
         # fade out over .5s
-        self.lane_change_ll_prob = max(self.lane_change_ll_prob - 1.7 * DT_MDL, 0.0)
+        self.lane_change_ll_prob = max(self.lane_change_ll_prob - 2.0 * DT_MDL, 0.0)
 
         # 98% certainty
         if lane_change_prob < 0.02 and self.lane_change_ll_prob < 0.01:
@@ -115,7 +114,6 @@ class DesireHelper:
       self.lane_change_timer += DT_MDL
 
     self.prev_one_blinker = one_blinker
-    self.ready_to_change = False
 
     self.desire = DESIRES[self.lane_change_direction][self.lane_change_state]
 
