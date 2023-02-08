@@ -98,6 +98,11 @@ def manager_init() -> None:
     ("PathWidth", "61"),
     ("RoadEdgesWidth", "2"),
     ("UnlimitedLength", "1"),
+    ("CruiseMaxVals1", "200"),
+    ("CruiseMaxVals2", "140"),
+    ("CruiseMaxVals3", "50"),
+    ("CruiseMaxVals4", "20"),
+    ("CruiseMaxVals5", "15"),
     ("PutPrebuilt", "0"), 
   ]
   if not PC:
