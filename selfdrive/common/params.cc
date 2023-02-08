@@ -237,6 +237,11 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"PathWidth", PERSISTENT},
     {"RoadEdgesWidth", PERSISTENT},
     {"UnlimitedLength", PERSISTENT},
+    {"CruiseMaxVals1", PERSISTENT},
+    {"CruiseMaxVals2", PERSISTENT},
+    {"CruiseMaxVals3", PERSISTENT},
+    {"CruiseMaxVals4", PERSISTENT},
+    {"CruiseMaxVals5", PERSISTENT},
     {"Compass", PERSISTENT},
 };
 
