@@ -838,7 +838,12 @@ TUNINGPanel::TUNINGPanel(QWidget* parent) : QWidget(parent) {
     toggleLayout->addWidget(new CValueControl("AChangeCost", "A_CHANGE_COST(150)", "적으면 선행차에 대한 반응이 강해집니다. ", "../assets/offroad/icon_road.png", 20, 400, 10));
     toggleLayout->addWidget(new CValueControl("DangerZoneCost", "DANGER_ZONE_COST(100)", "", "../assets/offroad/icon_road.png", 0, 400, 10));
     toggleLayout->addWidget(horizontal_line());
-    
+    toggleLayout->addWidget(new CValueControl("MaxCruiseVals1", "가속설정:0km/h(200)", "속도별 가속도.(x0.01m/s^2)", "../assets/offroad/icon_road.png", 1, 300, 5));
+    toggleLayout->addWidget(new CValueControl("MaxCruiseVals2", "가속설정:40km/h(150)", "속도별 가속도.(x0.01m/s^2)", "../assets/offroad/icon_road.png", 1, 300, 5));
+    toggleLayout->addWidget(new CValueControl("MaxCruiseVals3", "가속설정:70km/h(50)", "속도별 가속도.(x0.01m/s^2)", "../assets/offroad/icon_road.png", 1, 300, 5));
+    toggleLayout->addWidget(new CValueControl("MaxCruiseVals4", "가속설정:100km/h(20)", "속도별 가속도.(x0.01m/s^2)", "../assets/offroad/icon_road.png", 1, 300, 5));
+    toggleLayout->addWidget(new CValueControl("MaxCruiseVals5", "가속설정:140km/h(15)", "속도별 가속도.(x0.01m/s^2)", "../assets/offroad/icon_road.png", 1, 300, 5));
+    toggleLayout->addWidget(horizontal_line());
     toggleLayout->addWidget(new ParamControl("ApplyLongDynamicCost", "차량간격유지 응답속도(OFF)", "전방차량의 간격을 최대한 유지하도록 응답속도가 빨라집니다.", "../assets/offroad/icon_road.png", this));
     toggleLayout->addWidget(new CValueControl("ApplyDynamicTFollow", "차량간격제어:상대속도-(110%)", "선행차와 점점 가까와지면 차량거리를 안전하게 증가시키도록 합니다.", "../assets/offroad/icon_road.png", 100, 300, 1));
     toggleLayout->addWidget(new CValueControl("ApplyDynamicTFollowApart", "차량간격제어:상대속도+(95%)", "선행차와 점점 멀어지면 차량거리를 줄이도록 합니다.", "../assets/offroad/icon_road.png", 20, 100, 1 ));
