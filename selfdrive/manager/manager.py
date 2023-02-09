@@ -103,6 +103,8 @@ def manager_init() -> None:
     ("CruiseMaxVals3", "50"),
     ("CruiseMaxVals4", "20"),
     ("CruiseMaxVals5", "15"),
+    ("AutoNaviSpeedCtrlStart", "22"),
+    ("AutoNaviSpeedCtrlEnd", "6"),
     ("PutPrebuilt", "0"), 
   ]
   if not PC:
