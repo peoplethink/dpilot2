@@ -242,6 +242,8 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"CruiseMaxVals3", PERSISTENT},
     {"CruiseMaxVals4", PERSISTENT},
     {"CruiseMaxVals5", PERSISTENT},
+    {"AutoNaviSpeedCtrlStart", PERSISTENT},
+    {"AutoNaviSpeedCtrlEnd", PERSISTENT},
     {"Compass", PERSISTENT},
 };
 
