@@ -287,7 +287,7 @@ class RoadSpeedLimiter:
       return self.roadLimitSpeed.active
     return 0
 
-  def get_max_speed(self, cluster_speed, is_metric):
+  def get_max_speed(self, cluster_speed, is_metric, autoNaviSpeedCtrlStart=22, autoNaviSpeedCtrlEnd=6):
 
     log = ""
     self.recv()
@@ -333,12 +333,12 @@ class RoadSpeedLimiter:
         diff_speed = cluster_speed - (cam_limit_speed * camSpeedFactor)
         #cam_limit_speed_ms = cam_limit_speed * (CV.KPH_TO_MS if is_metric else CV.MPH_TO_MS)
 
-        starting_dist = v_ego * 22.
+        starting_dist = v_ego * autoNaviSpeedCtrlStart
 
         if cam_type == 22:
           safe_dist = v_ego * 3.
         else:
-          safe_dist = v_ego * 6.
+          safe_dist = v_ego * autoNaviSpeedCtrlEnd
 
         if MIN_LIMIT <= cam_limit_speed <= MAX_LIMIT and (self.slowing_down or cam_limit_speed_left_dist < starting_dist):
           if not self.slowing_down:
