@@ -6,7 +6,7 @@ from common.params import Params
 LaneChangeState = log.LateralPlan.LaneChangeState
 LaneChangeDirection = log.LateralPlan.LaneChangeDirection
 
-LANE_CHANGE_SPEED_MIN = self.laneChange * CV.KPH_TO_MS
+LANE_CHANGE_SPEED_MIN = laneChange * CV.KPH_TO_MS
 LANE_CHANGE_TIME_MAX = 10.
 
 DESIRES = {
