@@ -1,13 +1,12 @@
 from cereal import log
 from common.realtime import DT_MDL
 from common.conversions import Conversions as CV
-from common.params import Params, put_nonblocking
+from common.params import Params
 
 LaneChangeState = log.LateralPlan.LaneChangeState
 LaneChangeDirection = log.LateralPlan.LaneChangeDirection
 
-lanechangeset = float(int(Params().get("Lane_Change", encoding="utf8")))
-LANE_CHANGE_SPEED_MIN = lanechangeset * CV.KPH_TO_MS
+LANE_CHANGE_SPEED_MIN = self.laneChange * CV.KPH_TO_MS
 LANE_CHANGE_TIME_MAX = 10.
 
 DESIRES = {
@@ -43,7 +42,15 @@ class DesireHelper:
     self.desire = log.LateralPlan.Desire.none
     self.lane_change_wait_timer = 0
     self.ready_to_change = False
+    
+    self.params_count = 0
+    self.laneChange = float(int(Params().get("LaneChange", encoding="utf8"))) / 100.
 
+  def update_params(self):
+    self.params_count = (self.params_count + 1) % 200
+    if self.params_count == 50:
+      self.laneChange = float(int(Params().get("LaneChange", encoding="utf8"))) / 100.
+      
   def update(self, carstate, lat_active, lane_change_prob, md):
     lane_change_set_timer = int(Params().get("AutoLaneChangeTimer", encoding="utf8"))
     lane_change_auto_timer = 0.0 if lane_change_set_timer == 0 else 0.2 if lane_change_set_timer == 1 else \
