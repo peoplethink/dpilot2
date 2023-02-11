@@ -46,7 +46,7 @@ class DesireHelper:
 
   def update(self, carstate, lat_active, lane_change_prob, md):
     lane_change_set_timer = int(Params().get("AutoLaneChangeTimer", encoding="utf8"))
-    lane_change_auto_timer = 0.0 if lane_change_set_timer == 0 else 0.1 if lane_change_set_timer == 1 else \
+    lane_change_auto_timer = 0.0 if lane_change_set_timer == 0 else 0.2 if lane_change_set_timer == 1 else \
                              0.5 if lane_change_set_timer == 2 else 1.0 if lane_change_set_timer == 3 else \
                              1.5 if lane_change_set_timer == 4 else 2.0
     v_ego = carstate.vEgo
@@ -91,7 +91,7 @@ class DesireHelper:
       # LaneChangeState.laneChangeStarting
       elif self.lane_change_state == LaneChangeState.laneChangeStarting:
         # fade out over .5s
-        self.lane_change_ll_prob = max(self.lane_change_ll_prob - 1.5 * DT_MDL, 0.0)
+        self.lane_change_ll_prob = max(self.lane_change_ll_prob - 2.0 * DT_MDL, 0.0)
 
         # 98% certainty
         if lane_change_prob < 0.02 and self.lane_change_ll_prob < 0.01:
