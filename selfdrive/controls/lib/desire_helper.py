@@ -6,12 +6,8 @@ from common.params import Params, put_nonblocking
 LaneChangeState = log.LateralPlan.LaneChangeState
 LaneChangeDirection = log.LateralPlan.LaneChangeDirection
 
-<<<<<<< HEAD
-LANE_CHANGE_SPEED_MIN = laneChange * CV.KPH_TO_MS
-=======
 lanechangeset = float(int(Params().get("Lane_Change", encoding="utf8")))
 LANE_CHANGE_SPEED_MIN = lanechangeset * CV.KPH_TO_MS
->>>>>>> parent of 32630b15 (Update desire_helper.py)
 LANE_CHANGE_TIME_MAX = 10.
 
 DESIRES = {
