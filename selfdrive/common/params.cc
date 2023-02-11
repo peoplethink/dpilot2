@@ -225,7 +225,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"SccStartingCost", PERSISTENT},
     {"Steer_SRTune", PERSISTENT},
     {"Steer_SRTune_v", PERSISTENT},
-    {"Lane_Change", PERSISTENT},
+    {"LaneChange", PERSISTENT},
     {"SteerDeltaUp", PERSISTENT},
     {"SteerDeltaDown", PERSISTENT},
     {"PathOffset", PERSISTENT},
