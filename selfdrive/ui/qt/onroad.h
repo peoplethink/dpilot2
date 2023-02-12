@@ -150,6 +150,8 @@ protected:
   const int radius = 192;
   const int img_size = (radius / 2) * 1.5;
   
+  uint64_t last_update_params;
+
   float m_cur_speed = 0;
   
 signals:
