@@ -117,6 +117,8 @@ protected:
   double prev_draw_t = 0;
   FirstOrderFilter fps_filter;
   
+  uint64_t last_update_params;
+  
   // neokii
   QPixmap ic_brake;
   QPixmap ic_autohold_warning;
@@ -149,8 +151,6 @@ protected:
   
   const int radius = 192;
   const int img_size = (radius / 2) * 1.5;
-  
-  uint64_t last_update_params;
 
   float m_cur_speed = 0;
   
