@@ -461,7 +461,7 @@ void OnroadHud::drawCompass(QPainter &p, int x, int y, QPixmap &img, QBrush bg, 
 
 // NvgWindow
 
-NvgWindow::NvgWindow(VisionStreamType type, QWidget* parent) : fps_filter(UI_FREQ, 3, 1. / UI_FREQ), CameraViewWidget("camerad", type, true, parent) {
+NvgWindow::NvgWindow(VisionStreamType type, QWidget* parent) : last_update_params(0), fps_filter(UI_FREQ, 3, 1. / UI_FREQ), CameraViewWidget("camerad", type, true, parent) {
 
 }
 
@@ -682,7 +682,12 @@ void NvgWindow::paintGL() {
 void NvgWindow::showEvent(QShowEvent *event) {
   CameraViewWidget::showEvent(event);
 
-  ui_update_params(uiState());
+  auto now = millis_since_boot();
+  if(now - last_update_params > 1000*5) {
+    last_update_params = now;
+    ui_update_params(uiState());
+  }
+  
   prev_draw_t = millis_since_boot();
 }
 
