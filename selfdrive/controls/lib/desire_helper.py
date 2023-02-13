@@ -6,8 +6,12 @@ from common.params import Params
 LaneChangeState = log.LateralPlan.LaneChangeState
 LaneChangeDirection = log.LateralPlan.LaneChangeDirection
 
-lanechangeset = float(int(Params().get("Lane_Change", encoding="utf8")))
-LANE_CHANGE_SPEED_MIN = 40 * CV.KPH_TO_MS
+if int(Params().get("LaneChangeSpeed", encoding="utf8")) < 1:
+  LANE_CHANGE_SPEED_MIN = -1
+elif Params().get_bool("IsMetric"):
+  LANE_CHANGE_SPEED_MIN = float(int(Params().get("LaneChangeSpeed", encoding="utf8")) * CV.KPH_TO_MS)
+else:
+  LANE_CHANGE_SPEED_MIN = float(int(Params().get("LaneChangeSpeed", encoding="utf8")) * CV.MPH_TO_MS)
 LANE_CHANGE_TIME_MAX = 10.
 
 DESIRES = {
