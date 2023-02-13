@@ -817,7 +817,7 @@ TUNINGPanel::TUNINGPanel(QWidget* parent) : QWidget(parent) {
     toggleLayout->addWidget(new CValueControl("Steer_SRTune_v", "SR가변 비율", "SR가변시 비율값.", "../assets/offroad/icon_road.png", 80, 120, 1));
     toggleLayout->addWidget(new CValueControl("SteerDeltaUp", "SteerDeltaUp(3)", "", "../assets/offroad/icon_road.png", 1, 20, 1));
     toggleLayout->addWidget(new CValueControl("SteerDeltaDown", "SteerDeltaDown(7)", "", "../assets/offroad/icon_road.png", 1, 20, 1));
-    toggleLayout->addWidget(new CValueControl("Lane_Change", "차선변경 속도", "자동 차선 변경 가능 속도.", "../assets/offroad/icon_road.png", 0, 200, 5));
+    toggleLayout->addWidget(new LaneChangeSpeed());
     toggleLayout->addWidget(new AutoLaneChangeTimer());
     toggleLayout->addWidget(new CValueControl("PathOffset", "차선 좌우보정", "좌측이동(-), 우측이동(+)", "../assets/offroad/icon_road.png", -200, 200, 1));
     toggleLayout->addWidget(horizontal_line());
@@ -1003,6 +1003,71 @@ void AutoLaneChangeTimer::refresh() {
   }
   btnminus.setText("-");
   btnplus.setText("+");
+}
+
+//LaneChangeSpeed
+LaneChangeSpeed::LaneChangeSpeed() : AbstractControl(tr("LaneChange On/Off/Spd"), tr("On/Off lane change(push (-) btn till Off value) and set the lane changeable speed. This value can be kph or mph."), "../assets/offroad/icon_shell.png") {
+
+  label.setAlignment(Qt::AlignVCenter|Qt::AlignRight);
+  label.setStyleSheet("color: #e0e879");
+  hlayout->addWidget(&label);
+
+  btnminus.setStyleSheet(R"(
+    padding: 0;
+    border-radius: 50px;
+    font-size: 35px;
+    font-weight: 500;
+    color: #E4E4E4;
+    background-color: #393939;
+  )");
+  btnplus.setStyleSheet(R"(
+    padding: 0;
+    border-radius: 50px;
+    font-size: 35px;
+    font-weight: 500;
+    color: #E4E4E4;
+    background-color: #393939;
+  )");
+  btnminus.setFixedSize(150, 100);
+  btnplus.setFixedSize(150, 100);
+  btnminus.setText("－");
+  btnplus.setText("＋");
+  hlayout->addWidget(&btnminus);
+  hlayout->addWidget(&btnplus);
+
+  QObject::connect(&btnminus, &QPushButton::clicked, [=]() {
+    auto str = QString::fromStdString(params.get("LaneChangeSpeed"));
+    int value = str.toInt();
+    value = value - 1;
+    if (value <= -1) {
+      value = 100;
+    }
+    QString values = QString::number(value);
+    params.put("LaneChangeSpeed", values.toStdString());
+    refresh();
+  });
+  
+  QObject::connect(&btnplus, &QPushButton::clicked, [=]() {
+    auto str = QString::fromStdString(params.get("LaneChangeSpeed"));
+    int value = str.toInt();
+    value = value + 1;
+    if (value >= 101) {
+      value = 0;
+    }
+    QString values = QString::number(value);
+    params.put("LaneChangeSpeed", values.toStdString());
+    refresh();
+  });
+  refresh();
+}
+
+void LaneChangeSpeed::refresh() {
+  QString option = QString::fromStdString(params.get("LaneChangeSpeed"));
+  if (option == "0") {
+    label.setText(tr("Off"));
+  } else {
+    label.setText(QString::fromStdString(params.get("LaneChangeSpeed")));
+  }
 }
 
 // Lane Lines Width
