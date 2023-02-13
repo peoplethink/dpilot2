@@ -2,6 +2,7 @@ from cereal import log
 from common.realtime import DT_MDL
 from common.conversions import Conversions as CV
 from common.params import Params
+from common.numpy_fast import interp
 
 LaneChangeState = log.LateralPlan.LaneChangeState
 LaneChangeDirection = log.LateralPlan.LaneChangeDirection
@@ -45,14 +46,15 @@ class DesireHelper:
     self.keep_pulse_timer = 0.0
     self.prev_one_blinker = False
     self.desire = log.LateralPlan.Desire.none
-    self.lane_change_wait_timer = 0
+    
+    self.lane_change_set_timer = int(Params().get("AutoLaneChangeTimer", encoding="utf8"))
+    self.lane_change_auto_timer = 0.0 if self.lane_change_set_timer == 0 else 0.2 if self.lane_change_set_timer == 1 else 0.5 if self.lane_change_set_timer == 2 \
+      else 1.0 if self.lane_change_set_timer == 3 else 1.5 if self.lane_change_set_timer == 4 else 2.0
+    
+    self.lane_change_wait_timer = 0.0
     self.ready_to_change = False
-
+    
   def update(self, carstate, lat_active, lane_change_prob, md):
-    lane_change_set_timer = int(Params().get("AutoLaneChangeTimer", encoding="utf8"))
-    lane_change_auto_timer = 0.0 if lane_change_set_timer == 0 else 0.2 if lane_change_set_timer == 1 else 0.5 if lane_change_set_timer == 2 \
-      else 1.0 if lane_change_set_timer == 3 else 1.5 if lane_change_set_timer == 4 else 2.0
-
     v_ego = carstate.vEgo
     one_blinker = carstate.leftBlinker != carstate.rightBlinker
     below_lane_change_speed = v_ego < LANE_CHANGE_SPEED_MIN
