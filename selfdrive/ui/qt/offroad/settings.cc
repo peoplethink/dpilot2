@@ -1006,7 +1006,9 @@ void AutoLaneChangeTimer::refresh() {
 }
 
 //LaneChangeSpeed
-LaneChangeSpeed::LaneChangeSpeed() : AbstractControl(tr("LaneChange On/Off/Spd"), tr("On/Off lane change(push (-) btn till Off value) and set the lane changeable speed. This value can be kph or mph."), "../assets/offroad/icon_shell.png") {
+LaneChangeSpeed::LaneChangeSpeed() : AbstractControl("LaneChange Speed(km) ",
+                                                     "차선 변경 가능 속도를 조절합니다.",
+                                                     "../assets/offroad/icon_road.png") {
 
   label.setAlignment(Qt::AlignVCenter|Qt::AlignRight);
   label.setStyleSheet("color: #e0e879");
