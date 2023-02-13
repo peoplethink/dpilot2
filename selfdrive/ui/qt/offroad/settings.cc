@@ -1006,9 +1006,9 @@ void AutoLaneChangeTimer::refresh() {
 }
 
 //LaneChangeSpeed
-LaneChangeSpeed::LaneChangeSpeed() : AbstractControl("LaneChange Speed(km) ",
-                                                     "차선 변경 가능 속도를 조절합니다.",
-                                                     "../assets/offroad/icon_road.png") {
+LaneChangeSpeed::LaneChangeSpeed() : AbstractControl("LanChangeSpeed",
+                                                     "On/Off lane change.",
+                                                     "../assets/offroad/icon_shell.png") {
 
   label.setAlignment(Qt::AlignVCenter|Qt::AlignRight);
   label.setStyleSheet("color: #e0e879");
@@ -1038,37 +1038,37 @@ LaneChangeSpeed::LaneChangeSpeed() : AbstractControl("LaneChange Speed(km) ",
   hlayout->addWidget(&btnplus);
 
   QObject::connect(&btnminus, &QPushButton::clicked, [=]() {
-    auto str = QString::fromStdString(params.get("LaneChangeSpeed"));
+    auto str = QString::fromStdString(params.get("OpkrLaneChangeSpeed"));
     int value = str.toInt();
     value = value - 1;
     if (value <= -1) {
       value = 100;
     }
     QString values = QString::number(value);
-    params.put("LaneChangeSpeed", values.toStdString());
+    params.put("OpkrLaneChangeSpeed", values.toStdString());
     refresh();
   });
   
   QObject::connect(&btnplus, &QPushButton::clicked, [=]() {
-    auto str = QString::fromStdString(params.get("LaneChangeSpeed"));
+    auto str = QString::fromStdString(params.get("OpkrLaneChangeSpeed"));
     int value = str.toInt();
     value = value + 1;
     if (value >= 101) {
       value = 0;
     }
     QString values = QString::number(value);
-    params.put("LaneChangeSpeed", values.toStdString());
+    params.put("OpkrLaneChangeSpeed", values.toStdString());
     refresh();
   });
   refresh();
 }
 
 void LaneChangeSpeed::refresh() {
-  QString option = QString::fromStdString(params.get("LaneChangeSpeed"));
+  QString option = QString::fromStdString(params.get("OpkrLaneChangeSpeed"));
   if (option == "0") {
     label.setText(tr("Off"));
   } else {
-    label.setText(QString::fromStdString(params.get("LaneChangeSpeed")));
+    label.setText(QString::fromStdString(params.get("OpkrLaneChangeSpeed")));
   }
 }
 
