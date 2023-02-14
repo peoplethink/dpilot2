@@ -817,8 +817,9 @@ TUNINGPanel::TUNINGPanel(QWidget* parent) : QWidget(parent) {
     toggleLayout->addWidget(new CValueControl("Steer_SRTune_v", "SR가변 비율", "SR가변시 비율값.", "../assets/offroad/icon_road.png", 80, 120, 1));
     toggleLayout->addWidget(new CValueControl("SteerDeltaUp", "SteerDeltaUp(3)", "", "../assets/offroad/icon_road.png", 1, 20, 1));
     toggleLayout->addWidget(new CValueControl("SteerDeltaDown", "SteerDeltaDown(7)", "", "../assets/offroad/icon_road.png", 1, 20, 1));
+    toggleLayout->addWidget(new ParamControl("LaneChangeEnabled", "Enable Lane Change Assist", "Perform assisted lane change", "../assets/offroad/icon_road.png"));
+    toggleLayout->addWidget(new ParamControl("AutoLaneChangeEnabled", "Enable Auto Lane Change", "Automatically changes lanes at turn signal", "../assets/offroad/icon_road.png"));
     toggleLayout->addWidget(new LaneChangeSpeed());
-    toggleLayout->addWidget(new AutoLaneChangeTimer());
     toggleLayout->addWidget(new CValueControl("PathOffset", "차선 좌우보정", "좌측이동(-), 우측이동(+)", "../assets/offroad/icon_road.png", -200, 200, 1));
     toggleLayout->addWidget(horizontal_line());
     toggleLayout->addWidget(new ParamControl("CustomRoadUI", "Custom Road UI", "Personalize the road UI of openpilot.", "../assets/offroad/icon_road.png"));
@@ -928,81 +929,6 @@ void CValueControl::refresh()
     label.setText(QString::fromStdString(Params().get(m_params.toStdString())));
     btnminus.setText("－");
     btnplus.setText("＋");
-}
-
-// Auto Lane Change Timer (ALCT)
-AutoLaneChangeTimer::AutoLaneChangeTimer() : AbstractControl("차선변경 시간조절 ",
-                                                             "차선 자동변경 시간을 조절합니다.",
-                                                             "../assets/offroad/icon_road.png") {
-
-  label.setAlignment(Qt::AlignVCenter|Qt::AlignRight);
-  label.setStyleSheet("color: #e0e879");
-  hlayout->addWidget(&label);
-
-  btnminus.setStyleSheet(R"(
-    padding: 0;
-    border-radius: 50px;
-    font-size: 50px;
-    font-weight: 500;
-    color: #E4E4E4;
-    background-color: #393939;
-  )");
-  btnplus.setStyleSheet(R"(
-    padding: 0;
-    border-radius: 50px;
-    font-size: 50px;
-    font-weight: 500;
-    color: #E4E4E4;
-    background-color: #393939;
-  )");
-  btnminus.setFixedSize(150, 100);
-  btnplus.setFixedSize(150, 100);
-  hlayout->addWidget(&btnminus);
-  hlayout->addWidget(&btnplus);
-
-  QObject::connect(&btnminus, &QPushButton::clicked, [=]() {
-    auto str = QString::fromStdString(params.get("AutoLaneChangeTimer"));
-    int value = str.toInt();
-    value = value - 1;
-    if (value <= 0 ) {
-      value = 0;
-    }
-    QString values = QString::number(value);
-    params.put("AutoLaneChangeTimer", values.toStdString());
-    refresh();
-  });
-
-  QObject::connect(&btnplus, &QPushButton::clicked, [=]() {
-    auto str = QString::fromStdString(params.get("AutoLaneChangeTimer"));
-    int value = str.toInt();
-    value = value + 1;
-    if (value >= 5 ) {
-      value = 5;
-    }
-    QString values = QString::number(value);
-    params.put("AutoLaneChangeTimer", values.toStdString());
-    refresh();
-  });
-  refresh();
-}
-
-void AutoLaneChangeTimer::refresh() {
-  QString option = QString::fromStdString(params.get("AutoLaneChangeTimer"));
-  if (option == "0") {
-    label.setText(QString::fromStdString("Nudge"));
-  } else if (option == "1") {
-    label.setText(QString::fromStdString("Ngless"));
-  } else if (option == "2") {
-    label.setText(QString::fromStdString("0.5s"));
-  } else if (option == "3") {
-    label.setText(QString::fromStdString("1s"));
-  } else if (option == "4") {
-    label.setText(QString::fromStdString("1.5s"));
-  } else {
-    label.setText(QString::fromStdString("2s"));
-  }
-  btnminus.setText("-");
-  btnplus.setText("+");
 }
 
 //LaneChangeSpeed
