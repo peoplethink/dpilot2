@@ -303,11 +303,9 @@ class Controls:
         self.events.add(EventName.laneChangeBlocked)  
       else:
         if direction == LaneChangeDirection.left:
-          self.events.add(EventName.preLaneChangeLeft) if lane_change_set_timer == 0 else \
-            self.events.add(EventName.laneChange)
+          self.events.add(EventName.preLaneChangeLeft)
         else:
-          self.events.add(EventName.preLaneChangeRight) if lane_change_set_timer == 0 else \
-            self.events.add(EventName.laneChange)
+          self.events.add(EventName.preLaneChangeRight)
     elif self.sm['lateralPlan'].laneChangeState in (LaneChangeState.laneChangeStarting,
                                                     LaneChangeState.laneChangeFinishing):
       self.events.add(EventName.laneChange)
