@@ -147,7 +147,7 @@ class CarController:
 
     # Cut steer actuation bit for two frames and hold torque with induced temporary fault
     torque_fault = lkas_active and self.angle_limit_counter > MAX_ANGLE_FRAMES
-    lat_active = lkas_active # and not torque_fault
+    lat_active = lkas_active and not torque_fault
 
     if self.angle_limit_counter >= MAX_ANGLE_FRAMES + MAX_ANGLE_CONSECUTIVE_FRAMES:
       self.angle_limit_counter = 0
