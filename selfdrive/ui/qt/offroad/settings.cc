@@ -817,8 +817,6 @@ TUNINGPanel::TUNINGPanel(QWidget* parent) : QWidget(parent) {
     toggleLayout->addWidget(new CValueControl("Steer_SRTune_v", "SR가변 비율", "SR가변시 비율값.", "../assets/offroad/icon_road.png", 80, 120, 1));
     toggleLayout->addWidget(new CValueControl("SteerDeltaUp", "SteerDeltaUp(3)", "", "../assets/offroad/icon_road.png", 1, 20, 1));
     toggleLayout->addWidget(new CValueControl("SteerDeltaDown", "SteerDeltaDown(7)", "", "../assets/offroad/icon_road.png", 1, 20, 1));
-    toggleLayout->addWidget(new ParamControl("LaneChangeEnabled", "Enable Lane Change Assist", "Perform assisted lane change", "../assets/offroad/icon_road.png"));
-    toggleLayout->addWidget(new ParamControl("AutoLaneChangeEnabled", "Enable Auto Lane Change", "Automatically changes lanes at turn signal", "../assets/offroad/icon_road.png"));
     toggleLayout->addWidget(new LaneChangeSpeed());
     toggleLayout->addWidget(new CValueControl("PathOffset", "차선 좌우보정", "좌측이동(-), 우측이동(+)", "../assets/offroad/icon_road.png", -200, 200, 1));
     toggleLayout->addWidget(horizontal_line());
