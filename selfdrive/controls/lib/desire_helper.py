@@ -47,8 +47,8 @@ class DesireHelper:
     self.prev_one_blinker = False
     self.desire = log.LateralPlan.Desire.none
     
-    self.lane_change_enabled = Params().get_bool('LaneChangeEnabled')
-    self.auto_lane_change_enabled = Params().get_bool('AutoLaneChangeEnabled')
+    self.lane_change_enabled = True #Params().get_bool('LaneChangeEnabled')
+    self.auto_lane_change_enabled = True #Params().get_bool('AutoLaneChangeEnabled')
     self.auto_lane_change_timer = 0.0
     self.prev_torque_applied = False
     
@@ -66,11 +66,6 @@ class DesireHelper:
     else:
       # LaneChangeState.off
       if self.lane_change_state == LaneChangeState.off and one_blinker and not self.prev_one_blinker and not below_lane_change_speed:
-        if carstate.leftBlinker:
-          self.lane_change_direction = LaneChangeDirection.left
-        elif carstate.rightBlinker:
-          self.lane_change_direction = LaneChangeDirection.right
-          
         self.lane_change_state = LaneChangeState.preLaneChange
         self.lane_change_ll_prob = 1.0
 
@@ -94,7 +89,7 @@ class DesireHelper:
         
         if not one_blinker or below_lane_change_speed:
           self.lane_change_state = LaneChangeState.off
-        elif torque_applied and (not blindspot_detected or self.prev_torque_applied) and (not road_edge_detected):
+        elif torque_applied and (not blindspot_detected or self.prev_torque_applied) and not road_edge_detected:
           self.lane_change_state = LaneChangeState.laneChangeStarting
         elif torque_applied and blindspot_detected and self.auto_lane_change_timer != 10.0:
           self.auto_lane_change_timer = 10.0
