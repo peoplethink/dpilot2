@@ -268,9 +268,9 @@ class LongitudinalMpc:
     TFs = [1.0, 1.25, T_FOLLOW, 1.8]
     # KRKeegan adjustments to costs for different TFs
     # these were calculated using the test_longitudial.py deceleration tests
-    a_change_tf = interp(self.desired_TF, TFs, [.025, .2, .25])
-    j_ego_tf = interp(self.desired_TF, TFs, [.15, .2, .25])
-    d_zone_tf = interp(self.desired_TF, TFs, [.4, .3, .2])
+    a_change_tf = interp(self.desired_TF, TFs, [.1, .8, 1., 1.1])
+    j_ego_tf = interp(self.desired_TF, TFs, [.6, .8, 1., 1.1])
+    d_zone_tf = interp(self.desired_TF, TFs, [1.6, 1.3, 1., 1.])
     # KRKeegan adjustments to improve sluggish acceleration
     # do not apply to deceleration
     j_ego_v_ego = 1
@@ -362,7 +362,7 @@ class LongitudinalMpc:
   def update_TF(self, carstate):
     cruise_gap = int(clip(carstate.cruiseGap, 1., 4.))
     if cruise_gap == 1:
-      self.desired_TF = 0.8
+      self.desired_TF = 1.0
     elif cruise_gap == 2:
       self.desired_TF = 1.2
     elif cruise_gap == 3:
@@ -371,7 +371,7 @@ class LongitudinalMpc:
       self.desired_TF = np.interp(carstate.vEgo, x_vel, y_dist)
     elif cruise_gap == 4:
       x_vel = [0., 30.*CV.KPH_TO_MS, 70.*CV.KPH_TO_MS, 110.*CV.KPH_TO_MS]
-      y_dist = [0.9, 1.1, 1.2, 1.45]
+      y_dist = [1.0, 1.1, 1.2, 1.45]
       self.desired_TF = np.interp(carstate.vEgo, x_vel, y_dist)
 
   def update(self, carstate, radarstate, v_cruise, prev_accel_constraint):
