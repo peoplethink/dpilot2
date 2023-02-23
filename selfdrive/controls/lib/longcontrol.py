@@ -119,7 +119,7 @@ class LongControl:
     elif self.long_control_state == LongCtrlState.stopping:
       # Keep applying brakes until the car is stopped
       if not CS.standstill or output_accel > self.CP.stopAccel:
-        output_accel -= self.CP.stoppingDecelRate * DT_CTRL
+        output_accel -= self.stoppingDecelRate * DT_CTRL
       output_accel = clip(output_accel, accel_limits[0], accel_limits[1])
       self.reset(CS.vEgo)
 
