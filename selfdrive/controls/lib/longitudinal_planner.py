@@ -23,9 +23,6 @@ A_CRUISE_MIN = -1.2
 A_CRUISE_MAX_VALS = [2.0, 1.4, 0.6, 0.5, 0.2, 0.15]
 A_CRUISE_MAX_BP = [0., 40 * CV.KPH_TO_MS, 60 * CV.KPH_TO_MS, 80 * CV.KPH_TO_MS, 110 * CV.KPH_TO_MS, 140 * CV.KPH_TO_MS]
 
-A_CRUISE_MIN_VALS = [-0.65,  -0.60,  -0.70, -0.70,  -0.65, -0.65]
-A_CRUISE_MIN_BP = [0., 40 * CV.KPH_TO_MS, 60 * CV.KPH_TO_MS, 80 * CV.KPH_TO_MS, 110 * CV.KPH_TO_MS, 140 * CV.KPH_TO_MS]
- 
 # Lookup table for turns
 _A_TOTAL_MAX_V = [1.7, 3.2]
 _A_TOTAL_MAX_BP = [20., 40.]
@@ -33,9 +30,6 @@ _A_TOTAL_MAX_BP = [20., 40.]
 
 def get_max_accel(v_ego):
   return interp(v_ego, A_CRUISE_MAX_BP, A_CRUISE_MAX_VALS)
-
-def get_min_accel(v_ego):
-  return interp(v_ego, A_CRUISE_MIN_BP, A_CRUISE_MIN_VALS)
 
 def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
   """
@@ -120,7 +114,7 @@ class Planner:
     # No change cost when user is controlling the speed, or when standstill
     prev_accel_constraint = not (reset_state or sm['carState'].standstill)
     
-    accel_limits = [get_min_accel(v_ego), self.get_max_accel(v_ego)]
+    accel_limits = [A_CRUISE_MIN, self.get_max_accel(v_ego)]
     accel_limits_turns = limit_accel_in_turns(v_ego, sm['carState'].steeringAngleDeg, accel_limits, self.CP)
 
     if reset_state:
