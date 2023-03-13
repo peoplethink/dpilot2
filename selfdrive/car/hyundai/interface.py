@@ -21,7 +21,7 @@ class CarInterface(CarInterfaceBase):
   def __init__(self, CP, CarController, CarState):
     super().__init__(CP, CarController, CarState)
     self.cp2 = self.CS.get_can2_parser(CP)
-	
+
   @staticmethod
   def get_pid_accel_limits(CP, current_speed, cruise_speed):
     v_current_kph = current_speed * CV.MS_TO_KPH
@@ -92,7 +92,7 @@ class CarInterface(CarInterfaceBase):
         set_torque_tune(ret.lateralTuning, torque_params['LAT_ACCEL_FACTOR'], torque_params['FRICTION'])
 
 
-    ret.steerActuatorDelay = 0.1
+    ret.steerActuatorDelay = 0.12
     ret.steerLimitTimer = 0.8
     ret.steerRatio = 15.8
 	
@@ -438,8 +438,6 @@ class CarInterface(CarInterfaceBase):
       events.add(EventName.belowSteerSpeed)
     if self.CC.turning_indicator_alert:
       events.add(EventName.turningIndicatorOn)
-    if self.CS.dhmdps_err == 1 and Params().get_bool('Sound_Mdpserr'):
-      events.add(EventName.mdpserr)
 
   # handle button presses
     for b in ret.buttonEvents:

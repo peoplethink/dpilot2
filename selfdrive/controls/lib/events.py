@@ -571,16 +571,6 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
     ET.NO_ENTRY: NoEntryAlert("Brake Hold Active"),
   },
 
-  EventName.mdpserr: {
-    ET.PERMANENT: Alert(
-      "MDPS ERROR",
-      "MDPS 복구버튼을 누르세요!",
-      AlertStatus.critical, AlertSize.small,
-      Priority.LOW, VisualAlert.none, AudibleAlert.prompt, .2),
-      #AlertStatus.normal, AlertSize.full,
-      #Priority.MID, VisualAlert.none, AudibleAlert.prompt, 2.),
-  },
-  
   EventName.parkBrake: {
     ET.USER_DISABLE: EngagementAlert(AudibleAlert.disengage),
     ET.NO_ENTRY: NoEntryAlert("Parking Brake Engaged"),

@@ -486,6 +486,8 @@ void NvgWindow::initializeGL() {
   ic_turn_signal_r = QPixmap("../assets/images/turn_signal_r.png");
   ic_satellite = QPixmap("../assets/images/satellite.png");
   ic_scc2 = QPixmap("../assets/images/img_scc2.png");
+  ic_radar = QPixmap("../assets/images/radar.png");
+  ic_radar_vision = QPixmap("../assets/images/radar_vision.png");
 }
 
 void NvgWindow::updateFrameMat(int w, int h) {
@@ -597,11 +599,12 @@ void NvgWindow::drawLaneLines(QPainter &painter, const UIState *s) {
 void NvgWindow::drawLead(QPainter &painter, const cereal::ModelDataV2::LeadDataV3::Reader &lead_data, const QPointF &vd, bool is_radar) {
   painter.save();
 	
-  const float speedBuff = 10.;
-  const float leadBuff = 40.;
+  //const float speedBuff = 10.;
+  //const float leadBuff = 40.;
   const float d_rel = lead_data.getX()[0];
-  const float v_rel = lead_data.getV()[0];
+  //const float v_rel = lead_data.getV()[0];
 
+  /*
   float fillAlpha = 0;
   if (d_rel < leadBuff) {
     fillAlpha = 255 * (1.0 - (d_rel / leadBuff));
@@ -610,22 +613,23 @@ void NvgWindow::drawLead(QPainter &painter, const cereal::ModelDataV2::LeadDataV
     }
     fillAlpha = (int)(fmin(fillAlpha, 255));
   }
-
+  */
+	
   float sz = std::clamp((25 * 30) / (d_rel / 3 + 30), 15.0f, 30.0f) * 2.35;
   float x = std::clamp((float)vd.x(), 0.f, width() - sz / 2);
   float y = std::fmin(height() - sz * .6, (float)vd.y());
 
-  float g_xo = sz / 5;
-  float g_yo = sz / 10;
+  //float g_xo = sz / 5;
+  //float g_yo = sz / 10;
 	
-  QPointF glow[] = {{x + (sz * 1.35) + g_xo, y + sz + g_yo}, {x, y - g_yo}, {x - (sz * 1.35) - g_xo, y + sz + g_yo}};
-  painter.setBrush(is_radar ? QColor(86, 121, 216, 255) : QColor(218, 202, 37, 255));
-  painter.drawPolygon(glow, std::size(glow));
+  //QPointF glow[] = {{x + (sz * 1.35) + g_xo, y + sz + g_yo}, {x, y - g_yo}, {x - (sz * 1.35) - g_xo, y + sz + g_yo}};
+  //painter.setBrush(is_radar ? QColor(86, 121, 216, 255) : QColor(218, 202, 37, 255));
+  //painter.drawPolygon(glow, std::size(glow));
 
   // chevron
-  QPointF chevron[] = {{x + (sz * 1.25), y + sz}, {x, y}, {x - (sz * 1.25), y + sz}};
-  painter.setBrush(redColor(fillAlpha));
-  painter.drawPolygon(chevron, std::size(chevron));
+  //QPointF chevron[] = {{x + (sz * 1.25), y + sz}, {x, y}, {x - (sz * 1.25), y + sz}};
+  //painter.setBrush(redColor(fillAlpha));
+  //painter.drawPolygon(chevron, std::size(chevron));
   
   UIState* s = uiState();
   SubMaster& sm = *(s->sm);
@@ -634,23 +638,32 @@ void NvgWindow::drawLead(QPainter &painter, const cereal::ModelDataV2::LeadDataV
   bool radar_detected = lead_radar.getStatus() && lead_radar.getRadar();
   float radar_dist = radar_detected ? lead_radar.getDRel() : 0;
   float vision_dist = lead_one.getProb() > .5 ? (lead_one.getX()[0] - 0) : 0;
+  float disp_dist = (radar_detected) ? radar_dist : vision_dist;
 
   QString str;
-  str.sprintf("%.1fm", radar_detected ? radar_dist : vision_dist);
-  QColor textColor = QColor(255, 255, 255, 250);
-  configFont(painter, "Inter", 50, "Bold");
-  drawTextWithColor(painter, x, y + sz / 1.5f + 80.0, str, textColor);
+  //str.sprintf("%.1fm", radar_detected ? radar_dist : vision_dist);
+  QColor textColor = QColor(255, 255, 255, 255);
+  //configFont(painter, "Inter", 50, "Bold");
+  //drawTextWithColor(painter, x, y + sz / 1.5f + 80.0, str, textColor);
 
-  /*if (radar_detected) {
+  if (radar_detected) {
       float radar_rel_speed = lead_radar.getVRel();
-      str.sprintf("%.0fkm/h", m_cur_speed + radar_rel_speed * 3.6);
-      if (radar_rel_speed < -0.1) textColor = QColor(255, 105, 180, 200);
-      else if (radar_rel_speed > 0.1) textColor = QColor(0, 255, 0, 200);
-      else textColor = QColor(255, 255, 255, 200);
-      configFont(painter, "Inter", 60, "Bold");
-      drawTextWithColor(painter, x, y + sz / 1.5f + 80.0, str, textColor);
+      //str.sprintf("%.0fkm/h", m_cur_speed + radar_rel_speed * 3.6);
+      if (radar_rel_speed < -0.1) textColor = QColor(255, 255, 255, 255);
+      else if (radar_rel_speed > 0.1) textColor = QColor(255, 255, 255, 255);
+      else textColor = QColor(255, 255, 255, 255);
+      //configFont(painter, "Inter", 60, "Bold");
+      //drawTextWithColor(painter, x, y + sz / 1.5f + 80.0, str, textColor);
   }
-  */
+  painter.setOpacity(1.0);
+  int size = 240;
+  painter.drawPixmap(x - size / 2, y - size / 2, size, size, (radar_detected) ? ic_radar : ic_radar_vision);
+  configFont(painter, "Inter", 60, "Bold");
+  if(disp_dist<10.0) str.sprintf("%.1f", disp_dist);
+  else str.sprintf("%.0f", disp_dist);
+  drawTextWithColor(painter, x, y + 22.0, str, textColor);
+	
+	
   painter.restore();
 }
 
@@ -889,6 +902,27 @@ void NvgWindow::drawBottomIcons(QPainter &p) {
 
   configFont(p, "Open Sans", textSize, "Bold");
   drawTextWithColor(p, x-290, y+135, str, textColor);
+	
+ // Accel표시
+  float accel = car_state.getAEgo();  
+  float dx = 138 + 1330;
+#ifdef __TEST  
+  static float accel1 = 0.0;
+  accel1 += 0.2;
+  if (accel1 > 2.5) accel1 = -2.5;
+  accel = accel1;
+#endif	
+  //QRect rectAccel(x + dx, y - 550, 35, 1100);
+  //painter.setPen(Qt::NoPen);
+  //p.setPen(QPen(Qt::white, 2));
+  //p.setBrush(blackColor(150));
+  //p.drawRect(rectAccel);
+  QRect rectAccelPos(x + dx, y - 375, 35, -std::clamp((float)accel, -2.0f, 2.0f) / 2. * 550);
+  p.setBrush((accel>=0.0)?greenColor(255):redColor(255));
+  p.drawRect(rectAccelPos);
+  //textColor = whiteColor(200);
+  //configFont(p, "Inter", 25, "Bold");
+  //drawTextWithColor(p, x +dx+20, y - 135, "", textColor);
 	
   if (s->show_datetime && width() > 1200) {
       // ajouatom: 현재시간표시

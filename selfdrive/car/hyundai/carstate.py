@@ -36,8 +36,6 @@ class CarState(CarStateBase):
     self.cruise_main_button = 0
     self.mdps_error_cnt = 0
     self.cruise_unavail_cnt = 0
-    
-    self.dhmdps_err = 0
 
     self.apply_steer = 0.
 
@@ -120,7 +118,6 @@ class CarState(CarStateBase):
     ret.steeringTorque = cp_mdps.vl["MDPS12"]["CR_Mdps_StrColTq"]
     ret.steeringTorqueEps = cp_mdps.vl["MDPS12"]["CR_Mdps_OutTq"] / 10.  # scale to Nm
     ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD
-    self.dhmdps_err = cp.vl["MDPS12"]["CF_Mdps_FailStat"] and cp.vl["MDPS12"]["CF_Mdps_ToiFlt"]
 
     if not ret.standstill and cp_mdps.vl["MDPS12"]["CF_Mdps_ToiUnavail"] != 0:
       self.mdps_error_cnt += 1

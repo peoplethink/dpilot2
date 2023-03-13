@@ -113,6 +113,7 @@ protected:
   inline QColor skyBlueColor(int alpha = 200) { return QColor (135, 206, 230, alpha); }
   inline QColor whiteColor(int alpha = 255) { return QColor(255, 255, 255, alpha); }
   inline QColor tomatoColor(int alpha = 250) { return QColor (255, 99, 71, alpha); }
+  inline QColor yellowColor(int alpha = 255) { return QColor(255, 255, 0, alpha); }
   
   double prev_draw_t = 0;
   FirstOrderFilter fps_filter;
@@ -130,6 +131,8 @@ protected:
   QPixmap ic_turn_signal_r;
   QPixmap ic_satellite;
   QPixmap ic_scc2;
+  QPixmap ic_radar;
+  QPixmap ic_radar_vision;
   
   QMap<QString, QPixmap> ic_oil_com;
   
