@@ -471,10 +471,6 @@ VIPPanel::VIPPanel(QWidget* parent) : QWidget(parent) {
                                             "방향지시등 작동시 상시조향 가능",
                                             "../assets/offroad/icon_openpilot.png",
                                             this));
-  layout->addWidget(new ParamControl("Sound_Mdpserr","MDPS에러 음성 활성화",
-                                            "MDPS 에러 발생시 음성을 끄거나 켭니다.", 
-                                            "../assets/offroad/icon_shell.png", 
-                                            this));
   layout->addWidget(new ParamControl("HapticFeedbackWhenSpeedCamera",
                                             "NDA 카메라 과속시 핸들진동 ",
                                             "NDA 카메라 과속시 핸들진동 선택",
