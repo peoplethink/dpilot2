@@ -133,6 +133,7 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
   const float pwidth = std::stof(Params().get("PathWidth")) / 10 * 0.1524;
   const float llwidth = std::stof(Params().get("LaneLinesWidth")) / 12 * 0.1524;
   const float rewidth = std::stof(Params().get("RoadEdgesWidth")) / 12 * 0.1524;
+  const float blwidth = std::stof(Params().get("BlindspotLineWidth")) / 10 * 0.1524;
 
   // update lane lines
   const auto lane_lines = model.getLaneLines();
@@ -146,8 +147,8 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
   // lane barriers for blind spot
   int max_distance_barrier =  100;
   int max_idx_barrier = std::min(max_idx, get_path_length_idx(lane_lines[0], max_distance_barrier));
-  update_blindspot_data(s, 0, lane_lines[1], 0.9, &scene.lane_blindspot_vertices[0], max_idx_barrier);
-  update_blindspot_data(s, 1, lane_lines[2], 0.9, &scene.lane_blindspot_vertices[1], max_idx_barrier);
+  update_blindspot_data(s, 0, lane_lines[1], isCustomRoadUI ? blwidth : 0.5, &scene.lane_blindspot_vertices[0], max_idx_barrier);
+  update_blindspot_data(s, 1, lane_lines[2], isCustomRoadUI ? blwidth : 0.5, &scene.lane_blindspot_vertices[1], max_idx_barrier);
   
   // update road edges
   const auto road_edges = model.getRoadEdges();
