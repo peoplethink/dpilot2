@@ -96,7 +96,7 @@ def manager_init() -> None:
     ("LaneLinesWidth", "4"),
     ("PathWidth", "61"),
     ("RoadEdgesWidth", "2"),
-    ("BlindspotLineWidth", "4"),
+    ("BlindspotLineWidth", "20"),
     ("UnlimitedLength", "1"),
     ("CruiseMaxVals1", "200"),
     ("CruiseMaxVals2", "140"),
