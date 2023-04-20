@@ -599,37 +599,11 @@ void NvgWindow::drawLaneLines(QPainter &painter, const UIState *s) {
 void NvgWindow::drawLead(QPainter &painter, const cereal::ModelDataV2::LeadDataV3::Reader &lead_data, const QPointF &vd, bool is_radar) {
   painter.save();
 	
-  //const float speedBuff = 10.;
-  //const float leadBuff = 40.;
   const float d_rel = lead_data.getX()[0];
-  //const float v_rel = lead_data.getV()[0];
-
-  /*
-  float fillAlpha = 0;
-  if (d_rel < leadBuff) {
-    fillAlpha = 255 * (1.0 - (d_rel / leadBuff));
-    if (v_rel < 0) {
-      fillAlpha += 255 * (-1 * (v_rel / speedBuff));
-    }
-    fillAlpha = (int)(fmin(fillAlpha, 255));
-  }
-  */
 	
   float sz = std::clamp((25 * 30) / (d_rel / 3 + 30), 15.0f, 30.0f) * 2.35;
   float x = std::clamp((float)vd.x(), 0.f, width() - sz / 2);
   float y = std::fmin(height() - sz * .6, (float)vd.y());
-
-  //float g_xo = sz / 5;
-  //float g_yo = sz / 10;
-	
-  //QPointF glow[] = {{x + (sz * 1.35) + g_xo, y + sz + g_yo}, {x, y - g_yo}, {x - (sz * 1.35) - g_xo, y + sz + g_yo}};
-  //painter.setBrush(is_radar ? QColor(86, 121, 216, 255) : QColor(218, 202, 37, 255));
-  //painter.drawPolygon(glow, std::size(glow));
-
-  // chevron
-  //QPointF chevron[] = {{x + (sz * 1.25), y + sz}, {x, y}, {x - (sz * 1.25), y + sz}};
-  //painter.setBrush(redColor(fillAlpha));
-  //painter.drawPolygon(chevron, std::size(chevron));
   
   UIState* s = uiState();
   SubMaster& sm = *(s->sm);
@@ -641,10 +615,7 @@ void NvgWindow::drawLead(QPainter &painter, const cereal::ModelDataV2::LeadDataV
   float disp_dist = (radar_detected) ? radar_dist : vision_dist;
 
   QString str;
-  //str.sprintf("%.1fm", radar_detected ? radar_dist : vision_dist);
   QColor textColor = QColor(255, 255, 255, 255);
-  //configFont(painter, "Inter", 50, "Bold");
-  //drawTextWithColor(painter, x, y + sz / 1.5f + 80.0, str, textColor);
 
   if (radar_detected) {
       float radar_rel_speed = lead_radar.getVRel();
@@ -657,6 +628,7 @@ void NvgWindow::drawLead(QPainter &painter, const cereal::ModelDataV2::LeadDataV
   }
   painter.setOpacity(1.0);
   int size = 240;
+  QColor bgColor = QColor(0, 200, 0, 200);
   painter.drawPixmap(x - size / 2, y - size / 2, size, size, (radar_detected) ? ic_radar : ic_radar_vision);
   configFont(painter, "Inter", 60, "Bold");
   if(disp_dist<10.0) str.sprintf("%.1f", disp_dist);
