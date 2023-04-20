@@ -533,7 +533,7 @@ void NvgWindow::drawLaneLines(QPainter &painter, const UIState *s) {
   int steerOverride = (*s->sm)["carState"].getCarState().getSteeringPressed();
 
   // paint blindspot line
-  painter.setBrush(QColor(255, 165, 000, 150));
+  painter.setBrush(QColor(221, 160, 221, 200));
 
   if( scene.leftblindspot  )
   {
@@ -598,21 +598,29 @@ void NvgWindow::drawLaneLines(QPainter &painter, const UIState *s) {
 
 void NvgWindow::drawLead(QPainter &painter, const cereal::ModelDataV2::LeadDataV3::Reader &lead_data, const QPointF &vd, bool is_radar) {
   painter.save();
-	
-  const float d_rel = lead_data.getX()[0];
-	
-  float sz = std::clamp((25 * 30) / (d_rel / 3 + 30), 15.0f, 30.0f) * 2.35;
-  float x = std::clamp((float)vd.x(), 0.f, width() - sz / 2);
-  float y = std::fmin(height() - sz * .6, (float)vd.y());
   
   UIState* s = uiState();
   SubMaster& sm = *(s->sm);
   auto lead_radar = sm["radarState"].getRadarState().getLeadOne();
   auto lead_one = sm["modelV2"].getModelV2().getLeadsV3()[0];
   bool radar_detected = lead_radar.getStatus() && lead_radar.getRadar();
+	
+  const int icon_size = 256;
+  const float d_rel = lead_data.getX()[0];
+  float sz = std::clamp((25 * 30) / (d_rel / 3 + 30), 15.0f, 30.0f) * 2.35;
+  float x = std::clamp((float)vd.x(), 0.f, width() - sz / 2);
+  float y = std::fmin(height() - sz * .6, (float)vd.y());
+
+  int circle_size = 160;
+  QColor bgColor = QColor(0, 0, 0, 166);
   float radar_dist = radar_detected ? lead_radar.getDRel() : 0;
   float vision_dist = lead_one.getProb() > .5 ? (lead_one.getX()[0] - 0) : 0;
   float disp_dist = (radar_detected) ? radar_dist : vision_dist;
+
+#ifdef __TEST
+  radar_detected = true;
+  disp_dist = 127.0;
+#endif
 
   QString str;
   QColor textColor = QColor(255, 255, 255, 255);
@@ -620,16 +628,17 @@ void NvgWindow::drawLead(QPainter &painter, const cereal::ModelDataV2::LeadDataV
   if (radar_detected) {
       float radar_rel_speed = lead_radar.getVRel();
       //str.sprintf("%.0fkm/h", m_cur_speed + radar_rel_speed * 3.6);
-      if (radar_rel_speed < -0.1) textColor = QColor(255, 255, 255, 255);
-      else if (radar_rel_speed > 0.1) textColor = QColor(255, 255, 255, 255);
-      else textColor = QColor(255, 255, 255, 255);
-      //configFont(painter, "Inter", 60, "Bold");
-      //drawTextWithColor(painter, x, y + sz / 1.5f + 80.0, str, textColor);
+      if (disp_dist < 21) bgColor = redColor(180);
+      else if (disp_dist < 51) bgColor = orangeColor(180);
+      else if (disp_dist < 81) bgColor = greenColor(200);  
+      else if (disp_dist > 80)bgColor = blackColor(200);
+
+      painter.setPen(Qt::NoPen);
+      painter.setBrush(bgColor);
+      painter.drawEllipse(x - circle_size / 2, y - circle_size / 2, circle_size, circle_size);
   }
   painter.setOpacity(1.0);
-  int size = 240;
-  QColor bgColor = QColor(0, 200, 0, 200);
-  painter.drawPixmap(x - size / 2, y - size / 2, size, size, (radar_detected) ? ic_radar : ic_radar_vision);
+  painter.drawPixmap(x - icon_size / 2, y - icon_size / 2, icon_size, icon_size, (radar_detected) ? ic_radar : ic_radar_vision);
   configFont(painter, "Inter", 60, "Bold");
   if(disp_dist<10.0) str.sprintf("%.1f", disp_dist);
   else str.sprintf("%.0f", disp_dist);
@@ -896,7 +905,7 @@ void NvgWindow::drawBottomIcons(QPainter &p) {
   //configFont(p, "Inter", 25, "Bold");
   //drawTextWithColor(p, x +dx+20, y - 135, "", textColor);
 	
-  if (s->show_datetime && width() > 1200) {
+ if (s->show_datetime && width() > 1200) {
       // ajouatom: 현재시간표시
       QTextOption  textOpt = QTextOption(Qt::AlignLeft);
       configFont(p, "Open Sans", 36, "Bold");
