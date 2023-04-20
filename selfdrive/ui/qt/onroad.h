@@ -114,6 +114,7 @@ protected:
   inline QColor whiteColor(int alpha = 255) { return QColor(255, 255, 255, alpha); }
   inline QColor tomatoColor(int alpha = 250) { return QColor (255, 99, 71, alpha); }
   inline QColor yellowColor(int alpha = 255) { return QColor(255, 255, 0, alpha); }
+  inline QColor orangeColor(int alpha = 255) { return QColor(255, 165, 0, alpha); }
   
   double prev_draw_t = 0;
   FirstOrderFilter fps_filter;
