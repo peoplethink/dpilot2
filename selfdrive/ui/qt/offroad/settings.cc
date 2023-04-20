@@ -801,6 +801,7 @@ TUNINGPanel::TUNINGPanel(QWidget* parent) : QWidget(parent) {
     toggleLayout->addWidget(new LaneLinesWidth());
     toggleLayout->addWidget(new PathWidth());
     toggleLayout->addWidget(new RoadEdgesWidth());
+    toggleLayout->addWidget(new BlindspotLineWidth());
     toggleLayout->addWidget(new ParamControl("UnlimitedLength", "Unlimited Length", "Increases the path and road lines", "../assets/offroad/icon_road.png"));
     toggleLayout->addWidget(horizontal_line());
     toggleLayout->addWidget(horizontal_line());
@@ -1094,4 +1095,44 @@ RoadEdgesWidth::RoadEdgesWidth() : AbstractControl("    Road Edges Width", "Cust
 
 void RoadEdgesWidth::refresh() {
   label.setText(QString::fromStdString(params.get("RoadEdgesWidth")) + " inches");
+}
+
+// Blindspot Line Width
+BlindspotLineWidth::BlindspotLineWidth() : AbstractControl("   BlindspotLine Width", "Customize the lane lines width in inches. Default matches the MUTCD average of 4 inches.", "../assets/offroad/icon_blank.png") {
+  label.setAlignment(Qt::AlignVCenter | Qt::AlignRight);
+  label.setStyleSheet("color: #e0e879");
+  hlayout->addWidget(&label);
+
+  btnminus.setStyleSheet("QPushButton { background-color: #393939; color: #E4E4E4; border-radius: 50px; font: 500 35px; padding: 0; } QPushButton:pressed { background-color: #4a4a4a; color: #E4E4E4; }");
+  btnplus.setStyleSheet("QPushButton { background-color: #393939; color: #E4E4E4; border-radius: 50px; font: 500 35px; padding: 0; } QPushButton:pressed { background-color: #4a4a4a; color: #E4E4E4; }");
+  btnminus.setText("-");
+  btnplus.setText("+");
+  btnminus.setFixedSize(150, 100);
+  btnplus.setFixedSize(150, 100);
+  hlayout->addWidget(&btnminus);
+  hlayout->addWidget(&btnplus);
+
+  QObject::connect(&btnminus, &QPushButton::clicked, [this]() {
+    auto str = QString::fromStdString(params.get("BlindspotLineWidth"));
+    int value = str.toInt();
+    value = std::max(0, value - 1);
+    QString values = QString::number(value);
+    params.put("BlindspotLineWidth", values.toStdString());
+    refresh();
+  });
+
+  QObject::connect(&btnplus, &QPushButton::clicked, [this]() {
+    auto str = QString::fromStdString(params.get("BlindspotLineWidth"));
+    int value = str.toInt();
+    value = std::min(120, value + 1);
+    QString values = QString::number(value);
+    params.put("BlindspotLineWidth", values.toStdString());
+    refresh();
+  });
+
+  refresh();
+}
+
+void BlindspotLineWidth::refresh() {
+  label.setText(QString::fromStdString(params.get("BlindspotLineWidth")) + "feet");            
 }
