@@ -815,13 +815,6 @@ TUNINGPanel::TUNINGPanel(QWidget* parent) : QWidget(parent) {
     toggleLayout->addWidget(new CValueControl("AChangeCost", "A_CHANGE_COST(150)", "적으면 선행차에 대한 반응이 강해집니다. ", "../assets/offroad/icon_road.png", 20, 400, 10));
     toggleLayout->addWidget(new CValueControl("DangerZoneCost", "DANGER_ZONE_COST(100)", "", "../assets/offroad/icon_road.png", 0, 400, 10));
     toggleLayout->addWidget(horizontal_line());
-    toggleLayout->addWidget(new CValueControl("CruiseMaxVals1", "가속설정:0km/h(200)", "속도별 가속도를 지정합니다.(x0.01m/s^2)", "../assets/offroad/icon_road.png", 1, 300, 5));
-    toggleLayout->addWidget(new CValueControl("CruiseMaxVals2", "가속설정:40km/h(140)", "속도별 가속도를 지정합니다.(x0.01m/s^2)", "../assets/offroad/icon_road.png", 1, 300, 5));
-    toggleLayout->addWidget(new CValueControl("CruiseMaxVals3", "가속설정:60km/h(60)", "속도별 가속도를 지정합니다.(x0.01m/s^2)", "../assets/offroad/icon_road.png", 1, 300, 5));
-    toggleLayout->addWidget(new CValueControl("CruiseMaxVals4", "가속설정:80km/h(50)", "속도별 가속도를 지정합니다.(x0.01m/s^2)", "../assets/offroad/icon_road.png", 1, 300, 5));
-    toggleLayout->addWidget(new CValueControl("CruiseMaxVals5", "가속설정:110km/h(20)", "속도별 가속도를 지정합니다.(x0.01m/s^2)", "../assets/offroad/icon_road.png", 1, 300, 5));
-    toggleLayout->addWidget(new CValueControl("CruiseMaxVals6", "가속설정:140km/h(15)", "속도별 가속도를 지정합니다.(x0.01m/s^2)", "../assets/offroad/icon_road.png", 1, 300, 5));
-    toggleLayout->addWidget(horizontal_line());
     toggleLayout->addWidget(new CValueControl("AutoNaviSpeedCtrlStart", "과속카메라감속 시작 시간(22초)", "감속시작시점. 값이 크면 감속을 카메라에서 멀리 시작", "../assets/offroad/icon_road.png", 10, 50, 1));
     toggleLayout->addWidget(new CValueControl("AutoNaviSpeedCtrlEnd", "과속카메라감속 완료 시간(6초)", "감속완료시점. 값이 크면 카메라에서 멀리 감속 완료", "../assets/offroad/icon_road.png", 3, 20, 1));
     toggleLayout->addWidget(horizontal_line());
