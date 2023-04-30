@@ -55,9 +55,9 @@ class CarInterface(CarInterfaceBase):
       if candidate in [CAR.GENESIS, CAR.GENESIS_G80]:
         ret.lateralTuning.pid.kf = 0.00007
         ret.lateralTuning.pid.kpBP = [0., 10., 30.]
-        ret.lateralTuning.pid.kpV = [0.018, 0.038, 0.088]
+        ret.lateralTuning.pid.kpV = [0.018, 0.035, 0.088]
         ret.lateralTuning.pid.kiBP = [0., 10., 30.]
-        ret.lateralTuning.pid.kiV = [0.0018, 0.0038, 0.0088]
+        ret.lateralTuning.pid.kiV = [0.0018, 0.0035, 0.0088]
         ret.lateralTuning.pid.kdBP = [0.]
         ret.lateralTuning.pid.kdV = [0.6]
         ret.lateralTuning.pid.newKfTuned = True
@@ -113,7 +113,7 @@ class CarInterface(CarInterfaceBase):
     ret.longitudinalActuatorDelayLowerBound = 0.3
     ret.longitudinalActuatorDelayUpperBound = 0.5
 
-    ret.stopAccel = -2.0
+    ret.stopAccel = -1.5
     ret.stoppingDecelRate = float(int(Params().get("StoppingDecelRate", encoding="utf8"))) * 0.01
     ret.vEgoStopping = float(int(Params().get("SccStoppingCost", encoding="utf8"))) * 0.01
     ret.vEgoStarting = float(int(Params().get("SccStartingCost", encoding="utf8"))) * 0.01
