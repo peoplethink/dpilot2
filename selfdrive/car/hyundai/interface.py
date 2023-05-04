@@ -103,20 +103,20 @@ class CarInterface(CarInterfaceBase):
     #ret.longitudinalTuning.kiV = [0.05, 0.02, 0.01, 0.005]
     #ret.longitudinalTuning.deadzoneBP = [0., 40.]
     #ret.longitudinalTuning.deadzoneV = [0., 0.02]
-    ret.longitudinalTuning.kpBP = [0., 5.*CV.KPH_TO_MS, 10.*CV.KPH_TO_MS, 30.*CV.KPH_TO_MS, 130.*CV.KPH_TO_MS]
-    ret.longitudinalTuning.kpV = [1.3, 1.2, 1.0, 0.9, 0.5]
-    ret.longitudinalTuning.kiBP = [0., 30. * CV.KPH_TO_MS]
-    ret.longitudinalTuning.kiV = [0.1, 0.01]
+    ret.longitudinalTuning.kpBP = [0., 20.*CV.KPH_TO_MS, 120.*CV.KPH_TO_MS]
+    ret.longitudinalTuning.kpV = [1.2, 0.8, 0.5]
+    ret.longitudinalTuning.kiBP = [0., 120. * CV.KPH_TO_MS]
+    ret.longitudinalTuning.kiV = [0.18, 0.12]
     ret.longitudinalTuning.deadzoneBP = [0., 8.05]
     ret.longitudinalTuning.deadzoneV = [0., .14]
 
     ret.longitudinalActuatorDelayLowerBound = 0.3
     ret.longitudinalActuatorDelayUpperBound = 0.5
 
-    ret.stopAccel = -1.5
-    ret.stoppingDecelRate = float(int(Params().get("StoppingDecelRate", encoding="utf8"))) * 0.01
-    ret.vEgoStopping = float(int(Params().get("SccStoppingCost", encoding="utf8"))) * 0.01
-    ret.vEgoStarting = float(int(Params().get("SccStartingCost", encoding="utf8"))) * 0.01
+    ret.stopAccel = -0.4
+    ret.stoppingDecelRate = 0.01
+    ret.vEgoStopping = 0.2
+    ret.vEgoStarting = 0.2
 
     # genesis
     if candidate == CAR.GENESIS:
