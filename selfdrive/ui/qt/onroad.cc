@@ -1469,7 +1469,7 @@ void NvgWindow::drawEngRpm(QPainter &p) {
   float textSize = 50;
 	
   int x = (width() + (bdr_s*2))/2 - bdr_s;
-  int y = bdr_s + 50;
+  int y = bdr_s + 290;
 
   QString rpm;
 
