@@ -731,7 +731,7 @@ void NvgWindow::drawCommunity(QPainter &p) {
   char str[1024];
   const auto car_state = sm["carState"].getCarState();
   const auto controls_state = sm["controlsState"].getControlsState();
-  //const auto car_params = sm["carParams"].getCarParams();
+  const auto car_params = sm["carParams"].getCarParams();
   const auto live_params = sm["liveParameters"].getLiveParameters();
   const auto device_state = sm["deviceState"].getDeviceState();
 	
