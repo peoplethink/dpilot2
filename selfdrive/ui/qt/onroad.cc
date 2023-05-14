@@ -748,17 +748,17 @@ void NvgWindow::drawCommunity(QPainter &p) {
   }
 
   //int mdps_bus = car_params.getMdpsBus();
-  //int scc_bus = (int)car_params.getSccBus();
+  int scc_bus = car_params.getSccBus();
 
   QString infoText;
-  infoText.sprintf("    %s             SR%.2f             CPU %.1f°",
+  infoText.sprintf("    %s             SR%.2f             CPU %.1f°  BUS(SCC %d) ",
 		      lateral_state[lateralControlState],
                       //live_params.getAngleOffsetDeg(),
                       //live_params.getAngleOffsetAverageDeg(),
                       controls_state.getSteerRatio(),
                       //controls_state.getSteerActuatorDelay(),
-		      cpuTemp
-                      //scc_bus
+		      cpuTemp,
+                      scc_bus
                       );
 
   // info
@@ -993,7 +993,6 @@ void NvgWindow::drawMaxSpeed(QPainter &p) {
 
   bool is_cruise_set = (cruiseMaxSpeed > 0 && cruiseMaxSpeed < 255);
 
-  int sccBus = (int)car_params.getSccBus();
   int activeNDA = road_limit_speed.getActive();
   int roadLimitSpeed = road_limit_speed.getRoadLimitSpeed();
   int camLimitSpeed = road_limit_speed.getCamLimitSpeed();
@@ -1022,14 +1021,6 @@ void NvgWindow::drawMaxSpeed(QPainter &p) {
 
       p.setOpacity(1.f);
       p.drawPixmap(x, y, w, h, activeNDA == 1 ? ic_nda : ic_hda);
-  }
-  if (sccBus == 2) 
-  {
-      int w = 150;
-      int h = 54;
-      int x = (width() + (bdr_s*2))/2 - w/2 - bdr_s + 165;
-      int y = 40 - bdr_s;  
-      p.drawPixmap(x, y, w, h, ic_scc2); 
   }
   
   const int x_start = 30;
