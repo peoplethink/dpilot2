@@ -46,12 +46,6 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       "../assets/offroad/icon_openpilot.png",
     },
     {
-      "SccConnectedBus2",
-      "SCC Module connected BUS2",
-      "",
-      "../assets/offroad/icon_warning.png",
-    },
-    {
       "IsMetric",
       "미터법 사용",
       "mi/h 대신 km/h 단위로 속도를 표시합니다.",
