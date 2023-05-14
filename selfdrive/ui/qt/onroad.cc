@@ -751,7 +751,7 @@ void NvgWindow::drawCommunity(QPainter &p) {
   int scc_bus = car_params.getSccBus();
 
   QString infoText;
-  infoText.sprintf("    %s             SR%.2f             CPU %.1f°                                 (SCC %d) ",
+  infoText.sprintf("    %s             SR%.2f             CPU %.1f°               (SCC %d) ",
 		      lateral_state[lateralControlState],
                       //live_params.getAngleOffsetDeg(),
                       //live_params.getAngleOffsetAverageDeg(),
@@ -1468,12 +1468,12 @@ void NvgWindow::drawEngRpm(QPainter &p) {
   float eng_rpm = car_state.getEngRpm();
   float textSize = 35;
 	
-  int x = (width() + (bdr_s*2))/2 - bdr_s + 20;
-  int y = bdr_s + 290 + 717;
+  int x = (width() + (bdr_s*2))/2 - bdr_s;
+  int y = bdr_s;
 
   QString rpm;
 
-  rpm.sprintf("RPM %.0f", eng_rpm);
+  rpm.sprintf("%.0f", eng_rpm);
   configFont(p, "Open Sans", textSize, "Bold");
 
   QColor textColor0 = QColor(255, 255, 255, 250);
