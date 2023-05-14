@@ -87,7 +87,6 @@ def manager_init() -> None:
     ("PathOffset", "0"),
     ("ShowDateTime", "1"),
     ("Sound_Mdpserr", "1"),
-    ("SccConnectedBus2", "0"),
     ("Compass", "1"),
     ("CustomRoadUI", "1"),
     ("LaneLinesWidth", "4"),
