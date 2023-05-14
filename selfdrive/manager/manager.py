@@ -51,7 +51,7 @@ def manager_init() -> None:
     ("LongControlEnabled", "0"),
     ("IsLdwsCar", "0"),
     ("LateralControlSelect", "0"),
-
+    ("MadModeEnabled", "1"),
     ("SccSmootherSlowOnCurves", "0"),
     ("SccSmootherSyncGasPressed", "0"),
     ("StockNaviDecelEnabled", "0"),
