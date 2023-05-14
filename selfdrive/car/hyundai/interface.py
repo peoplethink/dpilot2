@@ -346,14 +346,11 @@ class CarInterface(CarInterfaceBase):
     ret.sasBus = 1 if 688 in fingerprint[1] and 1296 not in fingerprint[1] else 0
     ret.sccBus = 0 if 1056 in fingerprint[0] else 1 if 1056 in fingerprint[1] and 1296 not in fingerprint[1] \
                                                                      else 2 if 1056 in fingerprint[2] else -1
-    ret.sccBus = 0
-    if Params().get_bool("SccConnectedBus2"):
-      ret.sccBus = 2
-	
-    if ret.sccBus == 2:
+    
+    if ret.sccBus >= 0:
       ret.hasScc13 = 1290 in fingerprint[ret.sccBus]
       ret.hasScc14 = 905 in fingerprint[ret.sccBus]
-
+	
     ret.hasEms = 608 in fingerprint[0] and 809 in fingerprint[0]
     ret.hasLfaHda = 1157 in fingerprint[0]
 
@@ -391,8 +388,8 @@ class CarInterface(CarInterfaceBase):
 
     # most HKG cars has no long control, it is safer and easier to engage by main on
 
-    #if self.mad_mode_enabled:
-    ret.cruiseState.enabled = ret.cruiseState.available
+    if self.mad_mode_enabled:
+      ret.cruiseState.enabled = ret.cruiseState.available
 
     # turning indicator alert logic
     if not self.CC.keep_steering_turn_signals and (ret.leftBlinker or ret.rightBlinker or self.CC.turning_signal_timer) and ret.vEgo < LANE_CHANGE_SPEED_MIN - 1.2:
