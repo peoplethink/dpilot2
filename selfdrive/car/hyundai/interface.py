@@ -100,17 +100,17 @@ class CarInterface(CarInterfaceBase):
     ret.longitudinalTuning.kpBP = [0., 5.*CV.KPH_TO_MS, 10.*CV.KPH_TO_MS, 30.*CV.KPH_TO_MS, 130.*CV.KPH_TO_MS]
     ret.longitudinalTuning.kpV = [1.3, 1.2, 1.0, 0.9, 0.5]
     ret.longitudinalTuning.kiBP = [0., 120. * CV.KPH_TO_MS]
-    ret.longitudinalTuning.kiV = [0.008, 0.002]
+    ret.longitudinalTuning.kiV = [0.005, 0.002]
     ret.longitudinalTuning.deadzoneBP = [0., 8.05]
     ret.longitudinalTuning.deadzoneV = [0., .14]
 
-    ret.longitudinalActuatorDelayLowerBound = 0.3
-    ret.longitudinalActuatorDelayUpperBound = 0.3
+    ret.longitudinalActuatorDelayLowerBound = 0.2
+    ret.longitudinalActuatorDelayUpperBound = 0.5
 
     ret.stopAccel = -1.5
-    ret.stoppingDecelRate = 0.4
-    ret.vEgoStopping = 0.5
-    ret.vEgoStarting = 0.5
+    ret.stoppingDecelRate = 0.2
+    ret.vEgoStopping = 0.3
+    ret.vEgoStarting = 0.3
 
 
     # genesis
