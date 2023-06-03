@@ -98,7 +98,7 @@ void OnroadWindow::updateState(const UIState &s) {
     split->setDirection(QBoxLayout::RightToLeft);
   }
 
-  nvg->updateState(s);
+  hud->updateState(s);
 
   if (bg != bgColor) {
     // repaint border
