@@ -111,7 +111,7 @@ void OnroadWindow::mouseReleaseEvent(QMouseEvent* e) {
   QRect rc = rect();
   if(isMapVisible()) {
     UIState *s = uiState();
-    if(s.scene.map_on_left)
+    if(!s->scene.map_on_left)
       rc.setWidth(rc.width() - (topWidget(this)->width() / 2));
     else {
       rc.setWidth(rc.width() - (topWidget(this)->width() / 2));
@@ -172,7 +172,7 @@ void OnroadWindow::mousePressEvent(QMouseEvent* e) {
   QRect rc = rect();
   if(isMapVisible()) {
     UIState *s = uiState();
-    if(s.scene.map_on_left)
+    if(!s->scene.map_on_left)
       rc.setWidth(rc.width() - (topWidget(this)->width() / 2));
     else {
       rc.setWidth(rc.width() - (topWidget(this)->width() / 2));
