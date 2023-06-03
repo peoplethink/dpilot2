@@ -149,7 +149,13 @@ void OnroadWindow::mouseReleaseEvent(QMouseEvent* e) {
 
 void OnroadWindow::mousePressEvent(QMouseEvent* e) {
   startPos = e->pos();
-  //QWidget::mousePressEvent(e);
+  if (map != nullptr) {
+    bool sidebarVisible = geometry().x() > 0;
+    map->setVisible(!sidebarVisible && !map->isVisible());
+  }
+
+  // propagation event to parent(HomeWindow)
+  QWidget::mouseReleaseEvent(e);
 }
 
 void OnroadWindow::offroadTransition(bool offroad) {
