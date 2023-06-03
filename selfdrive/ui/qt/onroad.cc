@@ -4,6 +4,7 @@
 
 #include <QDebug>
 #include <QSound>
+#include <QMouseEvent>
 
 #include "selfdrive/common/timing.h"
 #include "selfdrive/ui/qt/util.h"
@@ -56,7 +57,6 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   QObject::connect(uiState(), &UIState::uiUpdate, this, &OnroadWindow::updateState);
   QObject::connect(uiState(), &UIState::offroadTransition, this, &OnroadWindow::offroadTransition);
 
-#ifdef QCOM2
   // screen recoder - neokii
 
   record_timer = std::make_shared<QTimer>();
@@ -66,18 +66,18 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
     }
   });
 	record_timer->start(1000/UI_FREQ);
-	
+
   QWidget* recorder_widget = new QWidget(this);
   QVBoxLayout * recorder_layout = new QVBoxLayout (recorder_widget);
   recorder_layout->setMargin(35);
   recorder = new ScreenRecoder(this);
   recorder_layout->addWidget(recorder);
-  recorder_layout->setAlignment(recorder, Qt::AlignRight | Qt::AlignCenter);
+  recorder_layout->setAlignment(recorder, Qt::AlignRight | Qt::AlignBottom);
 
   stacked_layout->addWidget(recorder_widget);
   recorder_widget->raise();
   alerts->raise();
-#endif
+
 }
 
 void OnroadWindow::updateState(const UIState &s) {
@@ -92,7 +92,13 @@ void OnroadWindow::updateState(const UIState &s) {
     alerts->updateAlert(alert, bgColor);
   }
 
-  hud->updateState(s);
+  if (s.scene.map_on_left) {
+    split->setDirection(QBoxLayout::LeftToRight);
+  } else {
+    split->setDirection(QBoxLayout::RightToLeft);
+  }
+
+  nvg->updateState(s);
 
   if (bg != bgColor) {
     // repaint border
@@ -102,67 +108,84 @@ void OnroadWindow::updateState(const UIState &s) {
 }
 
 void OnroadWindow::mouseReleaseEvent(QMouseEvent* e) {
-
-#ifdef QCOM2
-  // neokii
-  QPoint endPos = e->pos();
-  int dx = endPos.x() - startPos.x();
-  int dy = endPos.y() - startPos.y();
-  if(std::abs(dx) > 250 || std::abs(dy) > 200) {
-
-    if(std::abs(dx) < std::abs(dy)) {
-
-      if(dy < 0) { // upward
-        Params().remove("CalibrationParams");
-        Params().remove("LiveParameters");
-        QTimer::singleShot(1500, []() {
-          Params().putBool("SoftRestartTriggered", true);
-        });
-
-        QSound::play("../assets/sounds/reset_calibration.wav");
-      }
-      else { // downward
-        QTimer::singleShot(500, []() {
-          Params().putBool("SoftRestartTriggered", true);
-        });
-      }
+  QRect rc = rect();
+  if(isMapVisible()) {
+    UIState *s = uiState();
+    if(!s->scene.map_on_left)
+      rc.setWidth(rc.width() - (topWidget(this)->width() / 2));
+    else {
+      rc.setWidth(rc.width() - (topWidget(this)->width() / 2));
+      rc.setX((topWidget(this)->width() / 2));
     }
-    else if(std::abs(dx) > std::abs(dy)) {
-      if(dx < 0) { // right to left
-        if(recorder)
-          recorder->toggle();
-      }
-      else { // left to right
-        if(recorder)
-          recorder->toggle();
-      }
-    }
-
-    return;
   }
+  if(rc.contains(e->pos())) {
+#if 0
+    QPoint endPos = e->pos();
+    int dx = endPos.x() - startPos.x();
+    int dy = endPos.y() - startPos.y();
+    if(std::abs(dx) > 250 || std::abs(dy) > 200) {
 
-  if (map != nullptr) {
-    bool sidebarVisible = geometry().x() > 0;
-    map->setVisible(!sidebarVisible && !map->isVisible());
+      if(std::abs(dx) < std::abs(dy)) {
+
+        if(dy < 0) { // upward
+          Params().remove("CalibrationParams");
+          Params().remove("LiveParameters");
+          QTimer::singleShot(1500, []() {
+            Params().putBool("SoftRestartTriggered", true);
+          });
+
+          QSound::play("../assets/sounds/reset_calibration.wav");
+        }
+        else { // downward
+          QTimer::singleShot(500, []() {
+            Params().putBool("SoftRestartTriggered", true);
+          });
+        }
+      }
+      else if(std::abs(dx) > std::abs(dy)) {
+        if(dx < 0) { // right to left
+          if(recorder)
+            recorder->toggle();
+        }
+        else { // left to right
+          if(recorder)
+            recorder->toggle();
+        }
+      }
+
+      return;
+    }
+#endif
+
+    if (map != nullptr) {
+      bool sidebarVisible = geometry().x() > 0;
+      map->setVisible(!sidebarVisible && !map->isVisible());
+    }
   }
 
   // propagation event to parent(HomeWindow)
   QWidget::mouseReleaseEvent(e);
-#endif  
 }
 
 void OnroadWindow::mousePressEvent(QMouseEvent* e) {
-#ifdef QCOM2
-  startPos = e->pos();
-#else
-  if (map != nullptr) {
-    bool sidebarVisible = geometry().x() > 0;
-    map->setVisible(!sidebarVisible && !map->isVisible());
+
+  QRect rc = rect();
+  if(isMapVisible()) {
+    UIState *s = uiState();
+    if(!s->scene.map_on_left)
+      rc.setWidth(rc.width() - (topWidget(this)->width() / 2));
+    else {
+      rc.setWidth(rc.width() - (topWidget(this)->width() / 2));
+      rc.setX((topWidget(this)->width() / 2));
+    }
   }
 
-  // propagation event to parent(HomeWindow)
-  QWidget::mouseReleaseEvent(e);
-#endif 
+  printf("%d, %d, %d, %d\n", rc.x(), rc.y(), rc.width(), rc.height());
+  if(rc.contains(e->pos())) {
+    startPos = e->pos();
+  }
+
+  QWidget::mousePressEvent(e);
 }
 
 void OnroadWindow::offroadTransition(bool offroad) {
@@ -189,11 +212,9 @@ void OnroadWindow::offroadTransition(bool offroad) {
   bool wide_cam = Hardware::TICI() && Params().getBool("EnableWideCamera");
   nvg->setStreamType(wide_cam ? VISION_STREAM_RGB_WIDE_ROAD : VISION_STREAM_RGB_ROAD);
 
-#ifdef QCOM2
   if(offroad && recorder) {
     recorder->stop(false);
   }
-#endif 
 }
 
 void OnroadWindow::paintEvent(QPaintEvent *event) {
