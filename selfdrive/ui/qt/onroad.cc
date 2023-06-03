@@ -80,9 +80,8 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 
 }
 
-void OnroadWindow::updateState(const UIState &s) {
+void OnroadWindow::updateState(const UIState &s, const UIScene &scene = s->scene) {
   QColor bgColor = bg_colors[s.status];
-  const UIScene &scene = s->scene;
   Alert alert = Alert::get(*(s.sm), s.scene.started_frame);
   if (s.sm->updated("controlsState") || !alert.equal({})) {
     if (alert.type == "controlsUnresponsive") {
@@ -108,8 +107,7 @@ void OnroadWindow::updateState(const UIState &s) {
   }
 }
 
-void OnroadWindow::mouseReleaseEvent(QMouseEvent* e) {
-  const UIScene &scene = s->scene;
+void OnroadWindow::mouseReleaseEvent(QMouseEvent* e, const UIScene &scene = s->scene) {
   QRect rc = rect();
   if(isMapVisible()) {
     UIState *s = uiState();
@@ -169,12 +167,11 @@ void OnroadWindow::mouseReleaseEvent(QMouseEvent* e) {
   QWidget::mouseReleaseEvent(e);
 }
 
-void OnroadWindow::mousePressEvent(QMouseEvent* e) {
+void OnroadWindow::mousePressEvent(QMouseEvent* e, const UIScene &scene = s->scene) {
 
   QRect rc = rect();
   if(isMapVisible()) {
     UIState *s = uiState();
-    const UIScene &scene = s->scene;
     if(scene.map_on_left)
       rc.setWidth(rc.width() - (topWidget(this)->width() / 2));
     else {
