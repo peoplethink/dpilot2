@@ -44,7 +44,7 @@ CRASH_DISTANCE = .5
 LIMIT_COST = 1e6
 ACADOS_SOLVER_TYPE = 'SQP_RTI'
 
-DIFF_RADAR_VISION = 1.0
+DIFF_RADAR_VISION = 2.0
 
 # Fewer timestamps don't hurt performance and lead to
 # much better convergence of the MPC with low iterations
