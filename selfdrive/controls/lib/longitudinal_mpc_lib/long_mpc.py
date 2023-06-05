@@ -383,7 +383,6 @@ class LongitudinalMpc:
     v_ego = self.x0[1]
     a_ego = carstate.aEgo
     
-    self.update_params()
     self.lo_timer += 1
     if self.lo_timer > 100:
       self.lo_timer = 0
