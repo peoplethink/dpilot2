@@ -619,12 +619,10 @@ void NvgWindow::drawLaneLines(QPainter &painter, const UIState *s) {
 }
 
 void NvgWindow::drawLead(QPainter &painter, const cereal::ModelDataV2::LeadDataV3::Reader &lead_data, const cereal::RadarState::LeadData::Reader &radar_lead_data, const QPointF &vd, bool is_radar) {
-  painter.save();
-  
   const float speedBuff = 10.;
   const float leadBuff = 40.;
-  const float d_rel = lead_data.getDRel();
-  const float v_rel = lead_data.getVRel();
+  const float d_rel = lead_data.getX()[0];
+  const float v_rel = lead_data.getV()[0];
 	
   float fillAlpha = 0;
   if (d_rel < leadBuff) {
@@ -650,8 +648,6 @@ void NvgWindow::drawLead(QPainter &painter, const cereal::ModelDataV2::LeadDataV
   QPointF chevron[] = {{x + (sz * 1.25), y + sz + homebase_h},{x + (sz * 1.25), y + sz}, {x, y}, {x - (sz * 1.25), y + sz},{x - (sz * 1.25), y + sz + homebase_h}, {x, y + sz + homebase_h - 7}};
   painter.setBrush(redColor(fillAlpha));
   painter.drawPolygon(chevron, std::size(chevron));
-
-  painter.restore();
 }
 
 // Ichirio Stuff
