@@ -618,7 +618,7 @@ void NvgWindow::drawLaneLines(QPainter &painter, const UIState *s) {
   painter.restore();
 }
 
-void NvgWindow::drawLead(QPainter &painter, const cereal::ModelDataV2::LeadDataV3::Reader &lead_data, const cereal::RadarState::LeadData::Reader &radar_lead_data, const QPointF &vd, bool is_radar) {
+void NvgWindow::drawLead(QPainter &painter, const cereal::RadarState::LeadData::Reader &lead_data, const QPointF &vd) {
   const float speedBuff = 10.;
   const float leadBuff = 40.;
   const float d_rel = lead_data.getX()[0];
@@ -657,7 +657,7 @@ struct LeadcarLockon {
 #define LeadcarLockon_MAX 5
 LeadcarLockon leadcar_lockon[LeadcarLockon_MAX];
 
-void NvgWindow::drawLockon(QPainter &painter, const cereal::ModelDataV2::LeadDataV3::Reader &lead_data, const cereal::RadarState::LeadData::Reader &radar_lead_data, const QPointF &vd, bool is_radar, int num) {
+void NvgWindow::drawLockon(QPainter &painter, const cereal::ModelDataV2::LeadDataV3::Reader &lead_data, const QPointF &vd , int num  /*使っていない , size_t leads_num , const cereal::RadarState::LeadData::Reader &lead0, const cereal::RadarState::LeadData::Reader &lead1 */) {
   const float d_rel = lead_data.getX()[0];
   float a_rel = lead_data.getA()[0];
 
