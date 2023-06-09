@@ -894,7 +894,8 @@ void NvgWindow::drawLockon(QPainter &painter, const cereal::ModelDataV2::LeadDat
 
 void NvgWindow::paintGL() {
   CameraViewWidget::paintGL();
-		
+
+  UIState *s = uiState();
   if (s->worldObjectsVisible()) { 
     if(!s->recording) {
       QPainter p(this);
