@@ -896,6 +896,11 @@ void NvgWindow::paintGL() {
   CameraViewWidget::paintGL();
 	
   UIState *s = uiState();
+  SubMaster &sm = *(s->sm);
+  const double start_draw_t = millis_since_boot();
+  const cereal::ModelDataV2::Reader &model = sm["modelV2"].getModelV2();
+  const cereal::RadarState::Reader &radar_state = sm["radarState"].getRadarState();
+	
   if (s->worldObjectsVisible()) { 
     if(!s->recording) {
       QPainter p(this);
@@ -939,23 +944,19 @@ void NvgWindow::drawCommunity(QPainter &p) {
   bg.setColorAt(1, QColor::fromRgbF(0, 0, 0, 0));
   p.fillRect(0, 0, width(), header_h, bg);
 
-  UIState *s = uiState();
-
-  const SubMaster &sm = *(s->sm);
-
   const auto leads = model.getLeadsV3();
   size_t leads_num = leads.size();
   for(size_t i=0; i<leads_num && i < LeadcarLockon_MAX; i++){
     if(leads[i].getProb() > .2){ //信用度20%以上で表示。調整中。
-      drawLockon(painter, leads[i], s->scene.lead_vertices[i] , i /*, leads_num , leads[0] , leads[1]*/);
+      drawLockon(p, leads[i], s->scene.lead_vertices[i] , i /*, leads_num , leads[0] , leads[1]*/);
     }
    auto lead_one = radar_state.getLeadOne();
    auto lead_two = radar_state.getLeadTwo();
    if (lead_one.getStatus()) {
-     drawLead(painter, lead_one, s->scene.lead_vertices[0]);
+     drawLead(p, lead_one, s->scene.lead_vertices[0]);
    }
    if (lead_two.getStatus() && (std::abs(lead_one.getDRel() - lead_two.getDRel()) > 3.0)) {
-     drawLead(painter, lead_two, s->scene.lead_vertices[1]);
+     drawLead(p, lead_two, s->scene.lead_vertices[1]);
    }
   }
 	
