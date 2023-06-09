@@ -618,13 +618,14 @@ void NvgWindow::drawLaneLines(QPainter &painter, const UIState *s) {
   painter.restore();
 }
 
-void NvgWindow::drawLead(QPainter &painter, const cereal::RadarState::LeadData::Reader &lead_data, const QPointF &vd, bool is_radar) {
+void NvgWindow::drawLead(QPainter &painter, const cereal::ModelDataV2::LeadDataV3::Reader &lead_data, const cereal::RadarState::LeadData::Reader &radar_lead_data, const QPointF &vd, bool is_radar) {
   painter.save();
   
   const float speedBuff = 10.;
   const float leadBuff = 40.;
   const float d_rel = lead_data.getDRel();
   const float v_rel = lead_data.getVRel();
+	
   float fillAlpha = 0;
   if (d_rel < leadBuff) {
     fillAlpha = 255 * (1.0 - (d_rel / leadBuff));
@@ -660,7 +661,7 @@ struct LeadcarLockon {
 #define LeadcarLockon_MAX 5
 LeadcarLockon leadcar_lockon[LeadcarLockon_MAX];
 
-void NvgWindow::drawLockon(QPainter &painter, const cereal::ModelDataV2::LeadDataV3::Reader &lead_data, const QPointF &vd , int num  /*使っていない , size_t leads_num , const cereal::RadarState::LeadData::Reader &lead0, const cereal::RadarState::LeadData::Reader &lead1 */) {
+void NvgWindow::drawLockon(QPainter &painter, const cereal::ModelDataV2::LeadDataV3::Reader &lead_data, const cereal::RadarState::LeadData::Reader &radar_lead_data, const QPointF &vd, bool is_radar, int num) {
   const float d_rel = lead_data.getX()[0];
   float a_rel = lead_data.getA()[0];
 
@@ -703,24 +704,15 @@ void NvgWindow::drawLockon(QPainter &painter, const cereal::ModelDataV2::LeadDat
   a_rel = leadcar_lockon[num].a;
 
   float dh = 50;
-  if(uiState()->scene.wide_cam == false) {
-    float dd = d;
-    dd -= 25; //dd=0〜75
-    dd /= (75.0/2); //dd=0〜2
-    dd += 1; //dd=1〜3
-    if(dd < 1)dd = 1;
-    dh /= dd;
-  } else {
-    ww *= 0.5; hh *= 0.5;
-    dh = 100;
-    float dd = d;
-    dd -= 5; //dd=0〜95
-    dd /= (95.0/10); //dd=0〜10
-    dd += 1; //dd=1〜11
-    if(dd < 1)dd = 1;
-    dh /= dd*dd;
-  }
-
+  ww *= 0.5; hh *= 0.5;
+  dh = 100;
+  float dd = d;
+  dd -= 5; //dd=0〜95
+  dd /= (95.0/10); //dd=0〜10
+  dd += 1; //dd=1〜11
+  if(dd < 1)dd = 1;
+  dh /= dd*dd;
+	
   ww = ww * 2 * 5 / d;
   hh = hh * 2 * 5 / d;
   y = std::fmin(height() /*- sz * .6*/, y - dh) + dh;
@@ -891,9 +883,6 @@ void NvgWindow::drawLockon(QPainter &painter, const cereal::ModelDataV2::LeadDat
     if(ww >= 80){
       //ここではy0,y1を参照できない。
       float d_lim = 12;
-      if(wide_cam_requested == false){
-        d_lim = 32; //ロングカメラだとちょっと枠が大きい。実測
-      }
       if(num == 0 || (num==1 && (d_rel < d_lim || std::abs(y0 - y1) > 300))){ //num==1のとき、'2'の表示と前走車速度表示がかぶるので、こちらを消す。
         painter.drawText(r, Qt::AlignBottom | Qt::AlignLeft, " " + QString::number(num+1));
       }
