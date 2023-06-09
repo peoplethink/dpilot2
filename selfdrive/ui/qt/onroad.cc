@@ -621,8 +621,8 @@ void NvgWindow::drawLaneLines(QPainter &painter, const UIState *s) {
 void NvgWindow::drawLead(QPainter &painter, const cereal::RadarState::LeadData::Reader &lead_data, const QPointF &vd) {
   const float speedBuff = 10.;
   const float leadBuff = 40.;
-  const float d_rel = lead_data.getX()[0];
-  const float v_rel = lead_data.getV()[0];
+  const float d_rel = lead_data.getDRel();
+  const float v_rel = lead_data.getVRel();
 	
   float fillAlpha = 0;
   if (d_rel < leadBuff) {
@@ -943,14 +943,22 @@ void NvgWindow::drawCommunity(QPainter &p) {
 
   const SubMaster &sm = *(s->sm);
 
-  auto leads = sm["modelV2"].getModelV2().getLeadsV3();
-  if (leads[0].getProb() > .5) {
-    drawLead(p, leads[0], s->scene.lead_vertices[0], s->scene.lead_radar[0]);
+  const auto leads = model.getLeadsV3();
+  size_t leads_num = leads.size();
+  for(size_t i=0; i<leads_num && i < LeadcarLockon_MAX; i++){
+    if(leads[i].getProb() > .2){ //信用度20%以上で表示。調整中。
+      drawLockon(painter, leads[i], s->scene.lead_vertices[i] , i /*, leads_num , leads[0] , leads[1]*/);
+    }
+   auto lead_one = radar_state.getLeadOne();
+   auto lead_two = radar_state.getLeadTwo();
+   if (lead_one.getStatus()) {
+     drawLead(painter, lead_one, s->scene.lead_vertices[0]);
+   }
+   if (lead_two.getStatus() && (std::abs(lead_one.getDRel() - lead_two.getDRel()) > 3.0)) {
+     drawLead(painter, lead_two, s->scene.lead_vertices[1]);
+   }
   }
-  if (leads[1].getProb() > .5 && (std::abs(leads[1].getX()[0] - leads[0].getX()[0]) > 3.0)) {
-    drawLead(p, leads[1], s->scene.lead_vertices[1], s->scene.lead_radar[1]);
-  }
-
+	
   drawMaxSpeed(p);
   drawSpeed(p);
   drawTurnSignals(p);
