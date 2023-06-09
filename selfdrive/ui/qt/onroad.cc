@@ -894,13 +894,7 @@ void NvgWindow::drawLockon(QPainter &painter, const cereal::ModelDataV2::LeadDat
 
 void NvgWindow::paintGL() {
   CameraViewWidget::paintGL();
-	
-  UIState *s = uiState();
-  SubMaster &sm = *(s->sm);
-  const double start_draw_t = millis_since_boot();
-  const cereal::ModelDataV2::Reader &model = sm["modelV2"].getModelV2();
-  const cereal::RadarState::Reader &radar_state = sm["radarState"].getRadarState();
-	
+		
   if (s->worldObjectsVisible()) { 
     if(!s->recording) {
       QPainter p(this);
@@ -944,6 +938,12 @@ void NvgWindow::drawCommunity(QPainter &p) {
   bg.setColorAt(1, QColor::fromRgbF(0, 0, 0, 0));
   p.fillRect(0, 0, width(), header_h, bg);
 
+  UIState *s = uiState();
+  SubMaster &sm = *(s->sm);
+  const double start_draw_t = millis_since_boot();
+  const cereal::ModelDataV2::Reader &model = sm["modelV2"].getModelV2();
+  const cereal::RadarState::Reader &radar_state = sm["radarState"].getRadarState();
+	
   const auto leads = model.getLeadsV3();
   size_t leads_num = leads.size();
   for(size_t i=0; i<leads_num && i < LeadcarLockon_MAX; i++){
