@@ -250,7 +250,7 @@ class LongitudinalMpc:
     self.x_sol = np.zeros((N+1, X_DIM))
     self.u_sol = np.zeros((N,1))
     self.params = np.zeros((N+1, PARAM_DIM))
-    elf.t_follow = T_FOLLOW
+    self.t_follow = T_FOLLOW
     self.comfort_brake = COMFORT_BRAKE
     
     for i in range(N+1):
