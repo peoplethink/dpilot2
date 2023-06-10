@@ -97,6 +97,7 @@ def manager_init() -> None:
     ("UnlimitedLength", "1"),
     ("AutoNaviSpeedCtrlStart", "22"),
     ("AutoNaviSpeedCtrlEnd", "6"),
+    ("LeadDangerFactor", "80"),
     ("PutPrebuilt", "0"), 
   ]
   if not PC:
