@@ -618,12 +618,16 @@ void NvgWindow::drawLaneLines(QPainter &painter, const UIState *s) {
   painter.restore();
 }
 
-void NvgWindow::drawLead(QPainter &painter, const cereal::RadarState::LeadData::Reader &lead_data, const QPointF &vd) {
+static float global_a_rel;
+static float global_a_rel_col;
+static float vc_speed;
+void NvgWindow::drawLead(QPainter &painter, const cereal::RadarState::LeadData::Reader &lead_data, const QPointF &vd, int num ) {
+  painter.save();
   const float speedBuff = 10.;
   const float leadBuff = 40.;
   const float d_rel = lead_data.getDRel();
   const float v_rel = lead_data.getVRel();
-	
+
   float fillAlpha = 0;
   if (d_rel < leadBuff) {
     fillAlpha = 255 * (1.0 - (d_rel / leadBuff));
@@ -632,34 +636,63 @@ void NvgWindow::drawLead(QPainter &painter, const cereal::RadarState::LeadData::
     }
     fillAlpha = (int)(fmin(fillAlpha, 255));
   }
+	
   float sz = std::clamp((25 * 30) / (d_rel / 3 + 30), 15.0f, 30.0f) * 2.35;
   float x = std::clamp((float)vd.x(), 0.f, width() - sz / 2);
   float y = std::fmin(height() - sz * .6, (float)vd.y());
+	
   float g_xo = sz / 5;
   float g_yo = sz / 10;
-	
+
 
   float homebase_h = 12;
   QPointF glow[] = {{x + (sz * 1.35) + g_xo, y + sz + g_yo + homebase_h},{x + (sz * 1.35) + g_xo, y + sz + g_yo}, {x, y - g_yo}, {x - (sz * 1.35) - g_xo, y + sz + g_yo},{x - (sz * 1.35) - g_xo, y + sz + g_yo + homebase_h}, {x, y + sz + homebase_h + g_yo + 10}};
-  painter.setBrush(QColor(218, 202, 37, 255));
+  painter.setBrush(QColor(218, 202, 37, 210));
   painter.drawPolygon(glow, std::size(glow));
 
   // chevron
   QPointF chevron[] = {{x + (sz * 1.25), y + sz + homebase_h},{x + (sz * 1.25), y + sz}, {x, y}, {x - (sz * 1.25), y + sz},{x - (sz * 1.25), y + sz + homebase_h}, {x, y + sz + homebase_h - 7}};
   painter.setBrush(redColor(fillAlpha));
   painter.drawPolygon(chevron, std::size(chevron));
+  
+  if(num == 0){
+    QString dist = QString::number(d_rel,'f',0) + "m";
+    int str_w = 200;
+    //QString kmph = QString::number((v_rel + vc_speed)*3.6,'f',0) + "k";
+    //int str_w2 = 200;
+
+    configFont(painter, FONT_OPEN_SANS, 44, "SemiBold");
+    painter.setPen(QColor(0x0, 0x0, 0x0 , 200));
+    float lock_indicator_dx = 2;
+    painter.drawText(QRect(x+2+lock_indicator_dx+90, y-50+60, str_w, 50), Qt::AlignBottom | Qt::AlignLeft, dist);
+    //painter.drawText(QRect(x+2-lock_indicator_dx-str_w2-2, y-50+2, str_w2, 50), Qt::AlignBottom | Qt::AlignRight, kmph);
+    painter.setPen(QColor(0xff, 0xff, 0xff));
+    painter.drawText(QRect(x+lock_indicator_dx+90, y-50+60, str_w, 50), Qt::AlignBottom | Qt::AlignLeft, dist);
+    if(global_a_rel >= global_a_rel_col){
+      global_a_rel_col = -0.1;
+      painter.setPen(QColor(0.09*255, 0.945*255, 0.26*255, 255));
+    } else {
+      global_a_rel_col = 0;
+      painter.setPen(QColor(245, 0, 0, 255));
+    }
+    //painter.drawText(QRect(x-lock_indicator_dx-str_w2-2, y-50, str_w2, 50), Qt::AlignBottom | Qt::AlignRight, kmph);
+    painter.setPen(Qt::NoPen);
+  }
+
+  painter.restore();
 }
 
-// Ichirio Stuff
+// Ichirio
 struct LeadcarLockon {
   float x,y,d,a,lxt,lxf,lockOK;
 };
 #define LeadcarLockon_MAX 5
 LeadcarLockon leadcar_lockon[LeadcarLockon_MAX];
 
-void NvgWindow::drawLockon(QPainter &painter, const cereal::ModelDataV2::LeadDataV3::Reader &lead_data, const QPointF &vd , int num  /*使っていない , size_t leads_num , const cereal::RadarState::LeadData::Reader &lead0, const cereal::RadarState::LeadData::Reader &lead1 */) {
+void NvgWindow::drawLockon(QPainter &painter, const cereal::ModelDataV2::LeadDataV3::Reader &lead_data, const QPointF &vd , int num) {
   const float d_rel = lead_data.getX()[0];
   float a_rel = lead_data.getA()[0];
+  global_a_rel = a_rel;
 
   float sz = std::clamp((25 * 30) / (d_rel / 3 + 30), 15.0f, 30.0f) * 2.35;
   float x = std::clamp((float)vd.x(), 0.f, width() - sz / 2);
@@ -703,9 +736,9 @@ void NvgWindow::drawLockon(QPainter &painter, const cereal::ModelDataV2::LeadDat
   ww *= 0.5; hh *= 0.5;
   dh = 100;
   float dd = d;
-  dd -= 5; //dd=0〜95
-  dd /= (95.0/10); //dd=0〜10
-  dd += 1; //dd=1〜11
+  dd -= 5;
+  dd /= (95.0/10);
+  dd += 1;
   if(dd < 1)dd = 1;
   dh /= dd*dd;
 	
@@ -723,7 +756,7 @@ void NvgWindow::drawLockon(QPainter &painter, const cereal::ModelDataV2::LeadDat
 #endif
 
   configFont(painter, FONT_OPEN_SANS, 38, "SemiBold");
-  if(num == 0 /* && uiState()->scene.mLockOnButton */){
+  if(num == 0){
     painter.setPen(QPen(QColor(0.09*255, 0.945*255, 0.26*255, prob_alpha), 2));
     painter.drawRect(r);
 
@@ -789,24 +822,21 @@ void NvgWindow::drawLockon(QPainter &painter, const cereal::ModelDataV2::LeadDat
       }
     }
 
-    if(//lead0.getX()[0] > lead1.getX()[0]
-        //y0 > y1 //lead1がlead0より左
-        std::abs(y0 - y1) <= 300
+    if(std::abs(y0 - y1) <= 300
     ){
       leadcar_lockon[num].lockOK = leadcar_lockon[num].lockOK + (40 - leadcar_lockon[num].lockOK) / 5;
     } else {
       leadcar_lockon[num].lockOK = leadcar_lockon[num].lockOK + (0 - leadcar_lockon[num].lockOK) / 5;
     }
     float td = leadcar_lockon[num].lockOK;
-    //d:10〜100->1〜3へ変換
     if(td >= 3){
       float dd = leadcar_lockon[num].d;
       if(dd < 10){
         dd = 10;
       }
-      dd -= 10; //dd=0〜90
-      dd /= (90.0/2); //dd=0〜2
-      dd += 1; //dd=1〜3
+      dd -= 10;
+      dd /= (90.0/2);
+      dd += 1;
       td /= dd;
 
       float tlw = 8;
@@ -818,34 +848,21 @@ void NvgWindow::drawLockon(QPainter &painter, const cereal::ModelDataV2::LeadDat
       painter.drawLine(r.center().x() , r.bottom()+tlw_2 , r.center().x() , r.bottom() + td);
     }
 
-  } else if(/* uiState()->scene.mLockOnButton */ true){
+  } else if(true){
     if(num == 1){
-      //推論2番
-      //邪魔な前右寄りを走るバイクを認識したい。
-      if(//lead0.getX()[0] > lead1.getX()[0] //lead1がlead0より後ろ
-        //y0 > y1 //lead1がlead0より左
-        std::abs(y0 - y1) > 300 //大きく横にずれた
-        // ||ほかにv_relやa_relで前方の急減速を表示したり（num==0に表示してみた）
-        //&& lead1.getX()[0] < 10 //lead1が自分の前10m以内
+      if(std::abs(y0 - y1) > 300
       ){
-        //painter.setPen(QPen(QColor(245, 0, 0, prob_alpha), 4));
-        //painter.drawEllipse(r); //縁を描く
-        //painter.setPen(QPen(QColor(0.09*255, 0.945*255, 0.26*255, prob_alpha), 1)); //文字を後で書くために色を再設定。->文字は赤でもいいや
-
-        //円を（意味不明だから）書かないで、枠ごと赤くする。推論1が推論と別のものを捉えてるのを簡単に認識できる。
         painter.setPen(QPen(QColor(245, 0, 0, prob_alpha), 2));
       } else {
         painter.setPen(QPen(QColor(0.09*255, 0.945*255, 0.26*255, prob_alpha), 2));
       }
 
-      if(leadcar_lockon[0].x > leadcar_lockon[1].x - 20){ //多少逆転しても許容する
+      if(leadcar_lockon[0].x > leadcar_lockon[1].x - 20){
         leadcar_lockon[num].lxt = leadcar_lockon[num].lxt + (r.left() - leadcar_lockon[num].lxt) / 20;
         leadcar_lockon[num].lxf = leadcar_lockon[num].lxf + (0 - leadcar_lockon[num].lxf) / 20;
-        //painter.drawLine(r.left(),r.top() , 0 , 0);
       } else {
         leadcar_lockon[num].lxt = leadcar_lockon[num].lxt + (r.right() - leadcar_lockon[num].lxt) / 20;
         leadcar_lockon[num].lxf = leadcar_lockon[num].lxf + (width() - leadcar_lockon[num].lxf) / 20;
-        //painter.drawLine(r.right(),r.top() , width() , 0);
       }
       float lxt = leadcar_lockon[num].lxt;
       if(lxt < r.left()){
@@ -856,36 +873,24 @@ void NvgWindow::drawLockon(QPainter &painter, const cereal::ModelDataV2::LeadDat
       painter.drawLine(lxt,r.top() , leadcar_lockon[num].lxf , 0);
 
       if(ww >= 80){
-        //float dy = y0 - y1;
-        //painter.drawText(r, Qt::AlignBottom | Qt::AlignLeft, " " + QString::number(dy,'f',1) + "m");
-        //painter.drawText(r, Qt::AlignBottom | Qt::AlignLeft, " " + QString::number(dy,'f',1));
       }
     } else if(num == 2){
-      //推論3番
-      //事実上ない。動かない0,0に居るみたい？
       painter.setPen(QPen(QColor(0.09*255, 0.945*255, 0.26*255, prob_alpha), 2));
       //painter.drawLine(r.right(),r.center().y() , width() , height());
     } else {
-      //推論4番以降。
-      //存在していない。
       painter.setPen(QPen(QColor(0.09*255, 0.945*255, 0.26*255, prob_alpha), 2));
       //painter.drawLine(r.left(),r.center().y() , 0 , height());
     }
 
     painter.drawRect(r);
 
-    //painter.setPen(QPen(QColor(0.09*255, 0.945*255, 0.26*255, prob_alpha), 2));
-
     if(ww >= 80){
-      //ここではy0,y1を参照できない。
       float d_lim = 12;
-      if(num == 0 || (num==1 && (d_rel < d_lim || std::abs(y0 - y1) > 300))){ //num==1のとき、'2'の表示と前走車速度表示がかぶるので、こちらを消す。
+      if(num == 0 || (num==1 && (d_rel < d_lim || std::abs(y0 - y1) > 300))){
         painter.drawText(r, Qt::AlignBottom | Qt::AlignLeft, " " + QString::number(num+1));
       }
     }
-    if(ww >= 160 /*80*/){
-      //painter.drawText(r, Qt::AlignBottom | Qt::AlignRight, QString::number((int)(lead_data.getProb()*100)) + "％");
-      //painter.drawText(r, Qt::AlignBottom | Qt::AlignRight, QString::number(a_rel,'f',1) + "a");
+    if(ww >= 160){
     }
   }
   painter.setPen(Qt::NoPen);
@@ -948,16 +953,16 @@ void NvgWindow::drawCommunity(QPainter &p) {
   const auto leads = model.getLeadsV3();
   size_t leads_num = leads.size();
   for(size_t i=0; i<leads_num && i < LeadcarLockon_MAX; i++){
-    if(leads[i].getProb() > .2){ //信用度20%以上で表示。調整中。
-      drawLockon(p, leads[i], s->scene.lead_vertices[i] , i /*, leads_num , leads[0] , leads[1]*/);
+    if(leads[i].getProb() > .2){
+      drawLockon(p, leads[i], s->scene.lead_vertices[i] , i);
     }
    auto lead_one = radar_state.getLeadOne();
    auto lead_two = radar_state.getLeadTwo();
    if (lead_one.getStatus()) {
-     drawLead(p, lead_one, s->scene.lead_vertices[0]);
+     drawLead(p, lead_one, s->scene.lead_vertices[0], 0);
    }
    if (lead_two.getStatus() && (std::abs(lead_one.getDRel() - lead_two.getDRel()) > 3.0)) {
-     drawLead(p, lead_two, s->scene.lead_vertices[1]);
+     drawLead(p, lead_two, s->scene.lead_vertices[1], 1);
    }
   }
 	
@@ -988,7 +993,8 @@ void NvgWindow::drawCommunity(QPainter &p) {
   const auto car_params = sm["carParams"].getCarParams();
   const auto live_params = sm["liveParameters"].getLiveParameters();
   const auto device_state = sm["deviceState"].getDeviceState();
-	
+  float distance_traveled = sm["controlsState"].getControlsState().getDistanceTraveled() / 1000;
+  	
   int lateralControlState = controls_state.getLateralControlSelect();
   const char* lateral_state[] = {"PID", "INDI", "LQR", "TORQUE" };
 	
@@ -1005,14 +1011,15 @@ void NvgWindow::drawCommunity(QPainter &p) {
   int scc_bus = car_params.getSccBus();
 
   QString infoText;
-  infoText.sprintf("    %s             SR%.2f             CPU %.1f°              SCC %d ",
+  infoText.sprintf("          %s                  SR %.2f                   CPU온도 %.0f°C                   SCC %d                    주행거리  %.0f m",
 		      lateral_state[lateralControlState],
                       //live_params.getAngleOffsetDeg(),
                       //live_params.getAngleOffsetAverageDeg(),
                       controls_state.getSteerRatio(),
                       //controls_state.getSteerActuatorDelay(),
 		      cpuTemp,
-                      scc_bus
+                      scc_bus,
+		      controls_state.getDistanceTraveled()
                       );
 
   // info
@@ -1160,13 +1167,14 @@ void NvgWindow::drawBottomIcons(QPainter &p) {
   //drawTextWithColor(p, x +dx+20, y - 135, "", textColor);
 	
  if (s->show_datetime && width() > 1200) {
-      // ajouatom: 현재시간표시
-      QTextOption  textOpt = QTextOption(Qt::AlignLeft);
-      configFont(p, "Open Sans", 36, "Bold");
-      p.drawText(QRect(1158, 985, width(), 150), QDateTime::currentDateTime().toString("MM월dd ddd hh:mm"), textOpt);
-      //configFont(p, "Open Sans", 60, "Bold");
-      //p.drawText(QRect(270, 150, width(), 100), QDateTime::currentDateTime().toString("MM월 dd일 (ddd)"), textOpt);	
-  }	
+     // ajouatom: 현재시간표시
+     QTextOption  textOpt = QTextOption(Qt::AlignLeft);
+     configFont(p, "Open Sans", 65, "Bold");
+     p.drawText(QRect(270, 30, width(), 70), QDateTime::currentDateTime().toString("hh:mm"), textOpt);
+     configFont(p, "Open Sans", 60, "Bold");
+     p.drawText(QRect(270, 150, width(), 70), QDateTime::currentDateTime().toString("MM-dd(ddd)"), textOpt);
+  }
+	
   p.setOpacity(1.);
 }
 
