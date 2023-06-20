@@ -16,6 +16,7 @@ from selfdrive.controls.lib.longcontrol import LongCtrlState
 from selfdrive.road_speed_limiter import road_speed_limiter_get_active
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
+LongCtrlState = car.CarControl.Actuators.LongControlState
 min_set_speed = 30 * CV.KPH_TO_MS
 
 # EPS faults if you apply torque while the steering angle is above 90 degrees for more than 1 second
@@ -272,6 +273,7 @@ class CarController:
 
         if CS.has_scc14:
           acc_standstill = stopping if CS.out.vEgo < 2. else False
+          jerk = 3.0 if actuators.longControlState == LongCtrlState.pid else 1.0
 
           lead = self.scc_smoother.get_lead(controls.sm)
 
@@ -282,7 +284,7 @@ class CarController:
             obj_gap = 0
 
           can_sends.append(
-            create_scc14(self.packer, CC.enabled, CS.out.vEgo, acc_standstill, apply_accel, CS.out.gasPressed,
+            create_scc14(self.packer, CC.enabled, CS.out.vEgo, acc_standstill, apply_accel, jerk, stopping, CS.out.gasPressed,
                          obj_gap, CS.scc14))
     else:
       self.scc12_cnt = -1
