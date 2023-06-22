@@ -262,7 +262,7 @@ class CarController:
         self.scc12_cnt %= 0xF
 
         can_sends.append(create_scc12(self.packer, apply_accel, CC.enabled, self.scc12_cnt, self.scc_live, CS.scc12,
-                                      CS.out.gasPressed, CS.out.brakePressed, CC.cruiseControl.resume,
+                                      CC.cruiseControl.override, CS.out.brakePressed, CC.cruiseControl.resume,
                                       self.car_fingerprint))
 
         can_sends.append(create_scc11(self.packer, self.frame, CC.enabled, set_speed, hud_control.leadVisible, self.scc_live, CS.scc11,
@@ -296,7 +296,7 @@ class CarController:
             obj_gap = 0
 
           can_sends.append(
-            create_scc14(self.packer, CC.enabled, CS.out.vEgo, acc_standstill, apply_accel, upper_jerk, lower_jerk, stopping, CS.out.gasPressed,
+            create_scc14(self.packer, CC.enabled, CS.out.vEgo, acc_standstill, apply_accel, upper_jerk, lower_jerk, stopping, CC.cruiseControl.override,
                          obj_gap, CS.scc14))
     else:
       self.scc12_cnt = -1
