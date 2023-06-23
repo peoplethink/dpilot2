@@ -19,9 +19,9 @@ from selfdrive.controls.lib.events import Events
 
 LON_MPC_STEP = 0.2  # first step is 0.2s
 A_CRUISE_MIN = -1.2
-A_CRUISE_MIN_VALS = [-0.82, -0.84, -0.95, -1.05, -1.00, -0.90]
+A_CRUISE_MIN_VALS = [-0.75, -0.77, -0.84, -0.95, -0.80, -0.70]
 A_CRUISE_MIN_BP = [0.,    8.3,   14,    20.,   30.,   55.]
-A_CRUISE_MAX_VALS = [3.3, 2.6, 1.8, 1.4, 1.06, .88, .68, .45, .34, .13]
+A_CRUISE_MAX_VALS = [3.1, 2.4, 1.6, 1.2, .76, .62,  .48,  0.36, 0.28, 0.09]
 A_CRUISE_MAX_BP = [0.,  3,   6.,  8.,  11., 15.,  20.,  25.,  30.,  55.]
 
 
