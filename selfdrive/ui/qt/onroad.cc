@@ -661,13 +661,13 @@ void NvgWindow::drawLead(QPainter &painter, const cereal::RadarState::LeadData::
     //QString kmph = QString::number((v_rel + vc_speed)*3.6,'f',0) + "k";
     //int str_w2 = 200;
 
-    configFont(painter, FONT_OPEN_SANS, 44, "SemiBold");
+    configFont(painter, FONT_OPEN_SANS, 40, "SemiBold");
     painter.setPen(QColor(0x0, 0x0, 0x0 , 200));
     float lock_indicator_dx = 2;
-    painter.drawText(QRect(x+2+lock_indicator_dx+90, y-50+60, str_w, 50), Qt::AlignBottom | Qt::AlignLeft, dist);
+    painter.drawText(QRect(x+2+lock_indicator_dx+90, y-50+65, str_w, 50), Qt::AlignBottom | Qt::AlignLeft, dist);
     //painter.drawText(QRect(x+2-lock_indicator_dx-str_w2-2, y-50+2, str_w2, 50), Qt::AlignBottom | Qt::AlignRight, kmph);
     painter.setPen(QColor(0xff, 0xff, 0xff));
-    painter.drawText(QRect(x+lock_indicator_dx+90, y-50+60, str_w, 50), Qt::AlignBottom | Qt::AlignLeft, dist);
+    painter.drawText(QRect(x+lock_indicator_dx+90, y-50+65, str_w, 50), Qt::AlignBottom | Qt::AlignLeft, dist);
     if(global_a_rel >= global_a_rel_col){
       global_a_rel_col = -0.1;
       painter.setPen(QColor(0.09*255, 0.945*255, 0.26*255, 255));
