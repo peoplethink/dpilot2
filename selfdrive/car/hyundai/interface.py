@@ -24,16 +24,6 @@ class CarInterface(CarInterfaceBase):
     self.mad_mode_enabled = Params().get_bool('MadModeEnabled')
 
   @staticmethod
-  def get_pid_accel_limits(CP, current_speed, cruise_speed):
-
-    v_current_kph = current_speed * CV.MS_TO_KPH
-
-    gas_max_bp = [0., 10., 20., 40., 70., 110., 130.]
-    gas_max_v = [1.65, 1.6, 1.34, 0.6, 0.36, 0.18, 0.12]
-
-    return CarControllerParams.ACCEL_MIN, interp(v_current_kph, gas_max_bp, gas_max_v)
-
-  @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=[], disable_radar=False):  # pylint: disable=dangerous-default-value
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
 
