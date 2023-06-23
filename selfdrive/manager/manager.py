@@ -98,7 +98,7 @@ def manager_init() -> None:
     ("AutoNaviSpeedCtrlStart", "22"),
     ("AutoNaviSpeedCtrlEnd", "6"),
     ("LeadDangerFactor", "80"),
-    ("MaxAngleFrames", "87"),
+    ("MaxAngleFrames", "89"),
     ("PutPrebuilt", "0"), 
   ]
   if not PC:
