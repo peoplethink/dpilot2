@@ -58,7 +58,7 @@ T_DIFFS = np.diff(T_IDXS, prepend=[0.])
 MIN_ACCEL = -3.5
 T_FOLLOW = 1.45
 COMFORT_BRAKE = 2.5
-STOP_DISTANCE = 6.5
+STOP_DISTANCE = 6.0
 
 def get_stopped_equivalence_factor(v_lead, v_ego, t_follow=T_FOLLOW, stop_distance=STOP_DISTANCE, krkeegan=False):
   if not krkeegan:
@@ -376,7 +376,7 @@ class LongitudinalMpc:
   def update_TF(self, carstate, radarstate, v_ego, a_ego):
     cruise_gap = int(clip(carstate.cruiseGap, 1., 4.))
     if cruise_gap == 1:
-      self.t_follow = 0.9
+      self.t_follow = 0.8
     elif cruise_gap == 2:
       x_vel =  [0.0,   3.0,  3.01, 8.3,  8.31, 13.9, 19.7,  25.0,  41.67]
       y_dist = [1.17,  1.17, 1.26, 1.26, 1.34, 1.34, 1.43,  1.50,  1.55]
