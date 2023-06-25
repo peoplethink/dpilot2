@@ -70,9 +70,7 @@ class Planner:
     self.events = Events()
     
     self.params = Params()
-    self.param_read_counter = 0
-    self.read_param()
-
+    self.params_count = 0
     self.cruiseMaxVals1 = float(int(Params().get("CruiseMaxVals1", encoding="utf8"))) / 100.
     self.cruiseMaxVals2 = float(int(Params().get("CruiseMaxVals2", encoding="utf8"))) / 100.
     self.cruiseMaxVals3 = float(int(Params().get("CruiseMaxVals3", encoding="utf8"))) / 100.
