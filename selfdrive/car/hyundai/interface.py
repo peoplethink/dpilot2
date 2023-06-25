@@ -102,7 +102,7 @@ class CarInterface(CarInterfaceBase):
     ret.vEgoStarting = 0.3
     ret.vEgoStopping = 0.3
     ret.startAccel = 2.0
-    ret.stoppingDecelRate = 0.2 # brake_travel/s while trying to stop
+    ret.stoppingDecelRate = 0.1 # brake_travel/s while trying to stop
 
 
     # genesis
