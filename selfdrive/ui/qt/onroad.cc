@@ -1483,7 +1483,7 @@ void NvgWindow::drawMisc(QPainter &p) {
   const SubMaster &sm = *(s->sm);
 
   const auto road_limit_speed = sm["roadLimitSpeed"].getRoadLimitSpeed();
-  QString currentRoadName = QString::fromStdString(navi_data.getCurrentRoadName().cStr());
+  QString currentRoadName = QString::fromStdString(road_limit_speed.getCurrentRoadName().cStr());
 
   QColor color = QColor(255, 255, 255, 230);
 
