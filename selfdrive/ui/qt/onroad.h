@@ -151,6 +151,7 @@ protected:
   void drawCommunity(QPainter &p);
   void drawGpsStatus(QPainter &p);
   void drawSteer(QPainter &p);
+  void drawMisc(QPainter &p);
   void drawEngRpm(QPainter &p);
   
   const int radius = 192;
