@@ -971,6 +971,7 @@ void NvgWindow::drawCommunity(QPainter &p) {
   drawTurnSignals(p);
   drawGpsStatus(p);
   drawBrake(p);
+  drawMisc(p);	
 	
   if(s->show_steer)
     drawSteer(p);	
@@ -1461,7 +1462,33 @@ void NvgWindow::drawMaxSpeed(QPainter &p) {
       text_rect.moveTop(b_rect.top() + 3);
       p.drawText(text_rect, Qt::AlignCenter, str);
     }
+
+    {
+      configFont(p, "Inter", 10, "Bold");
+
+      QRect text_rect = getRect(p, Qt::AlignCenter, str);
+      QRect b_rect(board_rect.x(), board_rect.y(), board_rect.width(), board_rect.height()/2);
+      text_rect.moveCenter({b_rect.center().x(), 0});
+      text_rect.moveTop(b_rect.top() + 20);
+      p.drawText(text_rect, Qt::AlignCenter, str);
+    } 
   }
+
+  p.restore();
+}
+
+void NvgWindow::drawMisc(QPainter &p) {
+  p.save();
+  UIState *s = uiState();
+  const SubMaster &sm = *(s->sm);
+
+  const auto road_limit_speed = sm["roadLimitSpeed"].getRoadLimitSpeed();
+  QString currentRoadName = QString::fromStdString(navi_data.getCurrentRoadName().cStr());
+
+  QColor color = QColor(255, 255, 255, 230);
+
+  configFont(p, "Inter", 70, "Regular");
+  drawText(p, (width()-(bdr_s*2))/4 + bdr_s + 20, 140, currentRoadName, 200);
 
   p.restore();
 }
