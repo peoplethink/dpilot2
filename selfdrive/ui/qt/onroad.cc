@@ -32,10 +32,6 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   nvg->hud = hud;
 	
   buttons = new ButtonsWindow(this);
-  QObject::connect(uiState(), &UIState::uiUpdate, buttons, &ButtonsWindow::updateState);
-  QObject::connect(nvg, &NvgWindow::resizeSignal, [=] (int w) {
-    buttons->setFixedWidth(w);
-  });
   stacked_layout->addWidget(buttons);
 
 
@@ -82,6 +78,8 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 }
 
 void OnroadWindow::updateState(const UIState &s) {
+  buttons->updateState(s);
+	
   QColor bgColor = bg_colors[s.status];
   Alert alert = Alert::get(*(s.sm), s.scene.started_frame);
   if (s.sm->updated("controlsState") || !alert.equal({})) {
@@ -227,12 +225,10 @@ void OnroadWindow::paintEvent(QPaintEvent *event) {
 
 ButtonsWindow::ButtonsWindow(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout  = new QVBoxLayout(this);
-
   QWidget *btns_wrapper = new QWidget;
   QHBoxLayout *btns_layout  = new QHBoxLayout(btns_wrapper);
   btns_layout->setSpacing(0);
   btns_layout->setContentsMargins(0, 770, 30, 30);
-
   main_layout->addWidget(btns_wrapper, 0, Qt::AlignTop);
 
   // Dynamic lane profile button
