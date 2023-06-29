@@ -20,15 +20,13 @@ class ButtonsWindow : public QWidget {
 
 public:
   ButtonsWindow(QWidget* parent = 0);
+  void updateState(const UIState &s);
 
 private:
   QPushButton *dlpBtn;
 
   //int dlpStatus = -1;
   const QStringList dlpBtnColors = {"#87ceeb", "#00ff16", "#808080"};
-
-public slots:
-  void updateState(const UIState &s);
 };
 
 class OnroadHud : public QWidget {
