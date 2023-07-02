@@ -994,7 +994,7 @@ void NvgWindow::drawCommunity(QPainter &p) {
   const auto car_params = sm["carParams"].getCarParams();
   const auto live_params = sm["liveParameters"].getLiveParameters();
   const auto device_state = sm["deviceState"].getDeviceState();
-  const auto memoryUsagePercent = sm["deviceState"].getMemoryUsagePercent();	
+  const auto device_state = sm["deviceState"].getMemoryUsagePercent();	
   float distance_traveled = sm["controlsState"].getControlsState().getDistanceTraveled() / 1000;
   	
   int lateralControlState = controls_state.getLateralControlSelect();
@@ -1020,7 +1020,7 @@ void NvgWindow::drawCommunity(QPainter &p) {
                       controls_state.getSteerRatio(),
                       //controls_state.getSteerActuatorDelay(),
 		      cpuTemp,
-	              memoryUsagePercent,
+	              device_state.getMemoryUsagePercent(),
 		      controls_state.getDistanceTraveled() / 1000,
                       scc_bus
                       );
