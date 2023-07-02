@@ -506,6 +506,9 @@ void NvgWindow::initializeGL() {
   ic_scc2 = QPixmap("../assets/images/img_scc2.png");
   ic_radar = QPixmap("../assets/images/radar.png");
   ic_radar_vision = QPixmap("../assets/images/radar_vision.png");
+  ic_lane_change_left_img = QPixmap("../assets/images/lane_change_left.png");
+  ic_lane_change_right_img = QPixmap("../assets/images/lane_change_right.png");
+	
 }
 
 void NvgWindow::updateFrameMat(int w, int h) {
@@ -967,7 +970,8 @@ void NvgWindow::drawCommunity(QPainter &p) {
   drawTurnSignals(p);
   drawGpsStatus(p);
   drawBrake(p);
-  drawMisc(p);	
+  drawMisc(p);
+  drawLaneChangeIndicator(p);	
 	
   if(s->show_steer)
     drawSteer(p);	
@@ -1774,5 +1778,37 @@ void NvgWindow::drawEngRpm(QPainter &p) {
    drawTextWithColor(p, x, y, rpm, textColor2);
   } else if (eng_rpm > 3000) {
    drawTextWithColor(p, x, y, rpm, textColor2);
+  }
+
+void NvgWindow::drawLaneChangeIndicator(QPainter &painter, const UIState *s) {
+  typedef cereal::LateralPlan::LaneChangeDirection Direction;
+  typedef cereal::LateralPlan::LaneChangeState State;
+
+  auto draw_indicator_lambda = [this](QPainter &painter, Direction direction, QColor color) {
+    QPixmap img = direction == Direction::LEFT ? lane_change_left_img : lane_change_right_img;
+    QRect img_rc{0, (rect().height() - img.height()) / 2, img.width(), img.height()};
+    QRect ellipse_rc = img_rc.adjusted(-img_rc.width(), -img_rc.height() / 2, 20, img_rc.height() / 2);
+    if (direction == Direction::RIGHT) {
+      img_rc.moveRight(rect().right());
+      ellipse_rc.moveRight(rect().right() + img_rc.width());
+    }
+    painter.setPen(Qt::NoPen);
+    painter.setBrush(color);
+    painter.drawEllipse(ellipse_rc);
+    painter.drawPixmap(img_rc, img);
+  };
+
+  auto lateralPlan = (*(s->sm))["lateralPlan"].getLateralPlan();
+  auto laneChangeState = lateralPlan.getLaneChangeState();
+  auto direction = lateralPlan.getLaneChangeDirection();
+
+  if (laneChangeState == State::PRE_LANE_CHANGE) {
+    auto carState = (*(s->sm))["carState"].getCarState();
+    bool blocked = (direction == Direction::LEFT && carState.getLeftBlindspot()) ||
+                   (direction == Direction::RIGHT && carState.getRightBlindspot());
+    draw_indicator_lambda(painter, direction, blocked ? redColor(200) : blackColor(200));
+  } else if (laneChangeState == State::LANE_CHANGE_STARTING ||
+             laneChangeState == State::LANE_CHANGE_FINISHING) {
+    draw_indicator_lambda(painter, direction, bg_colors[s->status]);
   }
 }
