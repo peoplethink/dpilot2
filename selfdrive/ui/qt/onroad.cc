@@ -1786,7 +1786,7 @@ void NvgWindow::drawLaneChangeIndicator(QPainter &painter, const UIState *s) {
   typedef cereal::LateralPlan::LaneChangeState State;
 
   auto draw_indicator_lambda = [this](QPainter &painter, Direction direction, QColor color) {
-    QPixmap img = direction == Direction::LEFT ? lane_change_left_img : lane_change_right_img;
+    QPixmap img = direction == Direction::LEFT ? ic_lane_change_left_img : ic_lane_change_right_img;
     QRect img_rc{0, (rect().height() - img.height()) / 2, img.width(), img.height()};
     QRect ellipse_rc = img_rc.adjusted(-img_rc.width(), -img_rc.height() / 2, 20, img_rc.height() / 2);
     if (direction == Direction::RIGHT) {
