@@ -994,6 +994,7 @@ void NvgWindow::drawCommunity(QPainter &p) {
   const auto car_params = sm["carParams"].getCarParams();
   const auto live_params = sm["liveParameters"].getLiveParameters();
   const auto device_state = sm["deviceState"].getDeviceState();
+  const auto memoryUsagePercent = deviceState.getMemoryUsagePercent();	
   float distance_traveled = sm["controlsState"].getControlsState().getDistanceTraveled() / 1000;
   	
   int lateralControlState = controls_state.getLateralControlSelect();
@@ -1012,13 +1013,14 @@ void NvgWindow::drawCommunity(QPainter &p) {
   int scc_bus = car_params.getSccBus();
 
   QString infoText;
-  infoText.sprintf("          %s                  SR %.2f                   CPU온도 %.0f°C                   주행거리  %.1f km                    SCC %d",
+  infoText.sprintf("          %s                  SR %.2f                   CPU온도 %.0f°C         MEM: %d%%          주행거리  %.1f km                    SCC %d",
 		      lateral_state[lateralControlState],
                       //live_params.getAngleOffsetDeg(),
                       //live_params.getAngleOffsetAverageDeg(),
                       controls_state.getSteerRatio(),
                       //controls_state.getSteerActuatorDelay(),
 		      cpuTemp,
+	              memoryUsagePercent,
 		      controls_state.getDistanceTraveled() / 1000,
                       scc_bus
                       );
