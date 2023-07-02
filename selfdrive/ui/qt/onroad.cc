@@ -971,7 +971,7 @@ void NvgWindow::drawCommunity(QPainter &p) {
   drawGpsStatus(p);
   drawBrake(p);
   drawMisc(p);
-  drawLaneChangeIndicator(p);	
+  drawLaneChangeIndicator(p, uiState());	
 	
   if(s->show_steer)
     drawSteer(p);	
