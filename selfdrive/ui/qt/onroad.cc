@@ -1779,6 +1779,7 @@ void NvgWindow::drawEngRpm(QPainter &p) {
   } else if (eng_rpm > 3000) {
    drawTextWithColor(p, x, y, rpm, textColor2);
   }
+}
 
 void NvgWindow::drawLaneChangeIndicator(QPainter &painter, const UIState *s) {
   typedef cereal::LateralPlan::LaneChangeDirection Direction;
