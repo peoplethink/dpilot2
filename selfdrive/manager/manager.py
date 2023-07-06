@@ -111,6 +111,8 @@ def manager_init() -> None:
     ("CruiseMaxVals10", "10"),
     ("LongitudinalActuatorDelayUpperBound", "60"),
     ("LongitudinalActuatorDelayLowerBound", "20"),
+    ("LongitudinalTuningKpV", "100"),     
+    ("LongitudinalTuningKiV", "0"),    
     ("PutPrebuilt", "0"), 
   ]
   if not PC:
