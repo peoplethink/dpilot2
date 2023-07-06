@@ -1792,11 +1792,11 @@ void NvgWindow::drawLaneChangeIndicator(QPainter &painter, const UIState *s) {
     QRect img_rc{0, (rect().height() - img.height()) / 2, img.width(), img.height()};
     QRect ellipse_rc = img_rc.adjusted(-img_rc.width(), -img_rc.height() / 2, 40, img_rc.height() / 2);
     if (direction == Direction::RIGHT) {
-      img_rc.moveRight(rect().right() -200);
-      ellipse_rc.moveRight(rect().right() + img_rc.width() - 200);
+      img_rc.moveRight(rect().right() -300);
+      ellipse_rc.moveRight(rect().right() + img_rc.width() - 300);
     } else if (direction == Direction::LEFT) {
-      img_rc.moveLeft(rect().left() + 200);
-      ellipse_rc.moveLeft(rect().left() + img_rc.width() + 200);
+      img_rc.moveLeft(rect().left() + 600);
+      ellipse_rc.moveLeft(rect().left() + img_rc.width() + 300);
     }
     painter.setPen(Qt::NoPen);
     painter.setBrush(color);
