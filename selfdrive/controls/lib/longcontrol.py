@@ -69,6 +69,8 @@ class LongControl:
     self.v_pid = 0.0
     self.last_output_accel = 0.0
     self.readParamCount = 0
+    self.longitudinalTuningKpV = 1.0
+    self.longitudinalTuningKiV = 0.0
     self.longitudinalActuatorDelayLowerBound = float(int(Params().get("LongitudinalActuatorDelayLowerBound", encoding="utf8"))) * 0.01
     self.longitudinalActuatorDelayUpperBound = float(int(Params().get("LongitudinalActuatorDelayUpperBound", encoding="utf8"))) * 0.01
 
@@ -82,6 +84,17 @@ class LongControl:
     if self.readParamCount >= 100:
       self.readParamCount = 0
     elif self.readParamCount == 10:
+      self.longitudinalTuningKpV = float(int(Params().get("LongitudinalTuningKpV", encoding="utf8"))) * 0.01
+      self.longitudinalTuningKiV = float(int(Params().get("LongitudinalTuningKiV", encoding="utf8"))) * 0.001
+
+      ## longcontrolTuning이 한개일때만 적용
+      if len(self.CP.longitudinalTuning.kpBP) == 1 and len(self.CP.longitudinalTuning.kiBP)==1:
+        self.CP.longitudinalTuning.kpV = [self.longitudinalTuningKpV]
+        self.CP.longitudinalTuning.kiV = [self.longitudinalTuningKiV]
+        self.pid._k_p = (self.CP.longitudinalTuning.kpBP, self.CP.longitudinalTuning.kpV)
+        self.pid._k_i = (self.CP.longitudinalTuning.kiBP, self.CP.longitudinalTuning.kiV)
+        
+    elif self.readParamCount == 30:
       self.longitudinalActuatorDelayLowerBound = float(int(Params().get("LongitudinalActuatorDelayLowerBound", encoding="utf8"))) * 0.01
       self.longitudinalActuatorDelayUpperBound = float(int(Params().get("LongitudinalActuatorDelayUpperBound", encoding="utf8"))) * 0.01
       
