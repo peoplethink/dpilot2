@@ -281,16 +281,12 @@ class CarController:
           
           min_required_jerk = min(2.5, abs(accel - CS.out.aEgo) * 15)
           lower_jerk = clip(abs(accel - self.accel_last) * 50, min_required_jerk, 3.0)
-          upper_jerk = lower_jerk + 0.5
+          upper_jerk = lower_jerk
 
-          if CS.out.vEgoRaw < 4.:
-            if accel > 0:
-              lower_jerk = max(0.5, lower_jerk)
-              upper_jerk = lower_jerk + 0.5
-            else:
-              # When decelerating from very low speeds allow more jerk to prevent a slow stop
-              lower_jerk = max(0.2, lower_jerk)
-              upper_jerk = lower_jerk + 0.5
+          if accel > CS.out.aEgo:
+            lower_jerk = 0
+          else:
+            upper_jerk = 0
 
           lead = self.scc_smoother.get_lead(controls.sm)
 
