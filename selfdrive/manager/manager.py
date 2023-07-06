@@ -109,6 +109,8 @@ def manager_init() -> None:
     ("CruiseMaxVals8", "30"),
     ("CruiseMaxVals9", "25"),
     ("CruiseMaxVals10", "10"),
+    ("LongitudinalActuatorDelayUpperBound", "60"),
+    ("LongitudinalActuatorDelayLowerBound", "20"),
     ("PutPrebuilt", "0"), 
   ]
   if not PC:
