@@ -248,6 +248,8 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"CruiseMaxVals8", PERSISTENT},
     {"CruiseMaxVals9", PERSISTENT},
     {"CruiseMaxVals10", PERSISTENT},
+    {"LongitudinalActuatorDelayLowerBound", PERSISTENT},
+    {"LongitudinalActuatorDelayUpperBound", PERSISTENT}, 
     {"Compass", PERSISTENT},
 };
 
