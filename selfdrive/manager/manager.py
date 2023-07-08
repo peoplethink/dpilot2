@@ -112,7 +112,8 @@ def manager_init() -> None:
     ("LongitudinalActuatorDelayUpperBound", "60"),
     ("LongitudinalActuatorDelayLowerBound", "20"),
     ("LongitudinalTuningKpV", "50"),     
-    ("LongitudinalTuningKiV", "0"),    
+    ("LongitudinalTuningKiV", "0"),
+    ("MixRadarInfo", "1"),
     ("PutPrebuilt", "0"), 
   ]
   if not PC:
