@@ -1789,7 +1789,7 @@ void NvgWindow::drawLaneChangeIndicator(QPainter &painter, const UIState *s) {
     }
     painter.setPen(Qt::NoPen);
     painter.setBrush(color);
-    painter.drawEllipse(ellipse_rc);
+    //painter.drawEllipse(ellipse_rc);
     painter.drawPixmap(img_rc, img);
   };
 
