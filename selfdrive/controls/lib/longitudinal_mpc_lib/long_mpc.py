@@ -387,7 +387,7 @@ class LongitudinalMpc:
       self.t_follow = np.interp(carstate.vEgo, x_vel, y_dist)
     elif cruise_gap == 4:
       x_vel = [0,    11,   13,   15,   25,   40]
-      y_dist = [1.12, 1.12, 1.13, 1.12, 1.22, 1.22]
+      y_dist = [0.9, 1.0, 1.1, 1.12, 1.22, 1.22]
       self.t_follow = np.interp(carstate.vEgo, x_vel, y_dist)
       
     if radarstate.leadOne.status:
