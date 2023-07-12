@@ -632,16 +632,34 @@ void NvgWindow::drawLead(QPainter &painter, const cereal::RadarState::LeadData::
   float g_xo = sz / 5;
   float g_yo = sz / 10;
 
+  UIState *s = uiState();
 
-  float homebase_h = 12;
-  QPointF glow[] = {{x + (sz * 1.35) + g_xo, y + sz + g_yo + homebase_h},{x + (sz * 1.35) + g_xo, y + sz + g_yo}, {x, y - g_yo}, {x - (sz * 1.35) - g_xo, y + sz + g_yo},{x - (sz * 1.35) - g_xo, y + sz + g_yo + homebase_h}, {x, y + sz + homebase_h + g_yo + 10}};
-  painter.setBrush(QColor(218, 202, 37, 210));
-  painter.drawPolygon(glow, std::size(glow));
+  if (s->scene.radarDistance < 149) {
+    float homebase_h = 12;
+    QPointF glow[] = {{x + (sz * 1.35) + g_xo, y + sz + g_yo + homebase_h},{x + (sz * 1.35) + g_xo, y + sz + g_yo}, {x, y - g_yo}, {x - (sz * 1.35) - g_xo, y + sz + g_yo},{x - (sz * 1.35) - g_xo, y + sz + g_yo + homebase_h}, {x, y + sz + homebase_h + g_yo + 10}};
+    painter.setBrush(QColor(218, 202, 37, 210));
+    painter.drawPolygon(glow, std::size(glow));
 
-  // chevron
-  QPointF chevron[] = {{x + (sz * 1.25), y + sz + homebase_h},{x + (sz * 1.25), y + sz}, {x, y}, {x - (sz * 1.25), y + sz},{x - (sz * 1.25), y + sz + homebase_h}, {x, y + sz + homebase_h - 7}};
-  painter.setBrush(redColor(fillAlpha));
-  painter.drawPolygon(chevron, std::size(chevron));
+    // chevron
+    QPointF chevron[] = {{x + (sz * 1.25), y + sz + homebase_h},{x + (sz * 1.25), y + sz}, {x, y}, {x - (sz * 1.25), y + sz},{x - (sz * 1.25), y + sz + homebase_h}, {x, y + sz + homebase_h - 7}};
+    painter.setBrush(redColor(fillAlpha));
+    painter.drawPolygon(chevron, std::size(chevron));
+    painter.setPen(QColor(0x0, 0x0, 0xff));
+    painter.setFont(InterFont(35, QFont::DemiBold));
+    painter.drawText(QRect(x - (sz * 1.25), y, 2 * (sz * 1.25), sz * 1.25), Qt::AlignCenter, QString("R"));
+  } else {
+    QPointF glow[] = {{x + (sz * 1.35) + g_xo, y + sz + g_yo + homebase_h},{x + (sz * 1.35) + g_xo, y + sz + g_yo}, {x, y - g_yo}, {x - (sz * 1.35) - g_xo, y + sz + g_yo},{x - (sz * 1.35) - g_xo, y + sz + g_yo + homebase_h}, {x, y + sz + homebase_h + g_yo + 10}};
+    painter.setBrush(QColor(0, 255, 0, 255));
+    painter.drawPolygon(glow, std::size(glow));
+
+    // chevron
+    QPointF chevron[] = {{x + (sz * 1.25), y + sz + homebase_h},{x + (sz * 1.25), y + sz}, {x, y}, {x - (sz * 1.25), y + sz},{x - (sz * 1.25), y + sz + homebase_h}, {x, y + sz + homebase_h - 7}};
+    painter.setBrush(greenColor(fillAlpha));
+    painter.drawPolygon(chevron, std::size(chevron));
+    painter.setPen(QColor(0x0, 0x0, 0x0));
+    painter.setFont(InterFont(35, QFont::DemiBold));
+    painter.drawText(QRect(x - (sz * 1.25), y, 2 * (sz * 1.25), sz * 1.25), Qt::AlignCenter, QString("V"));
+  }	
   
   if(num == 0){
     QString dist = QString::number(d_rel,'f',0) + "m";
