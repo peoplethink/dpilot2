@@ -634,7 +634,7 @@ void NvgWindow::drawLead(QPainter &painter, const cereal::RadarState::LeadData::
 
   UIState *s = uiState();
 
-  if (s->scene.radarDistance < 149) {
+  if (scene.radarDistance < 149) {
     float homebase_h = 12;
     QPointF glow[] = {{x + (sz * 1.35) + g_xo, y + sz + g_yo + homebase_h},{x + (sz * 1.35) + g_xo, y + sz + g_yo}, {x, y - g_yo}, {x - (sz * 1.35) - g_xo, y + sz + g_yo},{x - (sz * 1.35) - g_xo, y + sz + g_yo + homebase_h}, {x, y + sz + homebase_h + g_yo + 10}};
     painter.setBrush(QColor(218, 202, 37, 210));
@@ -644,10 +644,11 @@ void NvgWindow::drawLead(QPainter &painter, const cereal::RadarState::LeadData::
     QPointF chevron[] = {{x + (sz * 1.25), y + sz + homebase_h},{x + (sz * 1.25), y + sz}, {x, y}, {x - (sz * 1.25), y + sz},{x - (sz * 1.25), y + sz + homebase_h}, {x, y + sz + homebase_h - 7}};
     painter.setBrush(redColor(fillAlpha));
     painter.drawPolygon(chevron, std::size(chevron));
+    configFont(painter, FONT_OPEN_SANS, 40, "SemiBold");  
     painter.setPen(QColor(0x0, 0x0, 0xff));
-    painter.setFont(InterFont(35, QFont::DemiBold));
     painter.drawText(QRect(x - (sz * 1.25), y, 2 * (sz * 1.25), sz * 1.25), Qt::AlignCenter, QString("R"));
   } else {
+    float homebase_h = 12;  
     QPointF glow[] = {{x + (sz * 1.35) + g_xo, y + sz + g_yo + homebase_h},{x + (sz * 1.35) + g_xo, y + sz + g_yo}, {x, y - g_yo}, {x - (sz * 1.35) - g_xo, y + sz + g_yo},{x - (sz * 1.35) - g_xo, y + sz + g_yo + homebase_h}, {x, y + sz + homebase_h + g_yo + 10}};
     painter.setBrush(QColor(0, 255, 0, 255));
     painter.drawPolygon(glow, std::size(glow));
@@ -656,8 +657,8 @@ void NvgWindow::drawLead(QPainter &painter, const cereal::RadarState::LeadData::
     QPointF chevron[] = {{x + (sz * 1.25), y + sz + homebase_h},{x + (sz * 1.25), y + sz}, {x, y}, {x - (sz * 1.25), y + sz},{x - (sz * 1.25), y + sz + homebase_h}, {x, y + sz + homebase_h - 7}};
     painter.setBrush(greenColor(fillAlpha));
     painter.drawPolygon(chevron, std::size(chevron));
+    configFont(painter, FONT_OPEN_SANS, 40, "SemiBold");  
     painter.setPen(QColor(0x0, 0x0, 0x0));
-    painter.setFont(InterFont(35, QFont::DemiBold));
     painter.drawText(QRect(x - (sz * 1.25), y, 2 * (sz * 1.25), sz * 1.25), Qt::AlignCenter, QString("V"));
   }	
   
