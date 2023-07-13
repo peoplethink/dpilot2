@@ -183,6 +183,7 @@ static void update_state(UIState *s) {
     scene.radarDistance = cs_data.getRadarDistance();
     scene.leftblindspot = scene.car_state.getLeftBlindspot();
     scene.rightblindspot = scene.car_state.getRightBlindspot();
+    scene.blinkerstatus = cs_data.getLeftBlinker()? 1 : cs_data.getRightBlinker()? 2 : 0;
   }
   
   if (scene.started && sm.updated("controlsState")) {
