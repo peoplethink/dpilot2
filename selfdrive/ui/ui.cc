@@ -180,6 +180,7 @@ static void update_state(UIState *s) {
     scene.car_state = sm["carState"].getCarState();
     auto cs_data = sm["carState"].getCarState();
     scene.angleSteers = cs_data.getSteeringAngleDeg();
+    scene.radarDistance = cs_data.getRadarDistance();
     scene.leftblindspot = scene.car_state.getLeftBlindspot();
     scene.rightblindspot = scene.car_state.getRightBlindspot();
   }
