@@ -97,6 +97,13 @@ void OnroadWindow::updateState(const UIState &s) {
     bg = bgColor;
     update();
   }
+	
+  UIState *my_s = uiState();
+  if (s.scene.blinkerstatus || my_s->scene.prev_blinkerstatus) {
+    update();
+    my_s->scene.prev_blinkerstatus = s.scene.blinkerstatus;
+    my_s->scene.blinkerframe += my_s->scene.blinkerframe < 255? +20 : -255;
+  }	
 }
 
 void OnroadWindow::mouseReleaseEvent(QMouseEvent* e) {
@@ -212,6 +219,43 @@ void OnroadWindow::offroadTransition(bool offroad) {
 void OnroadWindow::paintEvent(QPaintEvent *event) {
   QPainter p(this);
   p.fillRect(rect(), QColor(bg.red(), bg.green(), bg.blue(), 255));
+
+  // Begin AleSato Blinker Indicator
+  p.setPen(Qt::NoPen);
+  UIState *s = uiState();
+  p.setBrush(QBrush(QColor(0, 0, 0, 0xff)));
+  if (s->scene.blinkerstatus == 1) {
+    // left rectangle for blinker indicator
+    float rightcorner = width() * 0.75;
+    QRect blackground = QRect(0, height()*0.75, rightcorner, height());
+    p.drawRect(blackground);
+    float bottomsect = rightcorner / (rightcorner + (height()/4)); // time proportion
+    float delta = 1 - (float(s->scene.blinkerframe)/(255*bottomsect));
+    delta = std::clamp(delta, 0.0f, 1.0f);
+    QRect r = QRect(rightcorner*delta, height()-30, rightcorner-(rightcorner*delta), 30);
+    p.setBrush(QBrush(QColor(255, 150, 0, 255)));
+    p.drawRect(r);
+    float delta2 = (float(s->scene.blinkerframe) - float(255 * bottomsect)) / (255 * (1 - bottomsect));
+    delta2 = std::clamp(delta2, 0.0f, 1.0f);
+    r = QRect(0, height() - height()*0.25*delta2, 30, height());
+    p.drawRect(r);
+  } else if (s->scene.blinkerstatus == 2) {
+    // right rectangle for blinker indicator
+    float leftcorner = width() * 0.25;
+    QRect blackground = QRect(leftcorner, height()*0.75, width(), height());
+    p.drawRect(blackground);
+    float bottomsect = (width() - leftcorner) / (width() - leftcorner + (height()/4)); // time proportion
+    float delta = float(s->scene.blinkerframe)/(255*bottomsect);
+    delta = std::clamp(delta, 0.0f, 1.0f);
+    QRect r = QRect(leftcorner, height()-30, (width()-leftcorner)*delta, 30);
+    p.setBrush(QBrush(QColor(255, 150, 0, 255)));
+    p.drawRect(r);
+    float delta2 = (float(s->scene.blinkerframe) - float(255 * bottomsect)) / (255 * (1 - bottomsect));
+    delta2 = std::clamp(delta2, 0.0f, 1.0f);
+    r = QRect(width()-30, height() - height()*0.25*delta2, width(), height());
+    p.drawRect(r);
+  }
+  // End AleSato Blinker Indicator	
 }
 
 // ***** onroad widgets *****
@@ -489,8 +533,6 @@ void NvgWindow::initializeGL() {
   ic_nda = QPixmap("../assets/images/img_nda.png");
   ic_hda = QPixmap("../assets/images/img_hda.png");
   //ic_tire_pressure = QPixmap("../assets/images/img_tire_pressure.png");
-  ic_turn_signal_l = QPixmap("../assets/images/turn_signal_l.png");
-  ic_turn_signal_r = QPixmap("../assets/images/turn_signal_r.png");
   ic_satellite = QPixmap("../assets/images/satellite.png");
   ic_scc2 = QPixmap("../assets/images/img_scc2.png");
   ic_radar = QPixmap("../assets/images/radar.png");
@@ -975,7 +1017,6 @@ void NvgWindow::drawCommunity(QPainter &p) {
 	
   drawMaxSpeed(p);
   drawSpeed(p);
-  drawTurnSignals(p);
   drawGpsStatus(p);
   drawBrake(p);
   drawMisc(p);
@@ -1529,84 +1570,6 @@ void NvgWindow::drawSteer(QPainter &p) {
 	
   str.sprintf("%.0f°", desire_angle);
   drawTextWithColor(p, rc.center().x(), rc.center().y() + 50, str, textColor1);
-}
-
-void NvgWindow::drawTurnSignals(QPainter &p) {
-  static int blink_index = 0;
-  static int blink_wait = 0;
-  static double prev_ts = 0.0;
-
-  if(blink_wait > 0) {
-    blink_wait--;
-    blink_index = 0;
-  }
-  else {
-    const SubMaster &sm = *(uiState()->sm);
-    auto car_state = sm["carState"].getCarState();
-    bool left_on = car_state.getLeftBlinker();
-    bool right_on = car_state.getRightBlinker();
-
-    const float img_alpha = 0.8f;
-    const int fb_w = width() / 2 - 200;
-    const int center_x = width() / 2;
-    const int w = fb_w / 25;
-    const int h = 170;
-    const int gap = fb_w / 25;
-    const int margin = (int)(fb_w / 3.8f);
-    const int base_y = (height() - h) / 2 - 360;
-    const int draw_count = 7;
-
-    int x = center_x;
-    int y = base_y;
-
-    if(left_on) {
-      for(int i = 0; i < draw_count; i++) {
-        float alpha = img_alpha;
-        int d = std::abs(blink_index - i);
-        if(d > 0)
-          alpha /= d*2;
-
-        p.setOpacity(alpha);
-        float factor = (float)draw_count / (i + draw_count);
-        p.drawPixmap(x - w - margin, y + (h-h*factor)/2, w*factor, h*factor, ic_turn_signal_l);
-        x -= gap + w;
-      }
-    }
-
-    x = center_x;
-    if(right_on) {
-      for(int i = 0; i < draw_count; i++) {
-        float alpha = img_alpha;
-        int d = std::abs(blink_index - i);
-        if(d > 0)
-          alpha /= d*2;
-
-        float factor = (float)draw_count / (i + draw_count);
-        p.setOpacity(alpha);
-        p.drawPixmap(x + margin, y + (h-h*factor)/2, w*factor, h*factor, ic_turn_signal_r);
-        x += gap + w;
-      }
-    }
-
-    if(left_on || right_on) {
-
-      double now = millis_since_boot();
-      if(now - prev_ts > 900/UI_FREQ) {
-        prev_ts = now;
-        blink_index++;
-      }
-
-      if(blink_index >= draw_count) {
-        blink_index = draw_count - 1;
-        blink_wait = UI_FREQ/4;
-      }
-    }
-    else {
-      blink_index = 0;
-    }
-  }
-
-  p.setOpacity(1.);
 }
 
 void NvgWindow::drawGpsStatus(QPainter &p) {
