@@ -634,7 +634,7 @@ void NvgWindow::drawLead(QPainter &painter, const cereal::RadarState::LeadData::
 
   UIState *s = uiState();
 
-  if (scene.radarDistance < 149) {
+  if (s->scene.radarDistance < 149) {
     float homebase_h = 12;
     QPointF glow[] = {{x + (sz * 1.35) + g_xo, y + sz + g_yo + homebase_h},{x + (sz * 1.35) + g_xo, y + sz + g_yo}, {x, y - g_yo}, {x - (sz * 1.35) - g_xo, y + sz + g_yo},{x - (sz * 1.35) - g_xo, y + sz + g_yo + homebase_h}, {x, y + sz + homebase_h + g_yo + 10}};
     painter.setBrush(QColor(218, 202, 37, 210));
