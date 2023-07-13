@@ -144,6 +144,9 @@ typedef struct UIScene {
   uint64_t started_frame;
   bool rightblindspot;
   bool leftblindspot;
+  int blinkerstatus = 0;
+  int prev_blinkerstatus = 0;
+  int blinkerframe = 0;
   bool compass;
   
   struct _LateralPlan
