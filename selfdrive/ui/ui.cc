@@ -290,6 +290,7 @@ void ui_update_params(UIState *s) {
   s->scene.is_metric = params.getBool("IsMetric");
   s->scene.compass = params.getBool("Compass");
   s->scene.map_on_left = params.getBool("NavSettingLeftSide");
+  s->scene.brightness = std::stoi(params.get("OpkrUIBrightness"));
   s->show_debug = params.getBool("ShowDebugUI");
   s->show_gear = params.getBool("ShowCgearUI");//기어
   s->show_tpms = params.getBool("ShowTpmsUI");
@@ -403,6 +404,8 @@ void Device::updateBrightness(const UIState &s) {
   int brightness = brightness_filter.update(clipped_brightness);
   if (!awake) {
     brightness = 0;
+  } else if( s.scene.brightness ) {
+    brightness = s.scene.brightness * 0.99;
   }
 
   if (brightness != last_brightness) {
