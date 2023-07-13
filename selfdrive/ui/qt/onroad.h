@@ -126,8 +126,6 @@ protected:
   QPixmap ic_nda;
   QPixmap ic_hda;
   QPixmap ic_tire_pressure;
-  QPixmap ic_turn_signal_l;
-  QPixmap ic_turn_signal_r;
   QPixmap ic_satellite;
   QPixmap ic_scc2;
   QPixmap ic_radar;
@@ -144,7 +142,6 @@ protected:
   void drawMaxSpeed(QPainter &p);
   void drawSpeed(QPainter &p);
   void drawBottomIcons(QPainter &p);
-  void drawTurnSignals(QPainter &p);
   void drawDebugText(QPainter &p);
   void drawCgear(QPainter &p);//기어
   void drawTpms(QPainter &p);
