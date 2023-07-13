@@ -248,7 +248,7 @@ void OnroadWindow::paintEvent(QPaintEvent *event) {
     float delta = float(s->scene.blinkerframe)/(255*bottomsect);
     delta = std::clamp(delta, 0.0f, 1.0f);
     QRect r = QRect(leftcorner, height()-30, (width()-leftcorner)*delta, 30);
-    p.setBrush(QBrush(QColor(255, 150, 0, 255)));
+    p.setBrush(QBrush(QColor(255, 150, 0, 150)));
     p.drawRect(r);
     float delta2 = (float(s->scene.blinkerframe) - float(255 * bottomsect)) / (255 * (1 - bottomsect));
     delta2 = std::clamp(delta2, 0.0f, 1.0f);
