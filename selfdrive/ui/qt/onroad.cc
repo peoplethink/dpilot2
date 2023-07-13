@@ -644,7 +644,7 @@ void NvgWindow::drawLead(QPainter &painter, const cereal::RadarState::LeadData::
     QPointF chevron[] = {{x + (sz * 1.25), y + sz + homebase_h},{x + (sz * 1.25), y + sz}, {x, y}, {x - (sz * 1.25), y + sz},{x - (sz * 1.25), y + sz + homebase_h}, {x, y + sz + homebase_h - 7}};
     painter.setBrush(redColor(fillAlpha));
     painter.drawPolygon(chevron, std::size(chevron));
-    configFont(painter, FONT_OPEN_SANS, 40, "SemiBold");  
+    configFont(painter, FONT_OPEN_SANS, 35, "SemiBold");  
     painter.setPen(QColor(0x0, 0x0, 0xff));
     painter.drawText(QRect(x - (sz * 1.25), y, 2 * (sz * 1.25), sz * 1.25), Qt::AlignCenter, QString("R"));
   } else {
@@ -657,7 +657,7 @@ void NvgWindow::drawLead(QPainter &painter, const cereal::RadarState::LeadData::
     QPointF chevron[] = {{x + (sz * 1.25), y + sz + homebase_h},{x + (sz * 1.25), y + sz}, {x, y}, {x - (sz * 1.25), y + sz},{x - (sz * 1.25), y + sz + homebase_h}, {x, y + sz + homebase_h - 7}};
     painter.setBrush(greenColor(fillAlpha));
     painter.drawPolygon(chevron, std::size(chevron));
-    configFont(painter, FONT_OPEN_SANS, 40, "SemiBold");  
+    configFont(painter, FONT_OPEN_SANS, 35, "SemiBold");  
     painter.setPen(QColor(0x0, 0x0, 0x0));
     painter.drawText(QRect(x - (sz * 1.25), y, 2 * (sz * 1.25), sz * 1.25), Qt::AlignCenter, QString("V"));
   }	
