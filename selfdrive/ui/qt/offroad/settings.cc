@@ -236,7 +236,7 @@ void DevicePanel::updateCalibDescription() {
       AlignedBuffer aligned_buf;
       capnp::FlatArrayMessageReader cmsg(aligned_buf.align(calib_bytes.data(), calib_bytes.size()));
       auto calib = cmsg.getRoot<cereal::Event>().getLiveCalibration();
-      if (calib.getCalStatus() != 0) {
+      if (calib.getCalStatus() != cereal::LiveCalibrationData::Status::UNCALIBRATED) {
         double pitch = calib.getRpyCalib()[1] * (180 / M_PI);
         double yaw = calib.getRpyCalib()[2] * (180 / M_PI);
         desc += QString(" 장치 장착상태는 %1° %2 그리고 %3° %4.")
