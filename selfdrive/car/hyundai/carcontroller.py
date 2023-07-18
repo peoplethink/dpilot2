@@ -279,11 +279,11 @@ class CarController:
           acc_standstill = stopping if CS.out.vEgo < 2. else False
           #stopping = stopping and CS.out.vEgoRaw < 0.05
           
-          min_required_jerk = min(2.5, abs(accel - CS.out.aEgo) * 15)
-          lower_jerk = clip(abs(accel - self.accel_last) * 50, min_required_jerk, 3.0)
-          upper_jerk = lower_jerk
+          required_jerk = min(3, abs(accel - CS.out.aEgo) * 50)
+          lower_jerk = required_jerk
+          upper_jerk = required_jerk
 
-          if accel > CS.out.aEgo:
+          if CS.out.aEgo < accel:
             lower_jerk = 0
           else:
             upper_jerk = 0
@@ -299,5 +299,6 @@ class CarController:
           can_sends.append(
             create_scc14(self.packer, CC.enabled, CS.out.vEgo, acc_standstill, apply_accel, upper_jerk, lower_jerk, stopping, CC.cruiseControl.override,
                          obj_gap, CS.scc14))
+          self.apply_accel_last = apply_accel
     else:
       self.scc12_cnt = -1
