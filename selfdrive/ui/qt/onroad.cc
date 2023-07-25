@@ -1059,7 +1059,7 @@ void NvgWindow::drawCommunity(QPainter &p) {
   }
 
   auto cpu_loads = device_state.getCpuUsagePercent();
-  int cpu_usage = std::accumulate(cpu_loads.begin(), cpu_loads.end(), 0) / cpu_loads.size();
+  float cpu_usage = std::accumulate(cpu_loads.begin(), cpu_loads.end(), 0) / cpu_loads.size();
 	
   //int mdps_bus = car_params.getMdpsBus();
   int scc_bus = car_params.getSccBus();
