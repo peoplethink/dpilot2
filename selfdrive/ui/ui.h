@@ -115,7 +115,6 @@ typedef struct UIScene {
   float angleSteersDes;
   float cpuTempAvg;
   float distanceTraveled;
-  float memoryUsagePercent;
   float cpuUsagePercent;
   float radarDistance;
   
