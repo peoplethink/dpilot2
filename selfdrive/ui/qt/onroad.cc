@@ -1071,7 +1071,7 @@ void NvgWindow::drawCommunity(QPainter &p) {
                       controls_state.getSteerRatio(),
                       //controls_state.getSteerActuatorDelay(),
 		      cpuTemp,
-	              device_state.getCpuUsagePercent(),
+	              cpu_usage,
 		      controls_state.getDistanceTraveled() / 1000,
                       scc_bus
                       );
