@@ -1042,7 +1042,8 @@ void NvgWindow::drawCommunity(QPainter &p) {
   const auto controls_state = sm["controlsState"].getControlsState();
   const auto car_params = sm["carParams"].getCarParams();
   const auto live_params = sm["liveParameters"].getLiveParameters();
-  const auto device_state = sm["deviceState"].getDeviceState();	
+  const auto device_state = sm["deviceState"].getDeviceState();
+  float cpu_usagepercent = sm["deviceState"].getDeviceState().getCpuUsagePercent();	
   float distance_traveled = sm["controlsState"].getControlsState().getDistanceTraveled() / 1000;
   	
   int lateralControlState = controls_state.getLateralControlSelect();
@@ -1058,7 +1059,7 @@ void NvgWindow::drawCommunity(QPainter &p) {
   }
 
   auto cpu_loads = deviceState.getCpuUsagePercent();
-  int cpu_usage = std::accumulate(cpu_loads.begin(), cpu_loads.end(), 0) / cpu_loads.size();
+  float cpu_usage = std::accumulate(cpu_loads.begin(), cpu_loads.end(), 0) / cpu_loads.size();
 	
   //int mdps_bus = car_params.getMdpsBus();
   int scc_bus = car_params.getSccBus();
