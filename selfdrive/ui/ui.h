@@ -116,6 +116,7 @@ typedef struct UIScene {
   float cpuTempAvg;
   float distanceTraveled;
   float memoryUsagePercent;
+  float cpuUsagePercent;
   float radarDistance;
   
   cereal::PandaState::PandaType pandaType;
