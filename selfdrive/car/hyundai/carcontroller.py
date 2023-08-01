@@ -3,7 +3,7 @@ from random import randint
 from cereal import car
 from common.realtime import DT_CTRL
 from common.numpy_fast import clip, interp
-from selfdrive.car import apply_std_steer_torque_limits
+from selfdrive.car import apply_std_steer_torque_limits, common_fault_avoidance
 from selfdrive.car.hyundai.hyundaican import create_lkas11, create_clu11, \
   create_scc11, create_scc12, create_scc13, create_scc14, \
   create_mdps12, create_lfahda_mfc, create_hda_mfc
@@ -97,6 +97,11 @@ class CarController:
     new_steer = int(round(actuators.steer * self.params.STEER_MAX))
     apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, self.params)
 
+    # >90 degree steering fault prevention
+    self.angle_limit_counter, apply_steer_req = common_fault_avoidance(CS.out.steeringAngleDeg, MAX_ANGLE, CC.latActive,
+                                                                      self.angle_limit_counter, MAX_ANGLE_FRAMES,
+                                                                      MAX_ANGLE_CONSECUTIVE_FRAMES)
+    
     # disable when temp fault is active, or below LKA minimum speed
     lkas_active = CC.latActive
 
@@ -111,6 +116,9 @@ class CarController:
     if not lkas_active:
       apply_steer = 0
 
+     # Hold torque with induced temporary fault when cutting the actuation bit
+    torque_fault = CC.latActive and not apply_steer_req
+    
     self.apply_steer_last = apply_steer
 
     sys_warning, sys_state, left_lane_warning, right_lane_warning = process_hud_alert(CC.enabled, self.car_fingerprint, hud_control)
@@ -142,27 +150,15 @@ class CarController:
     if self.frame % 100 == 0:
       self.maxAngleFrames = int(Params().get("MaxAngleFrames", encoding="utf8"))
       
-    # Count up to MAX_ANGLE_FRAMES, at which point we need to cut torque to avoid a steering fault
-    if lkas_active and abs(CS.out.steeringAngleDeg) >= MAX_ANGLE:
-      self.angle_limit_counter += 1
-    else:
-      self.angle_limit_counter = 0
-
-    # Cut steer actuation bit for two frames and hold torque with induced temporary fault
-    torque_fault = lkas_active and self.angle_limit_counter > self.maxAngleFrames
-    lat_active = lkas_active and not torque_fault
-
-    if self.angle_limit_counter >= self.maxAngleFrames + MAX_ANGLE_CONSECUTIVE_FRAMES:
-      self.angle_limit_counter = 0
 
     can_sends = []
     
-    can_sends.append(create_lkas11(self.packer, self.frame, self.car_fingerprint, apply_steer, lat_active,
+    can_sends.append(create_lkas11(self.packer, self.frame, self.car_fingerprint, apply_steer, apply_steer_req,
                                    torque_fault, CS.lkas11, sys_warning, sys_state, CC.enabled, hud_control.leftLaneVisible, hud_control.rightLaneVisible,
                                    left_lane_warning, right_lane_warning, 0, self.ldws_opt))
 
     if CS.mdps_bus or CS.scc_bus == 1:  # send lkas11 bus 1 if mdps or scc is on bus 1
-      can_sends.append(create_lkas11(self.packer, self.frame, self.car_fingerprint, apply_steer, lat_active,
+      can_sends.append(create_lkas11(self.packer, self.frame, self.car_fingerprint, apply_steer, apply_steer_req,
                                      torque_fault, CS.lkas11, sys_warning, sys_state, CC.enabled, hud_control.leftLaneVisible, hud_control.rightLaneVisible,
                                      left_lane_warning, right_lane_warning, 1, self.ldws_opt))
 
