@@ -85,6 +85,7 @@ class CarController:
     self.prev_active_cam = False
     self.active_cam_timer = 0
     self.last_active_cam_frame = 0
+    self.maxAngleFrames = MAX_ANGLE_FRAMES
     self.angle_limit_counter = 0
      
   def update(self, CC, CS, controls):
@@ -98,7 +99,7 @@ class CarController:
 
     # >90 degree steering fault prevention
     self.angle_limit_counter, apply_steer_req = common_fault_avoidance(CS.out.steeringAngleDeg, MAX_ANGLE, CC.latActive,
-                                                                      self.angle_limit_counter, MAX_ANGLE_FRAMES,
+                                                                      self.angle_limit_counter, self.maxAngleFrames,
                                                                       MAX_ANGLE_CONSECUTIVE_FRAMES)
     
     # disable when temp fault is active, or below LKA minimum speed
@@ -146,7 +147,9 @@ class CarController:
 
     cut_steer_temp = False
       
-
+    if self.frame % 100 == 0:
+      self.maxAngleFrames = int(Params().get("MaxAngleFrames", encoding="utf8"))
+      
     can_sends = []
     
     can_sends.append(create_lkas11(self.packer, self.frame, self.car_fingerprint, apply_steer, apply_steer_req,
