@@ -192,6 +192,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"SccSmootherSlowOnCurves", PERSISTENT},
     {"SccSmootherSyncGasPressed", PERSISTENT},
     {"StockNaviDecelEnabled", PERSISTENT},
+    {"Sound_Mdpserr", PERSISTENT},
     {"NewRadarInterface", PERSISTENT},
     {"DisableOpFcw", PERSISTENT},
     {"ShowDebugUI", PERSISTENT},
