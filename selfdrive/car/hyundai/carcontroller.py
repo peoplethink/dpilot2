@@ -85,7 +85,6 @@ class CarController:
     self.prev_active_cam = False
     self.active_cam_timer = 0
     self.last_active_cam_frame = 0
-    self.maxAngleFrames = MAX_ANGLE_FRAMES
     self.angle_limit_counter = 0
      
   def update(self, CC, CS, controls):
@@ -146,9 +145,6 @@ class CarController:
     self.lkas11_cnt = (self.lkas11_cnt + 1) % 0x10
 
     cut_steer_temp = False
-
-    if self.frame % 100 == 0:
-      self.maxAngleFrames = int(Params().get("MaxAngleFrames", encoding="utf8"))
       
 
     can_sends = []
