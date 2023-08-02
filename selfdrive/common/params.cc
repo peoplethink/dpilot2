@@ -236,6 +236,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"UnlimitedLength", PERSISTENT},
     {"AutoNaviSpeedCtrlStart", PERSISTENT},
     {"AutoNaviSpeedCtrlEnd", PERSISTENT},
+    {"MaxAngleFrames", PERSISTENT},
     {"LeadDangerFactor", PERSISTENT},
     {"CruiseMaxVals1", PERSISTENT},
     {"CruiseMaxVals2", PERSISTENT},
