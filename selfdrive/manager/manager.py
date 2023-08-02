@@ -97,6 +97,7 @@ def manager_init() -> None:
     ("UnlimitedLength", "1"),
     ("AutoNaviSpeedCtrlStart", "22"),
     ("AutoNaviSpeedCtrlEnd", "6"),
+    ("MaxAngleFrames", "88"),
     ("LeadDangerFactor", "80"),
     ("CruiseMaxVals1", "205"),
     ("CruiseMaxVals2", "200"),
