@@ -16,7 +16,7 @@ from selfdrive.ntune import ntune_scc_get
 from selfdrive.road_speed_limiter import road_speed_limiter_get_max_speed, road_speed_limiter_get_active, \
   get_road_speed_limiter
 
-SYNC_MARGIN = 3.
+SYNC_MARGIN = 5.
 
 # do not modify
 MIN_SET_SPEED_KPH = V_CRUISE_MIN
@@ -259,9 +259,9 @@ class SccSmoother:
             self.btn = self.get_button(CS.cruiseState_speed * self.speed_conv_to_clu)
         elif ascc_auto_set and clu11_speed < 30:
           if self.autoascc:  
-            self.btn = Buttons.SET_DECEL
+            self.btn = Buttons.RES_ACCEL #SET_DECEL
         else:
-          self.btn = Buttons.RES_ACCEL
+          self.btn = Buttons.SET_DECEL #RES_ACCEL
         self.alive_count = SccSmoother.get_alive_count()
 
       if self.btn != Buttons.NONE:
