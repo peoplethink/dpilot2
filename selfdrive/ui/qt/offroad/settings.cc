@@ -798,9 +798,6 @@ TUNINGPanel::TUNINGPanel(QWidget* parent) : QWidget(parent) {
     toggleLayout->addWidget(new LabelControl("〓〓〓〓〓〓〓〓【 조향메뉴 】〓〓〓〓〓〓〓〓", ""));
     toggleLayout->addWidget(new ParamControl("Steer_SRTune", "SR가변 사용", "SR속도 가변사용(반드시 활성화할것)", "../assets/offroad/icon_road.png", this));
     toggleLayout->addWidget(new CValueControl("Steer_SRTune_v", "SR가변 비율", "SR가변시 비율값(추천:95)", "../assets/offroad/icon_road.png", 80, 120, 1));
-    //toggleLayout->addWidget(new CValueControl("SteerDeltaUp", "SteerDeltaUp(3)", "", "../assets/offroad/icon_road.png", 1, 20, 1));
-    //toggleLayout->addWidget(new CValueControl("SteerDeltaDown", "SteerDeltaDown(7)", "", "../assets/offroad/icon_road.png", 1, 20, 1));
-    toggleLayout->addWidget(new CValueControl("MaxAngleFrames", "MaxAngleFrames(88)", "89:기본, 88:추천, lkas fault 발생시 87:사용", "../assets/offroad/icon_road.png", 80, 100, 1));
     toggleLayout->addWidget(new LaneChangeSpeed());
     toggleLayout->addWidget(new CValueControl("PathOffset", "차선 좌우보정", "좌측이동(-), 우측이동(+)", "../assets/offroad/icon_road.png", -200, 200, 1));
     toggleLayout->addWidget(horizontal_line());
