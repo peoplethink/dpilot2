@@ -1204,7 +1204,7 @@ void NvgWindow::drawBottomIcons(QPainter &p) {
   if(autohold >= 0) {
     x = radius / 2 + (bdr_s * 2) + (radius + 50) * 3;
     img_alpha = autohold > 0 ? 1.0f : 0.15f;
-    bg_alpha = autohold > 0 ? 0.3f : 0.1f;
+    bg_alpha = autohold > 0 ? 0.0f : 0.0f;
     drawIcon(p, x, y, autohold > 1 ? ic_autohold_warning : ic_autohold_active,
             QColor(0, 0, 0, (255 * bg_alpha)), img_alpha);
   }
