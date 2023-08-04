@@ -528,8 +528,8 @@ void NvgWindow::initializeGL() {
 
   //neokii
   ic_brake = QPixmap("../assets/images/img_brake_disc.png");
-  //ic_autohold_warning = QPixmap("../assets/images/img_autohold_warning.png").scaled(img_size, img_size, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-  //ic_autohold_active = QPixmap("../assets/images/img_autohold_active.png").scaled(img_size, img_size, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+  ic_autohold_warning = QPixmap("../assets/images/img_autohold_warning.png").scaled(img_size, img_size, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+  ic_autohold_active = QPixmap("../assets/images/img_autohold_active.png").scaled(img_size, img_size, Qt::KeepAspectRatio, Qt::SmoothTransformation);
   ic_nda = QPixmap("../assets/images/img_nda.png");
   ic_hda = QPixmap("../assets/images/img_hda.png");
   //ic_tire_pressure = QPixmap("../assets/images/img_tire_pressure.png");
@@ -1198,6 +1198,16 @@ void NvgWindow::drawBottomIcons(QPainter &p) {
 
   configFont(p, "Open Sans", textSize, "Bold");
   drawTextWithColor(p, x-290, y+135, str, textColor);
+
+ // auto hold
+  int autohold = car_state.getAutoHold();
+  if(autohold >= 0) {
+    x = radius / 2 + (bdr_s * 2) + (radius + 50) * 3;
+    img_alpha = autohold > 0 ? 1.0f : 0.15f;
+    bg_alpha = autohold > 0 ? 0.3f : 0.1f;
+    drawIcon(p, x, y, autohold > 1 ? ic_autohold_warning : ic_autohold_active,
+            QColor(0, 0, 0, (255 * bg_alpha)), img_alpha);
+  }
 	
  // Accel표시
   float accel = car_state.getAEgo();  
