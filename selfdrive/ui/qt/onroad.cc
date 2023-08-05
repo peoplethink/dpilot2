@@ -1210,7 +1210,8 @@ void NvgWindow::drawBottomIcons(QPainter &p) {
  // auto hold
   int autohold = car_state.getAutoHold();
   if(autohold >= 0) {
-    x = radius / 2 + (bdr_s * 2) + (radius + 50) * 3;
+    x = radius / 2 + (bdr_s * 2) + (radius + 50);
+    y = 100;
     float img_alpha = autohold > 0 ? 1.0f : 0.15f;
     float bg_alpha = autohold > 0 ? 0.0f : 0.0f;
     drawIcon(p, x, y, autohold > 1 ? ic_autohold_warning : ic_autohold_active,
