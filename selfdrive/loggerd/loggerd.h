@@ -81,7 +81,7 @@ const LogCameraInfo cameras_logged[] = {
     .has_qcamera = false,
     .trigger_rotate = Hardware::TICI(),
     .enable = true,
-    .record = Params().getBool("RecordFront"),
+    .record = false,
   },
   {
     .type = WideRoadCam,
