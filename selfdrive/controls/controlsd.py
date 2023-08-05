@@ -255,7 +255,8 @@ class Controls:
 
     # Create events for battery, temperature, disk space, and memory
     if EON and (self.sm['peripheralState'].pandaType != PandaType.uno) and \
-       self.sm['deviceState'].batteryPercent < 1 and self.sm['deviceState'].chargingError:
+       self.sm['deviceState'].batteryPercent < 1 and self.sm['deviceState'].chargingError \
+       and not Params().get_bool("IsChargerFaultIgnored"):
       # at zero percent battery, while discharging, OP should not allowed
       self.events.add(EventName.lowBattery)
     if self.sm['deviceState'].thermalStatus >= ThermalStatus.red:
