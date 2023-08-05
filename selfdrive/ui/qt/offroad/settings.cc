@@ -57,11 +57,12 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       "차선 유무에 따라 laneline, laneless 자동 적용",
       "../assets/offroad/icon_road.png",
     },
+    // ignore charging error
     {
-      "DisengageOnAccelerator",
-      "Disengage On Accelerator Pedal",
-      "When enabled, pressing the accelerator pedal will disengage openpilot.",
-      "../assets/offroad/icon_disengage_on_accelerator.svg",
+      "IsChargerFaultIgnored",
+      "Low Battery 경고 무시",
+      "low battery 경고 발생시 활성화.",
+      "../assets/offroad/icon_road.png",
     },
 #ifdef ENABLE_MAPS
     {
