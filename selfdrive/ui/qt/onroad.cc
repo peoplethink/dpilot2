@@ -1206,7 +1206,7 @@ void NvgWindow::drawBottomIcons(QPainter &p) {
 
   configFont(p, "Open Sans", textSize, "Bold");
   drawTextWithColor(p, x-290, y+135, str, textColor);
-
+/*
  // auto hold
   int autohold = car_state.getAutoHold();
   if(autohold >= 0) {
@@ -1215,7 +1215,7 @@ void NvgWindow::drawBottomIcons(QPainter &p) {
     float bg_alpha = autohold > 0 ? 0.0f : 0.0f;
     drawIcon(p, x, y-20, autohold > 1 ? ic_autohold_warning : ic_autohold_active,
             QColor(0, 0, 0, (255 * bg_alpha)), img_alpha);
-  }
+  }*/
 	
  // Accel표시
   float accel = car_state.getAEgo();  
