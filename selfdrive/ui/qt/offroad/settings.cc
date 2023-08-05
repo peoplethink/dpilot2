@@ -52,15 +52,9 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       "../assets/offroad/icon_metric.png",
     },
     {
-      "RecordFront",
-      "운전자 영상 녹화",
-      "운전자 모니터링 카메라에서 데이터를 업로드하고 운전자 모니터링 알고리즘을 개선하십시오.",
-      "../assets/offroad/icon_monitoring.png",
-    },
-    {
       "EndToEndToggle",
-      "\U0001f96c 차선이 없을 때 사용 버전 알파 \U0001f96c",
-      "차선이 없는 곳에서 사람과 같이 운전을 하는 것을 목표함니다.",
+      "\U0001f96c AUTO LANE 활성화 \U0001f96c",
+      "차선 유무에 따라 laneline, laneless 자동 적용",
       "../assets/offroad/icon_road.png",
     },
     {
