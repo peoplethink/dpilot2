@@ -85,7 +85,7 @@ def apply_toyota_steer_torque_limits(apply_torque, apply_torque_last, motor_torq
   return int(round(float(apply_torque)))
 
 
-def common_fault_avoidance(measured_value: float, max_value: float, request: int, current_request_frames: int = 0, 
+def common_fault_avoidance(fault_condition: bool, request: int, current_request_frames: int = 0, 
                                                          max_request_frames: int = 1, cut_request_frames: int = 1):
   """
   Several cars have the ability to work around their EPS limits by cutting the
@@ -93,7 +93,7 @@ def common_fault_avoidance(measured_value: float, max_value: float, request: int
   """
 
   # Count up to max_request_frames, at which point we need to cut the request for cut_request_frames to avoid a fault
-  if request and abs(measured_value) >= max_value:
+  if request and fault_condition:
     current_request_frames += 1
   else:
     current_request_frames = 0
