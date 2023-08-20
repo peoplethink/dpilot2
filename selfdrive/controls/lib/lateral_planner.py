@@ -38,6 +38,8 @@ class LateralPlanner:
     self.dynamic_lane_profile_status_buffer = False
     self.second = 0.0
 
+    self.average_desired_curvature = CP.pfeiferjDesiredCurvatures
+    
   def reset_mpc(self, x0=np.zeros(4)):
     self.x0 = x0
     self.lat_mpc.reset(x0=self.x0)
