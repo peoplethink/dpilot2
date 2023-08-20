@@ -115,6 +115,7 @@ def manager_init() -> None:
     ("LongitudinalTuningKpV", "50"),     
     ("LongitudinalTuningKiV", "0"),
     ("MixRadarInfo", "1"),
+    ("AverageDesiredCurvature", "1"),
     ("PutPrebuilt", "0"), 
   ]
   if not PC:
