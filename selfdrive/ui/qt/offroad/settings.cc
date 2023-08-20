@@ -796,7 +796,7 @@ TUNINGPanel::TUNINGPanel(QWidget* parent) : QWidget(parent) {
     toggleLayout->addWidget(new CValueControl("MaxAngleFrames", "MaxAngleFrames(89)", "89:기본, lkas fault 발생시 87:사용", "../assets/offroad/icon_road.png", 80, 100, 1));
     toggleLayout->addWidget(new LaneChangeSpeed());
     toggleLayout->addWidget(new CValueControl("PathOffset", "차선 좌우보정", "좌측이동(-), 우측이동(+)", "../assets/offroad/icon_road.png", -200, 200, 1));
-    toggleLayout->addWidget(new ParamControl("AverageDesiredCurvature", "Average Desired Curvature", "Use for smoother handling of curves.", "../assets/offroad/icon_road.png"));
+    toggleLayout->addWidget(new ParamControl("AverageDesiredCurvature", "Average Desired Curvature", "Use for smoother handling of curves.", "../assets/offroad/icon_road.png", this));
     toggleLayout->addWidget(horizontal_line());
     toggleLayout->addWidget(new BrightnessControl());
     toggleLayout->addWidget(new ParamControl("CustomRoadUI", "Custom Road UI", "Personalize the road UI of openpilot.", "../assets/offroad/icon_road.png"));
@@ -804,7 +804,6 @@ TUNINGPanel::TUNINGPanel(QWidget* parent) : QWidget(parent) {
     toggleLayout->addWidget(new PathWidth());
     toggleLayout->addWidget(new RoadEdgesWidth());
     toggleLayout->addWidget(new BlindspotLineWidth());
-    toggleLayout->addWidget(new ParamControl("AverageDesiredCurvature", "Average Desired Curvature", "Use for smoother handling of curves.", "../assets/offroad/icon_road.png"));
     toggleLayout->addWidget(horizontal_line());
     toggleLayout->addWidget(horizontal_line());
     toggleLayout->addWidget(new LabelControl("〓〓〓〓〓〓〓〓【 롱컨메뉴 】〓〓〓〓〓〓〓〓", ""));
