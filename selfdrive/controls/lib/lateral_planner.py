@@ -13,7 +13,7 @@ from cereal import log
 LaneChangeState = log.LateralPlan.LaneChangeState
 
 class LateralPlanner:
-  def __init__(self, use_lanelines=True, wide_camera=False):
+  def __init__(self, CP, use_lanelines=True, wide_camera=False):
     self.use_lanelines = use_lanelines
     self.LP = LanePlanner(wide_camera)
     self.readParams = 0
