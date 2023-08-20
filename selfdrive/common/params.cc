@@ -255,6 +255,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"LongitudinalTuningKiV", PERSISTENT},
     {"MixRadarInfo", PERSISTENT},
     {"OpkrUIBrightness", PERSISTENT},
+    {"AverageDesiredCurvature", PERSISTENT},
     {"Compass", PERSISTENT},
 };
 
