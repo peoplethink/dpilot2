@@ -110,9 +110,6 @@ class CarInterfaceBase(ABC):
     ret.longitudinalActuatorDelayLowerBound = 0.15
     ret.longitudinalActuatorDelayUpperBound = 0.15
     ret.steerLimitTimer = 1.0
-
-    params = Params()
-    ret.pfeiferjDesiredCurvatures = ret.lateralTune and params.get_bool("AverageDesiredCurvature")
     return ret
 
   @staticmethod
