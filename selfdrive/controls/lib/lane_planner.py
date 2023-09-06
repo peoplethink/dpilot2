@@ -52,7 +52,7 @@ class LanePlanner:
     self.wide_camera = wide_camera
 
     self.params = Params()
-    elf.drive_close_to_edge = self.params.get_bool("CloseToRoadEdge")
+    self.drive_close_to_edge = self.params.get_bool("CloseToRoadEdge")
     self.left_edge_offset = float(Decimal(self.params.get("LeftEdgeOffset", encoding="utf8")) * Decimal('0.01'))
     self.right_edge_offset = float(Decimal(self.params.get("RightEdgeOffset", encoding="utf8")) * Decimal('0.01'))
 
