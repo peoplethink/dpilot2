@@ -231,6 +231,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"CloseToRoadEdge", PERSISTENT},
     {"LeftEdgeOffset", PERSISTENT},
     {"RightEdgeOffset", PERSISTENT},
+    {"SteerActuatorDelayAdj", PERSISTENT},
     {"ShowDateTime", PERSISTENT},
     {"ShowEngRPMUI", PERSISTENT},
     {"CustomRoadUI", PERSISTENT},
