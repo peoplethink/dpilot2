@@ -173,6 +173,21 @@ private:
   void refresh();
 };
 
+class SteerActuatorDelay : public AbstractControl {
+  Q_OBJECT
+
+public:
+  SteerActuatorDelay();
+
+private:
+  QPushButton btnplus;
+  QPushButton btnminus;
+  QLabel label;
+  Params params;
+  
+  void refresh();
+};
+
 class CloseToRoadEdgeToggle : public ToggleControl {
   Q_OBJECT
 
