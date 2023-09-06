@@ -988,7 +988,7 @@ void LaneChangeSpeed::refresh() {
 
 OPKREdgeOffset::OPKREdgeOffset() : AbstractControl("", 
                                                    "+ value to move car to left, - value to move car to right on each lane.",
-                                                   "../assets/offroad/icon_shell.png") {
+                                                   "") {
 
   labell1.setAlignment(Qt::AlignVCenter|Qt::AlignLeft);
   labell1.setText(tr("LeftEdge: "));
