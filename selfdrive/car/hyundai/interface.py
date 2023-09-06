@@ -11,6 +11,7 @@ from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness,
 from selfdrive.car.interfaces import CarInterfaceBase
 from selfdrive.controls.lib.latcontrol_torque import set_torque_tune
 from common.params import Params
+from decimal import Decimal
 from selfdrive.controls.lib.desire_helper import LANE_CHANGE_SPEED_MIN
 
 GearShifter = car.CarState.GearShifter
@@ -83,9 +84,12 @@ class CarInterface(CarInterfaceBase):
         set_torque_tune(ret.lateralTuning, torque_params['LAT_ACCEL_FACTOR'], torque_params['FRICTION'])
 
 
-    ret.steerActuatorDelay = 0.3
+    ret.steerActuatorDelay = 0.1
     ret.steerLimitTimer = 0.8
     ret.steerRatio = 15.3
+
+    params = Params()
+    ret.steerActuatorDelay = float(Decimal(params.get("SteerActuatorDelayAdj", encoding="utf8")) * Decimal('0.01'))
 	  
     # genesis
     if candidate == CAR.GENESIS:
