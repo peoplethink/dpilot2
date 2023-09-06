@@ -5,6 +5,8 @@ from common.numpy_fast import interp, clip, mean
 from common.realtime import DT_MDL
 from selfdrive.hardware import EON, TICI
 from selfdrive.swaglog import cloudlog
+from common.params import Params
+from decimal import Decimal
 
 ENABLE_ZORROBYTE = True
 ENABLE_INC_LANE_PROB = True
@@ -12,9 +14,9 @@ ENABLE_INC_LANE_PROB = True
 TRAJECTORY_SIZE = 33
 # camera offset is meters from center car to camera
 # model path is in the frame of the camera
-PATH_OFFSET = 0.00
+PATH_OFFSET = -(float(Decimal(Params().get("PathOffsetAdj", encoding="utf8")) * Decimal('0.001')))  # default 0.0
 if EON:
-  CAMERA_OFFSET = -0.06
+  CAMERA_OFFSET = -(float(Decimal(Params().get("CameraOffsetAdj", encoding="utf8")) * Decimal('0.001')))  # m from center car to camera
 elif TICI:
   CAMERA_OFFSET = 0.04
 else:
@@ -41,22 +43,66 @@ class LanePlanner:
     self.l_lane_change_prob = 0.
     self.r_lane_change_prob = 0.
 
-    self.camera_offset = -CAMERA_OFFSET if wide_camera else CAMERA_OFFSET
-    self.path_offset = -PATH_OFFSET if wide_camera else PATH_OFFSET
+    self.camera_offset = CAMERA_OFFSET
+    self.path_offset = PATH_OFFSET
 
     self.readings = []
     self.frame = 0
 
     self.wide_camera = wide_camera
 
+    self.params = Params()
+    elf.drive_close_to_edge = self.params.get_bool("CloseToRoadEdge")
+    self.left_edge_offset = float(Decimal(self.params.get("LeftEdgeOffset", encoding="utf8")) * Decimal('0.01'))
+    self.right_edge_offset = float(Decimal(self.params.get("RightEdgeOffset", encoding="utf8")) * Decimal('0.01'))
+
+    self.road_edge_offset = 0.0
+    self.total_camera_offset = self.camera_offset
+    self.lp_timer = 0
+    self.lp_timer2 = 0
+    self.lp_timer3 = 0
+    
   def parse_model(self, md):
+
+    #opkr
+    self.lp_timer += DT_MDL
+    if self.lp_timer > 1.0:
+      self.lp_timer = 0.0
+      self.camera_offset = -(float(Decimal(Params().get("CameraOffsetAdj", encoding="utf8")) * Decimal('0.001')))  # m from center car to camera
+
+    #opkr
+    if self.drive_close_to_edge:
+      left_edge_prob = np.clip(1.0 - md.roadEdgeStds[0], 0.0, 1.0)
+      left_nearside_prob = md.laneLineProbs[0]
+      left_close_prob = md.laneLineProbs[1]
+      right_close_prob = md.laneLineProbs[2]
+      right_nearside_prob = md.laneLineProbs[3]
+      right_edge_prob = np.clip(1.0 - md.roadEdgeStds[1], 0.0, 1.0)
+
+      self.lp_timer3 += DT_MDL
+      if self.lp_timer3 > 3.0:
+        self.lp_timer3 = 0.0
+        if right_nearside_prob < 0.1 and left_nearside_prob < 0.1:
+          self.road_edge_offset = 0.0
+        elif right_edge_prob > 0.35 and right_nearside_prob < 0.2 and right_close_prob > 0.5 and left_nearside_prob >= right_nearside_prob:
+          self.road_edge_offset = -self.right_edge_offset
+        elif left_edge_prob > 0.35 and left_nearside_prob < 0.2 and left_close_prob > 0.5 and right_nearside_prob >= left_nearside_prob:
+          self.road_edge_offset = -self.left_edge_offset
+        else:
+          self.road_edge_offset = 0.0
+    else:
+      self.road_edge_offset = 0.0
+
+    self.total_camera_offset = self.camera_offset + self.road_edge_offset
+    
     lane_lines = md.laneLines
     if len(lane_lines) == 4 and len(lane_lines[0].t) == TRAJECTORY_SIZE:
       self.ll_t = (np.array(lane_lines[1].t) + np.array(lane_lines[2].t))/2
       # left and right ll x is the same
       self.ll_x = lane_lines[1].x
-      self.lll_y = np.array(lane_lines[1].y) + self.camera_offset
-      self.rll_y = np.array(lane_lines[2].y) + self.camera_offset
+      
+      self.lll_y = np.array(lane_lines[1].y) + self.total_camera_offset
+      self.rll_y = np.array(lane_lines[2].y) + self.total_camera_offset
       self.lll_prob = md.laneLineProbs[1]
       self.rll_prob = md.laneLineProbs[2]
       self.lll_std = md.laneLineStds[1]
