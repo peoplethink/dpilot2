@@ -795,6 +795,7 @@ TUNINGPanel::TUNINGPanel(QWidget* parent) : QWidget(parent) {
     toggleLayout->addWidget(new CValueControl("Steer_SRTune_v", "SR가변 비율", "SR가변시 비율값(추천:95)", "../assets/offroad/icon_road.png", 80, 120, 1));
     toggleLayout->addWidget(new CValueControl("MaxAngleFrames", "MaxAngleFrames(89)", "89:기본, lkas fault 발생시 87:사용", "../assets/offroad/icon_road.png", 80, 100, 1));
     toggleLayout->addWidget(new LaneChangeSpeed());
+    toggleLayout->addWidget(new SteerActuatorDelay());
     toggleLayout->addWidget(new CameraOffset());
     toggleLayout->addWidget(new PathOffset());
     toggleLayout->addWidget(new CloseToRoadEdgeToggle());
