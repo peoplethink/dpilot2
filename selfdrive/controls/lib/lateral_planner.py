@@ -59,7 +59,6 @@ class LateralPlanner:
     self.readParams -= 1
     if self.readParams <= 0:
       self.readParams = 100
-      self.pathOffset = float(int(Params().get("PathOffset", encoding="utf8")))*0.01
     self.second += DT_MDL
     if self.second > 1.0:
       self.use_lanelines = not Params().get_bool("EndToEndToggle")
