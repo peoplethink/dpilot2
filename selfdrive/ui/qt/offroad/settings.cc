@@ -795,7 +795,10 @@ TUNINGPanel::TUNINGPanel(QWidget* parent) : QWidget(parent) {
     toggleLayout->addWidget(new CValueControl("Steer_SRTune_v", "SR가변 비율", "SR가변시 비율값(추천:95)", "../assets/offroad/icon_road.png", 80, 120, 1));
     toggleLayout->addWidget(new CValueControl("MaxAngleFrames", "MaxAngleFrames(89)", "89:기본, lkas fault 발생시 87:사용", "../assets/offroad/icon_road.png", 80, 100, 1));
     toggleLayout->addWidget(new LaneChangeSpeed());
-    toggleLayout->addWidget(new CValueControl("PathOffset", "차선 좌우보정", "좌측이동(-), 우측이동(+)", "../assets/offroad/icon_road.png", -200, 200, 1));
+    toggleLayout->addWidget(new CameraOffset());
+    toggleLayout->addWidget(new PathOffset());
+    toggleLayout->addWidget(new CloseToRoadEdgeToggle());
+    toggleLayout->addWidget(new OPKREdgeOffset());
     toggleLayout->addWidget(new ParamControl("AverageDesiredCurvature", "Average Desired Curvature", "Use for smoother handling of curves.", "../assets/offroad/icon_road.png", this));
     toggleLayout->addWidget(horizontal_line());
     toggleLayout->addWidget(new BrightnessControl());
@@ -981,6 +984,259 @@ void LaneChangeSpeed::refresh() {
   } else {
     label.setText(QString::fromStdString(params.get("OpkrLaneChangeSpeed")));
   }
+}
+
+OPKREdgeOffset::OPKREdgeOffset() : AbstractControl("", tr("+ value to move car to left, - value to move car to right on each lane."), "") {
+
+  labell1.setAlignment(Qt::AlignVCenter|Qt::AlignLeft);
+  labell1.setText(tr("LeftEdge: "));
+  hlayout->addWidget(&labell1);
+  labell.setAlignment(Qt::AlignVCenter|Qt::AlignLeft);
+  labell.setStyleSheet("color: #e0e879");
+  hlayout->addWidget(&labell);
+  btnminusl.setStyleSheet(R"(
+    padding: 0;
+    border-radius: 50px;
+    font-size: 35px;
+    font-weight: 500;
+    color: #E4E4E4;
+    background-color: #393939;
+  )");
+  btnplusl.setStyleSheet(R"(
+    padding: 0;
+    border-radius: 50px;
+    font-size: 35px;
+    font-weight: 500;
+    color: #E4E4E4;
+    background-color: #393939;
+  )");
+  btnminusl.setFixedSize(80, 100);
+  btnplusl.setFixedSize(80, 100);
+  hlayout->addWidget(&btnminusl);
+  hlayout->addWidget(&btnplusl);
+
+  labelr1.setAlignment(Qt::AlignVCenter|Qt::AlignRight);
+  labelr1.setText(tr("RightEdge: "));
+  hlayout->addWidget(&labelr1);
+  labelr.setAlignment(Qt::AlignVCenter|Qt::AlignLeft);
+  labelr.setStyleSheet("color: #e0e879");
+  hlayout->addWidget(&labelr);
+  btnminusr.setStyleSheet(R"(
+    padding: 0;
+    border-radius: 50px;
+    font-size: 35px;
+    font-weight: 500;
+    color: #E4E4E4;
+    background-color: #393939;
+  )");
+  btnplusr.setStyleSheet(R"(
+    padding: 0;
+    border-radius: 50px;
+    font-size: 35px;
+    font-weight: 500;
+    color: #E4E4E4;
+    background-color: #393939;
+  )");
+  btnminusr.setFixedSize(80, 100);
+  btnplusr.setFixedSize(80, 100);
+  hlayout->addWidget(&btnminusr);
+  hlayout->addWidget(&btnplusr);
+
+  btnminusl.setText("－");
+  btnplusl.setText("＋");
+  btnminusr.setText("－");
+  btnplusr.setText("＋");
+
+  QObject::connect(&btnminusl, &QPushButton::clicked, [=]() {
+    auto str = QString::fromStdString(params.get("LeftEdgeOffset"));
+    int value = str.toInt();
+    value = value - 1;
+    if (value <= -50) {
+      value = -50;
+    }
+    QString values = QString::number(value);
+    params.put("LeftEdgeOffset", values.toStdString());
+    refreshl();
+  });
+  
+  QObject::connect(&btnplusl, &QPushButton::clicked, [=]() {
+    auto str = QString::fromStdString(params.get("LeftEdgeOffset"));
+    int value = str.toInt();
+    value = value + 1;
+    if (value >= 50) {
+      value = 50;
+    }
+    QString values = QString::number(value);
+    params.put("LeftEdgeOffset", values.toStdString());
+    refreshl();
+  });
+  QObject::connect(&btnminusr, &QPushButton::clicked, [=]() {
+    auto str = QString::fromStdString(params.get("RightEdgeOffset"));
+    int value = str.toInt();
+    value = value - 1;
+    if (value <= -50) {
+      value = -50;
+    }
+    QString values = QString::number(value);
+    params.put("RightEdgeOffset", values.toStdString());
+    refreshr();
+  });
+  
+  QObject::connect(&btnplusr, &QPushButton::clicked, [=]() {
+    auto str = QString::fromStdString(params.get("RightEdgeOffset"));
+    int value = str.toInt();
+    value = value + 1;
+    if (value >= 50) {
+      value = 50;
+    }
+    QString values = QString::number(value);
+    params.put("RightEdgeOffset", values.toStdString());
+    refreshr();
+  });
+  refreshl();
+  refreshr();
+}
+
+void OPKREdgeOffset::refreshl() {
+  auto strs = QString::fromStdString(params.get("LeftEdgeOffset"));
+  int valuei = strs.toInt();
+  float valuef = valuei * 0.01;
+  QString valuefs = QString::number(valuef);
+  labell.setText(QString::fromStdString(valuefs.toStdString()));
+}
+
+void OPKREdgeOffset::refreshr() {
+  auto strs = QString::fromStdString(params.get("RightEdgeOffset"));
+  int valuei = strs.toInt();
+  float valuef = valuei * 0.01;
+  QString valuefs = QString::number(valuef);
+  labelr.setText(QString::fromStdString(valuefs.toStdString()));
+}
+
+CameraOffset::CameraOffset() : AbstractControl(tr("CameraOffset"), tr("Sets the CameraOffset value. (+value:Move Left, -value:Move Right)"), "../assets/offroad/icon_road.png") {
+
+  label.setAlignment(Qt::AlignVCenter|Qt::AlignRight);
+  label.setStyleSheet("color: #e0e879");
+  hlayout->addWidget(&label);
+
+  btnminus.setStyleSheet(R"(
+    padding: 0;
+    border-radius: 50px;
+    font-size: 35px;
+    font-weight: 500;
+    color: #E4E4E4;
+    background-color: #393939;
+  )");
+  btnplus.setStyleSheet(R"(
+    padding: 0;
+    border-radius: 50px;
+    font-size: 35px;
+    font-weight: 500;
+    color: #E4E4E4;
+    background-color: #393939;
+  )");
+  btnminus.setFixedSize(150, 100);
+  btnplus.setFixedSize(150, 100);
+  btnminus.setText("－");
+  btnplus.setText("＋");
+  hlayout->addWidget(&btnminus);
+  hlayout->addWidget(&btnplus);
+
+  QObject::connect(&btnminus, &QPushButton::clicked, [=]() {
+    auto str = QString::fromStdString(params.get("CameraOffsetAdj"));
+    int value = str.toInt();
+    value = value - 5;
+    if (value <= -1000) {
+      value = -1000;
+    }
+    QString values = QString::number(value);
+    params.put("CameraOffsetAdj", values.toStdString());
+    refresh();
+  });
+  
+  QObject::connect(&btnplus, &QPushButton::clicked, [=]() {
+    auto str = QString::fromStdString(params.get("CameraOffsetAdj"));
+    int value = str.toInt();
+    value = value + 5;
+    if (value >= 1000) {
+      value = 1000;
+    }
+    QString values = QString::number(value);
+    params.put("CameraOffsetAdj", values.toStdString());
+    refresh();
+  });
+  refresh();
+}
+
+void CameraOffset::refresh() {
+  auto strs = QString::fromStdString(params.get("CameraOffsetAdj"));
+  int valuei = strs.toInt();
+  float valuef = valuei * 0.001;
+  QString valuefs = QString::number(valuef);
+  label.setText(QString::fromStdString(valuefs.toStdString()));
+}
+
+PathOffset::PathOffset() : AbstractControl(tr("PathOffset"), tr("Sets the PathOffset value. (+value:Move left, -value:Move right)"), "../assets/offroad/icon_road.png") {
+
+  label.setAlignment(Qt::AlignVCenter|Qt::AlignRight);
+  label.setStyleSheet("color: #e0e879");
+  hlayout->addWidget(&label);
+
+  btnminus.setStyleSheet(R"(
+    padding: 0;
+    border-radius: 50px;
+    font-size: 35px;
+    font-weight: 500;
+    color: #E4E4E4;
+    background-color: #393939;
+  )");
+  btnplus.setStyleSheet(R"(
+    padding: 0;
+    border-radius: 50px;
+    font-size: 35px;
+    font-weight: 500;
+    color: #E4E4E4;
+    background-color: #393939;
+  )");
+  btnminus.setFixedSize(150, 100);
+  btnplus.setFixedSize(150, 100);
+  btnminus.setText("－");
+  btnplus.setText("＋");
+  hlayout->addWidget(&btnminus);
+  hlayout->addWidget(&btnplus);
+
+  QObject::connect(&btnminus, &QPushButton::clicked, [=]() {
+    auto str = QString::fromStdString(params.get("PathOffsetAdj"));
+    int value = str.toInt();
+    value = value - 5;
+    if (value <= -1000) {
+      value = -1000;
+    }
+    QString values = QString::number(value);
+    params.put("PathOffsetAdj", values.toStdString());
+    refresh();
+  });
+  
+  QObject::connect(&btnplus, &QPushButton::clicked, [=]() {
+    auto str = QString::fromStdString(params.get("PathOffsetAdj"));
+    int value = str.toInt();
+    value = value + 5;
+    if (value >= 1000) {
+      value = 1000;
+    }
+    QString values = QString::number(value);
+    params.put("PathOffsetAdj", values.toStdString());
+    refresh();
+  });
+  refresh();
+}
+
+void PathOffset::refresh() {
+  auto strs = QString::fromStdString(params.get("PathOffsetAdj"));
+  int valuei = strs.toInt();
+  float valuef = valuei * 0.001;
+  QString valuefs = QString::number(valuef);
+  label.setText(QString::fromStdString(valuefs.toStdString()));
 }
 
 // Lane Lines Width
