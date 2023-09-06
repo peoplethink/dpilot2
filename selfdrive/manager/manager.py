@@ -90,6 +90,7 @@ def manager_init() -> None:
     ("CloseToRoadEdge", "0"),
     ("LeftEdgeOffset", "0"),
     ("RightEdgeOffset", "0"),
+    ("SteerActuatorDelayAdj", "10"),
     ("ShowDateTime", "1"),
     ("Sound_Mdpserr", "1"),
     ("Compass", "1"),
