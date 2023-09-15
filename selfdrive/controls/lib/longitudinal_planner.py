@@ -16,6 +16,7 @@ from selfdrive.swaglog import cloudlog
 from selfdrive.controls.lib.vision_turn_controller import VisionTurnController
 from common.params import Params
 from selfdrive.controls.lib.events import Events
+from selfdrive.controls.vtsc import vtsc
 
 LON_MPC_STEP = 0.2  # first step is 0.2s
 A_CRUISE_MIN = -1.2
@@ -148,6 +149,15 @@ class Planner:
     accel_limits_turns[0] = min(accel_limits_turns[0], self.a_desired + 0.05, a_min_sol)
     accel_limits_turns[1] = max(accel_limits_turns[1], self.a_desired - 0.05)
 
+    enabled = not reset_state and self.CP.openpilotLongitudinalControl
+    vtsc.update(enabled, v_ego, self.a_desired, v_cruise, sm)
+    if vtsc.active:
+      original_v_cruise = v_cruise
+      a_target, v_cruise = vtsc.plan
+      if v_cruise < v_ego and original_v_cruise > v_cruise:
+        accel_limits_turns[0] = min(accel_limits_turns[0], a_target - 0.05)
+        accel_limits_turns[1] = min(accel_limits_turns[1], a_target)
+        
     self.mpc.set_accel_limits(accel_limits_turns[0], accel_limits_turns[1])
     self.mpc.set_cur_state(self.v_desired_filter.x, self.a_desired)
     self.mpc.update(sm['carState'], sm['radarState'], v_cruise_sol, prev_accel_constraint)
