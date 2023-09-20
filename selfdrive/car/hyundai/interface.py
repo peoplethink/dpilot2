@@ -321,11 +321,11 @@ class CarInterface(CarInterfaceBase):
     ret.startingState = False
     ret.vEgoStarting = 0.3
     ret.vEgoStopping = 0.3
-    ret.startAccel = 1.0
-    ret.stoppingDecelRate = 0.2
+    ret.startAccel = 1.5
+    ret.stoppingDecelRate = 0.3
 	  
-    ret.longitudinalActuatorDelayLowerBound = 0.2
-    ret.longitudinalActuatorDelayUpperBound = 0.6
+    ret.longitudinalActuatorDelayLowerBound = 0.4
+    ret.longitudinalActuatorDelayUpperBound = 0.4
 	  
     ret.enableBsm = 0x58b in fingerprint[0]
     ret.enableAutoHold = 1151 in fingerprint[0]
