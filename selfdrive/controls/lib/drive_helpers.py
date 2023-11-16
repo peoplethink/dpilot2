@@ -128,7 +128,7 @@ def get_lag_adjusted_curvature(CP, v_ego, psis, curvatures, curvature_rates, dis
   safe_desired_curvature_rate = clip(desired_curvature_rate,
                                           -max_curvature_rate,
                                           max_curvature_rate)
-  safe_desired_curvature = clip(desired_curvature * 0.95,
+  safe_desired_curvature = clip(desired_curvature * 1.05,
                                      current_curvature_desired - max_curvature_rate * DT_MDL,
                                      current_curvature_desired + max_curvature_rate * DT_MDL)
 
