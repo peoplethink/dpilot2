@@ -707,12 +707,6 @@ CommunityPanel::CommunityPanel(QWidget* parent) : QWidget(parent) {
                                             "../assets/offroad/icon_road.png",
                                             this));           
 
-  toggles.append(new ParamControl("NewTurnVisionControl",
-                                            "New비젼기반 커브감속",
-                                            "비젼커브 활성화시 우선순위 ",
-                                            "../assets/offroad/icon_road.png",
-                                            this));
-  
   toggles.append(new ParamControl("SccSmootherSyncGasPressed",
                                             "가속 속도 동기화",
                                             "",

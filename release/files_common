@@ -612,5 +612,3 @@ opendbc/vw_mqb_2010.dbc
 opendbc/tesla_can.dbc
 opendbc/tesla_radar.dbc
 opendbc/tesla_powertrain.dbc
-
-selfdrive/controls/vtsc.py
