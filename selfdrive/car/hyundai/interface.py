@@ -312,10 +312,10 @@ class CarInterface(CarInterfaceBase):
     #ret.longitudinalTuning.kpV = [0.5]
     #ret.longitudinalTuning.kiV = [0.0]
     ret.longitudinalTuning.kpBP = [2.0, 7.0]
-    ret.longitudinalTuning.kpV = [0.4, 0.6]
+    ret.longitudinalTuning.kpV = [0.4, 0.9]
 
     ret.longitudinalTuning.kiBP = [2.0, 7.0]
-    ret.longitudinalTuning.kiV = [0.0, 0.15]
+    ret.longitudinalTuning.kiV = [0.0, 0.19]
 
     ret.stoppingControl = True
     ret.startingState = False
