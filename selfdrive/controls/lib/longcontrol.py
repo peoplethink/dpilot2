@@ -101,6 +101,7 @@ class LongControl:
     """Update longitudinal control. This updates the state machine and runs a PID loop"""
     # Interp control trajectory
     speeds = long_plan.speeds
+    a_target_now = 0.0
     if len(speeds) == CONTROL_N:
       v_target_now = interp(t_since_plan, T_IDXS[:CONTROL_N], speeds)
       a_target_now = interp(t_since_plan, T_IDXS[:CONTROL_N], long_plan.accels)
@@ -120,14 +121,16 @@ class LongControl:
       v_target_now = 0.0
       v_target_1sec = 0.0
       a_target = 0.0
+      a_target_lower = a_target_upper = 0.0
 
     self.pid.neg_limit = accel_limits[0]
     self.pid.pos_limit = accel_limits[1]
 
     output_accel = self.last_output_accel
+    
     self.long_control_state = long_control_state_trans(self.CP, active, self.long_control_state, CS.vEgo,
                                                        v_target, v_target_1sec, CS.brakePressed,
-                                                       CS.cruiseState.standstill)
+                                                       CS.cruiseState.standstill, a_target_now)
 
     if self.long_control_state == LongCtrlState.off:
       self.reset(CS.vEgo)
