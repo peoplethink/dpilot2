@@ -49,16 +49,17 @@ def match_vision_to_cluster(v_ego, lead, clusters):
     prob_d = laplacian_cdf(c.dRel, offset_vision_dist, lead.xStd[0])
     prob_y = laplacian_cdf(c.yRel, -lead.y[0], lead.yStd[0])
     prob_v = laplacian_cdf(c.vRel + v_ego, lead.v[0], lead.vStd[0])
-
+    
+    weight_v = interp(c.vRel + v_ego, [0, 10], [0.3, 1])
     # This is isn't exactly right, but good heuristic
-    return prob_d * prob_y * prob_v
+    return prob_d * prob_y * prob_v * weight_v
 
   cluster = max(clusters, key=prob)
 
   # if no 'sane' match is found return -1
   # stationary radar points can be false positives
   dist_sane = abs(cluster.dRel - offset_vision_dist) < max([(offset_vision_dist)*.25, 5.0])
-  vel_sane = (abs(cluster.vRel + v_ego - lead.v[0]) < 10) or (v_ego + cluster.vRel > 3)
+  vel_sane = (abs(cluster.vRel + v_ego - lead.v[0]) < 15) or (v_ego + cluster.vRel > 3)
   if dist_sane and vel_sane:
     return cluster
   else:
@@ -72,6 +73,15 @@ def get_lead(v_ego, ready, clusters, lead_msg, model_v_ego, low_speed_override=T
   else:
     cluster = None
 
+  if len(tracks) > 0 and track is None:
+    track = tracks.get(0)  ## SCC radar always 0
+    if track is not None and lead_msg.prob > .5:
+      offset_vision_dist = lead_msg.x[0] - RADAR_TO_CAMERA
+      if offset_vision_dist < track.dRel - 5.0:
+        track = None
+
+    mixRadarInfo = 0
+    
   lead_dict = {'status': False}
   if cluster is not None:
     lead_dict = cluster.get_RadarState2(lead_msg.prob, lead_msg, mixRadarInfo)
