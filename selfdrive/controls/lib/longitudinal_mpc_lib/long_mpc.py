@@ -280,12 +280,12 @@ class LongitudinalMpc:
   def get_cost_multipliers(self, v_lead0, v_lead1):
     v_ego = self.x0[1]
     v_ego_bps = [0, 10]
-    TFs = [1.0, 1.25, T_FOLLOW, 1.8]
+    TFs = [0.8, 1.2, 1.45]
     # KRKeegan adjustments to costs for different TFs
     # these were calculated using the test_longitudial.py deceleration tests
-    a_change_tf = interp(self.t_follow, TFs, [.1, .8, 1., 1.1])
-    j_ego_tf = interp(self.t_follow, TFs, [.6, .8, 1., 1.1])
-    d_zone_tf = interp(self.t_follow, TFs, [1.6, 1.3, 1., 1.])
+    a_change_tf = interp(self.t_follow, TFs, [.8, 1., 1.1])
+    j_ego_tf = interp(self.t_follow, TFs, [.8, 1., 1.1])
+    d_zone_tf = interp(self.t_follow, TFs, [1.3, 1., 1.])
     # KRKeegan adjustments to improve sluggish acceleration
     # do not apply to deceleration
     j_ego_v_ego = 1
