@@ -11,10 +11,10 @@ LongCtrlState = car.CarControl.Actuators.LongControlState
 
 
 def long_control_state_trans(CP, active, long_control_state, v_ego, v_target,
-                             v_target_1sec, brake_pressed, cruise_standstill):
+                             v_target_1sec, brake_pressed, cruise_standstill, a_target_now):
   # Ignore cruise standstill if car has a gas interceptor
   cruise_standstill = cruise_standstill and not CP.enableGasInterceptor
-  accelerating = v_target_1sec > v_target
+  accelerating = v_target_1sec > (v_target + 0.01)
   planned_stop = (v_target < CP.vEgoStopping and
                   v_target_1sec < CP.vEgoStopping and
                   not accelerating)
@@ -34,7 +34,7 @@ def long_control_state_trans(CP, active, long_control_state, v_ego, v_target,
   else:
     if long_control_state in (LongCtrlState.off, LongCtrlState.pid):
       long_control_state = LongCtrlState.pid
-      if stopping_condition:
+      if stopping_condition and a_target_now > -0.8:
         long_control_state = LongCtrlState.stopping
 
     elif long_control_state == LongCtrlState.stopping:
