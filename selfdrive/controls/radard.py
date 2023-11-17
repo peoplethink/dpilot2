@@ -72,15 +72,6 @@ def get_lead(v_ego, ready, clusters, lead_msg, model_v_ego, low_speed_override=T
     cluster = match_vision_to_cluster(v_ego, lead_msg, clusters)
   else:
     cluster = None
-
-  if len(tracks) > 0 and track is None:
-    track = tracks.get(0)  ## SCC radar always 0
-    if track is not None and lead_msg.prob > .5:
-      offset_vision_dist = lead_msg.x[0] - RADAR_TO_CAMERA
-      if offset_vision_dist < track.dRel - 5.0:
-        track = None
-
-    mixRadarInfo = 0
     
   lead_dict = {'status': False}
   if cluster is not None:
