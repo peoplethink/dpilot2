@@ -283,9 +283,9 @@ class LongitudinalMpc:
     TFs = [0.8, 1.2, 1.45]
     # KRKeegan adjustments to costs for different TFs
     # these were calculated using the test_longitudial.py deceleration tests
-    a_change_tf = interp(self.t_follow, TFs, [.8, 1., 1.1])
-    j_ego_tf = interp(self.t_follow, TFs, [.8, 1., 1.1])
-    d_zone_tf = interp(self.t_follow, TFs, [1.3, 1., 1.])
+    a_change_tf = interp(self.t_follow, TFs, [.9, 1., 1.0])
+    j_ego_tf = interp(self.t_follow, TFs, [.5, 1., 1.0])
+    d_zone_tf = interp(self.t_follow, TFs, [1.1, 1., 1.0])
     # KRKeegan adjustments to improve sluggish acceleration
     # do not apply to deceleration
     j_ego_v_ego = 1
