@@ -345,7 +345,9 @@ class CarInterface(CarInterfaceBase):
 
     ret.radarOffCan = ret.sccBus == -1
     ret.pcmCruise = not ret.radarOffCan
-	
+
+    ret.radarTimeStep = (1.0 / 50)
+	  
     # Detect smartMDPS: the smartMDPS allows openpilot to continue lateral actuation past the lateral low speed lockout by intercepting CF_Clu_Vanz from the MDPS
     smartMdps = 0x2AA in fingerprint[0]
     # If the smartMDPS is detected, openpilot can send lateral actuation when lower than minSteerSpeed without faulting
