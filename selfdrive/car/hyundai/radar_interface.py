@@ -6,6 +6,7 @@ from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import RadarInterfaceBase
 from selfdrive.car.hyundai.values import DBC
 from common.params import Params
+from common.filter_simple import StreamingMovingAverage
 
 RADAR_START_ADDR = 0x500
 RADAR_MSG_COUNT = 32
@@ -26,7 +27,7 @@ def get_radar_can_parser(CP):
         ("REL_ACCEL", msg),
         ("REL_SPEED", msg),
       ]
-      checks += [(msg, 20)]
+      checks += [(msg, 50)]
     return CANParser('hyundai_kia_mando_front_radar', signals, checks, 1)
 
   else:
@@ -39,7 +40,7 @@ def get_radar_can_parser(CP):
       ("ACC_ObjRelSpd", "SCC11"),
     ]
     checks = [
-      ("SCC11", 20),
+      ("SCC11", 50),
     ]
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, CP.sccBus)
 
@@ -55,7 +56,10 @@ class RadarInterface(RadarInterfaceBase):
     self.radar_off_can = CP.radarOffCan
     self.rcp = get_radar_can_parser(CP)
 
-    
+    self.dRelFilter = StreamingMovingAverage(2)
+    self.vRelFilter = StreamingMovingAverage(4)
+    self.valid_prev = False
+
   def update(self, can_strings):
     if self.radar_off_can or (self.rcp is None):
       return super().update(None)
@@ -120,9 +124,15 @@ class RadarInterface(RadarInterfaceBase):
             self.pts[ii].trackId = self.track_id
             self.track_id += 1
 
-          self.pts[ii].dRel = cpt["SCC11"]['ACC_ObjDist']  # from front of car
+          if not self.valid_prev:
+            dRel = self.dRelFilter.set(cpt["SCC11"]['ACC_ObjDist'])
+            vRel = self.vRelFilter.set(cpt["SCC11"]['ACC_ObjRelSpd'])
+          else:
+            dRel = self.dRelFilter.process(cpt["SCC11"]['ACC_ObjDist'])
+            vRel = self.vRelFilter.process(cpt["SCC11"]['ACC_ObjRelSpd'])
+          self.pts[ii].dRel = dRel #cpt["SCC11"]['ACC_ObjDist']  # from front of car
           self.pts[ii].yRel = -cpt["SCC11"]['ACC_ObjLatPos']  # in car frame's y axis, left is negative
-          self.pts[ii].vRel = cpt["SCC11"]['ACC_ObjRelSpd']
+          self.pts[ii].vRel = vRel #cpt["SCC11"]['ACC_ObjRelSpd']
           self.pts[ii].aRel = float('nan')
           self.pts[ii].yvRel = float('nan')
           self.pts[ii].measured = True
@@ -131,5 +141,6 @@ class RadarInterface(RadarInterfaceBase):
           if ii in self.pts:
             del self.pts[ii]
 
+      self.valid_prev = valid
       ret.points = list(self.pts.values())
       return ret
