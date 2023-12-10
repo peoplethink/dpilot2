@@ -11,7 +11,6 @@ from common.params import Params
 from common.realtime import config_realtime_process, DT_MDL, Priority
 from common.filter_simple import FirstOrderFilter
 from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
-from selfdrive.car.toyota.values import CAR as TOYOTA
 from selfdrive.hardware import TICI
 from selfdrive.swaglog import cloudlog
 
@@ -36,7 +35,7 @@ MAX_INVALID_THRESHOLD = 10
 MIN_ENGAGE_BUFFER = 2  # secs
 
 VERSION = 1  # bump this to invalidate old parameter caches
-ALLOWED_FINGERPRINTS = [TOYOTA.COROLLA_TSS2, TOYOTA.COROLLA, TOYOTA.COROLLAH_TSS2, TOYOTA.PRIUS, TOYOTA.PRIUS_TSS2]
+ALLOWED_CARS = ['toyota', 'hyundai']
 
 
 def slope2rot(slope):
@@ -110,7 +109,7 @@ class TorqueEstimator:
     self.offline_friction = 0.0
     self.offline_latAccelFactor = 0.0
     self.resets = 0.0
-    self.use_params = CP.carFingerprint in ALLOWED_FINGERPRINTS
+    self.use_params = CP.carName in ALLOWED_CARS
 
     if CP.lateralTuning.which() == 'torque':
       self.offline_friction = CP.lateralTuning.torque.friction
