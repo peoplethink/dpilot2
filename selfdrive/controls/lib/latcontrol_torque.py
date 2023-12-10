@@ -6,7 +6,6 @@ from selfdrive.controls.lib.latcontrol import LatControl, MIN_STEER_SPEED
 from selfdrive.controls.lib.pid import PIDController
 from selfdrive.controls.lib.drive_helpers import apply_deadzone
 from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
-from selfdrive.ntune import nTune
 
 # At higher speeds (25+mph) we can assume:
 # Lateral acceleration achieved by a specific car correlates to
@@ -21,17 +20,6 @@ from selfdrive.ntune import nTune
 
 
 FRICTION_THRESHOLD = 0.2
-
-
-def set_torque_tune(tune, MAX_LAT_ACCEL=2.5, FRICTION=0.01, steering_angle_deadzone_deg=0.0):
-  tune.init('torque')
-  tune.torque.useSteeringAngle = True
-  tune.torque.kp = 1.0 / MAX_LAT_ACCEL
-  tune.torque.kf = 1.0 / MAX_LAT_ACCEL
-  tune.torque.ki = 0.1 / MAX_LAT_ACCEL
-  tune.torque.friction = FRICTION
-  tune.torque.kd = 0.8
-  tune.torque.steeringAngleDeadzoneDeg = steering_angle_deadzone_deg
 
 
 class LatControlTorque(LatControl):
