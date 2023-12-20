@@ -2,9 +2,13 @@ import math
 
 from cereal import log
 from common.numpy_fast import interp
+from common.filter_simple import FirstOrderFilter
 from selfdrive.controls.lib.latcontrol import LatControl, MIN_STEER_SPEED
 from selfdrive.controls.lib.pid import PIDController
+from selfdrive.controls.lib.drive_helpers import CONTROL_N, apply_deadzone
+from selfdrive.controls.lib.latcontrol import LatControl
 from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
+from common.params import Params
 
 # At higher speeds (25+mph) we can assume:
 # Lateral acceleration achieved by a specific car correlates to
@@ -32,11 +36,30 @@ class LatControlTorque(LatControl):
     self.use_steering_angle = self.torque_params.useSteeringAngle
     self.steering_angle_deadzone_deg = self.torque_params.steeringAngleDeadzoneDeg
 
+    self.paramsCount = 0
+    self.lateralTorqueCustom = int(Params().get("LateralTorqueCustom", encoding="utf8"))
+    self.lateralTorqueAccelFactor = float(int(Params().get("LateralTorqueAccelFactor", encoding="utf8")))*0.001
+    self.lateralTorqueFriction = float(int(Params().get("LateralTorqueFriction", encoding="utf8")))*0.001
+
   def update_live_torque_params(self, latAccelFactor, latAccelOffset, friction):
+    if self.lateralTorqueCustom > 0: 
+      return
     self.torque_params.latAccelFactor = latAccelFactor
     self.torque_params.latAccelOffset = latAccelOffset
     self.torque_params.friction = friction
 
+  def update_params(self):
+    self.paramsCount += 1
+    if self.paramsCount > 30:
+      self.paramsCount = 0
+    elif self.paramsCount == 10:
+      self.lateralTorqueCustom = Params().get_int("LateralTorqueCustom")
+      self.lateralTorqueAccelFactor = float(Params().get_int("LateralTorqueAccelFactor"))*0.001
+      self.lateralTorqueFriction = float(Params().get_int("LateralTorqueFriction"))*0.001
+      if self.lateralTorqueCustom > 0:
+        self.torque_params.latAccelFactor = self.lateralTorqueAccelFactor
+        self.torque_params.friction = self.lateralTorqueFriction
+        
   def update(self, active, CS, VM, params, last_actuators, steer_limited, desired_curvature, desired_curvature_rate, llk):
     pid_log = log.ControlsState.LateralTorqueState.new_message()
 
