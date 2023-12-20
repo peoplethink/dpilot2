@@ -1065,7 +1065,7 @@ void NvgWindow::drawCommunity(QPainter &p) {
   int scc_bus = car_params.getSccBus();
 
   QString infoText;
-  infoText.sprintf("      %s   LT[%.0f]:%s     (%.4f/%.4f)     SR %.2f     CPU온도 %.0f°C     CPU load %d%%     주행거리  %.1f km     SCC %d",
+  infoText.sprintf("    (%s)   (LT[%.0f]:%s) (%.4f/%.4f) (SR %.2f) (온도 %.0f°C) (load %d%%) (주행거리%.1f km) (SCC %d)"),
 		      lateral_state[lateralControlState],
 	              live_torque_params.getTotalBucketPoints(),
 	              live_torque_params.getLiveValid() ? "ON" : "OFF",
