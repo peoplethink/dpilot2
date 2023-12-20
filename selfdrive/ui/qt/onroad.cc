@@ -1074,7 +1074,7 @@ void NvgWindow::drawCommunity(QPainter &p) {
 
                       //live_params.getAngleOffsetDeg(),
                       //live_params.getAngleOffsetAverageDeg(),
-	              controls_state.getTotalCameraOffset(),
+	              //controls_state.getTotalCameraOffset(),
                       controls_state.getSteerRatio(),
                       //controls_state.getSteerActuatorDelay(),
 		      cpuTemp,
