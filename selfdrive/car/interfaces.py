@@ -14,6 +14,7 @@ from selfdrive.car import gen_empty_fingerprint
 from selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, apply_deadzone
 from selfdrive.controls.lib.events import Events
 from selfdrive.controls.lib.vehicle_model import VehicleModel
+from common.params import Params
 
 GearShifter = car.CarState.GearShifter
 EventName = car.CarEvent.EventName
@@ -167,6 +168,13 @@ class CarInterfaceBase(ABC):
     tune.torque.latAccelFactor = params['LAT_ACCEL_FACTOR']
     tune.torque.latAccelOffset = 0.0
     tune.torque.steeringAngleDeadzoneDeg = steering_angle_deadzone_deg
+
+    lateralTorqueCustom = int(Params().get("LateralTorqueCustom", encoding="utf8"))
+    lateralTorqueAccelFactor = float(int(Params().get("LateralTorqueAccelFactor", encoding="utf8")))*0.001
+    lateralTorqueFriction = float(int(Params().get("LateralTorqueFriction", encoding="utf8")))*0.001
+    if lateralTorqueCustom == 2:
+      tune.torque.latAccelFactor = lateralTorqueAccelFactor
+      tune.torque.friction = lateralTorqueFriction
 
   @abstractmethod
   def _update(self, c: car.CarControl) -> car.CarState:
