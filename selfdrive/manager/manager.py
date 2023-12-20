@@ -115,7 +115,7 @@ def manager_init() -> None:
     ("CruiseMaxVals9", "25"),
     ("CruiseMaxVals10", "12"),
     ("OpkrUIBrightness", "0"),
-    ("LateralTorqueCustom", "0"),       
+    ("LateralTorqueCustom", "1"),       
     ("LateralTorqueAccelFactor", "2500"),       
     ("LateralTorqueFriction", "100"),
     ("LongitudinalActuatorDelayUpperBound", "40"),
