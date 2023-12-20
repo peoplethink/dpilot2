@@ -6,7 +6,7 @@ from common.realtime import sec_since_boot
 from common.numpy_fast import clip, interp
 from selfdrive.swaglog import cloudlog
 from selfdrive.modeld.constants import index_function
-from selfdrive.controls.lib.radar_helpers import _LEAD_ACCEL_TAU
+from selfdrive.controls.radard import _LEAD_ACCEL_TAU
 from common.conversions import Conversions as CV
 from common.params import Params
 from common.realtime import DT_MDL

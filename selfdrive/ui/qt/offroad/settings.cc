@@ -817,6 +817,8 @@ TUNINGPanel::TUNINGPanel(QWidget* parent) : QWidget(parent) {
     toggleLayout->addWidget(horizontal_line());
     toggleLayout->addWidget(new LabelControl("〓〓〓〓〓〓〓〓【 롱컨메뉴 】〓〓〓〓〓〓〓〓", ""));
     toggleLayout->addWidget(new CValueControl("MixRadarInfo", "MixRadarInfo for SCC Rardar", "0:Not used,1:Use", "../assets/offroad/icon_shell.png", 0, 1, 1));
+    toggleLayout->addWidget(new CValueControl("ALeadTau", "ALeadTaux0.01(150)", "값이 작아지면 선행차 가속도에 민감", "../assets/offroad/icon_road.png", 0, 500, 5));
+    toggleLayout->addWidget(new CValueControl("ALeadTauStart", "ALeadTauStartx0.01(50)", "값이 작아지면 선행차 가속도에 민감", "../assets/offroad/icon_road.png", 5, 80, 5));
     toggleLayout->addWidget(new CValueControl("StopDistance", "StopDistance(600cm)", "선행차와 정지하는 거리를 입력합니다.", "../assets/offroad/icon_road.png", 200, 1000, 50));
     toggleLayout->addWidget(new CValueControl("XEgoObstacleCost", "X_EGO_COST(5)", "증가할수록 정지선정지가 정확해지나, 급감속이 강해집니다.", "../assets/offroad/icon_road.png", 3, 50, 1));
     toggleLayout->addWidget(new CValueControl("JEgoCost", "J_EGO_COST(5)", "", "../assets/offroad/icon_road.png", 4, 10, 1));
