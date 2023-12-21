@@ -801,9 +801,9 @@ TUNINGPanel::TUNINGPanel(QWidget* parent) : QWidget(parent) {
     toggleLayout->addWidget(new CValueControl("LateralTorqueAccelFactor", "TorqueAccelFactor(2500)", "", "../assets/offroad/icon_road.png", 1000, 4000, 10));
     toggleLayout->addWidget(new CValueControl("LateralTorqueFriction", "TorqueFriction(100)", "", "../assets/offroad/icon_road.png", 0, 1000, 10));
     toggleLayout->addWidget(horizontal_line());
+    toggleLayout->addWidget(new CValueControl("PathOffset", "PathOffset", "(-)Left, (+)Right", "../assets/offroad/icon_road.png", -200, 200, 1));
     toggleLayout->addWidget(new LaneChangeSpeed());
     toggleLayout->addWidget(new CameraOffset());
-    toggleLayout->addWidget(new PathOffset());
     toggleLayout->addWidget(new CloseToRoadEdgeToggle());
     toggleLayout->addWidget(new OPKREdgeOffset());
     toggleLayout->addWidget(new ParamControl("AverageDesiredCurvature", "Average Desired Curvature", "Use for smoother handling of curves.", "../assets/offroad/icon_road.png", this));
@@ -1183,71 +1183,6 @@ CameraOffset::CameraOffset() : AbstractControl("CameraOffset",
 
 void CameraOffset::refresh() {
   auto strs = QString::fromStdString(params.get("CameraOffsetAdj"));
-  int valuei = strs.toInt();
-  float valuef = valuei * 0.001;
-  QString valuefs = QString::number(valuef);
-  label.setText(QString::fromStdString(valuefs.toStdString()));
-}
-
-PathOffset::PathOffset() : AbstractControl("PathOffset",
-                                           "+value:Move left, -value:Move right", 
-                                           "../assets/offroad/icon_road.png") {
-
-  label.setAlignment(Qt::AlignVCenter|Qt::AlignRight);
-  label.setStyleSheet("color: #e0e879");
-  hlayout->addWidget(&label);
-
-  btnminus.setStyleSheet(R"(
-    padding: 0;
-    border-radius: 50px;
-    font-size: 35px;
-    font-weight: 500;
-    color: #E4E4E4;
-    background-color: #393939;
-  )");
-  btnplus.setStyleSheet(R"(
-    padding: 0;
-    border-radius: 50px;
-    font-size: 35px;
-    font-weight: 500;
-    color: #E4E4E4;
-    background-color: #393939;
-  )");
-  btnminus.setFixedSize(150, 100);
-  btnplus.setFixedSize(150, 100);
-  btnminus.setText("－");
-  btnplus.setText("＋");
-  hlayout->addWidget(&btnminus);
-  hlayout->addWidget(&btnplus);
-
-  QObject::connect(&btnminus, &QPushButton::clicked, [=]() {
-    auto str = QString::fromStdString(params.get("PathOffsetAdj"));
-    int value = str.toInt();
-    value = value - 5;
-    if (value <= -1000) {
-      value = -1000;
-    }
-    QString values = QString::number(value);
-    params.put("PathOffsetAdj", values.toStdString());
-    refresh();
-  });
-  
-  QObject::connect(&btnplus, &QPushButton::clicked, [=]() {
-    auto str = QString::fromStdString(params.get("PathOffsetAdj"));
-    int value = str.toInt();
-    value = value + 5;
-    if (value >= 1000) {
-      value = 1000;
-    }
-    QString values = QString::number(value);
-    params.put("PathOffsetAdj", values.toStdString());
-    refresh();
-  });
-  refresh();
-}
-
-void PathOffset::refresh() {
-  auto strs = QString::fromStdString(params.get("PathOffsetAdj"));
   int valuei = strs.toInt();
   float valuef = valuei * 0.001;
   QString valuefs = QString::number(valuef);
