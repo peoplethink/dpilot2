@@ -39,8 +39,6 @@ class LatControlTorque(LatControl):
     self.lateralTorqueFriction = float(int(Params().get("LateralTorqueFriction", encoding="utf8")))*0.001
 
   def update_live_torque_params(self, latAccelFactor, latAccelOffset, friction):
-    if self.lateralTorqueCustom > 0: 
-      return
     self.torque_params.latAccelFactor = latAccelFactor
     self.torque_params.latAccelOffset = latAccelOffset
     self.torque_params.friction = friction
