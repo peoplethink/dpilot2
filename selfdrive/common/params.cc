@@ -229,7 +229,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"SteerDeltaUp", PERSISTENT},
     {"SteerDeltaDown", PERSISTENT},
     {"CameraOffsetAdj", PERSISTENT},
-    {"PathOffsetAdj", PERSISTENT},
+    {"PathOffset", PERSISTENT},
     {"CloseToRoadEdge", PERSISTENT},
     {"LeftEdgeOffset", PERSISTENT},
     {"RightEdgeOffset", PERSISTENT},
