@@ -20,6 +20,7 @@ class LateralPlanner:
     self.readParams = 0
     self.DH = DesireHelper()
 
+    self.pathOffset = float(int(Params().get("PathOffset", encoding="utf8")))*0.01
     self.last_cloudlog_t = 0
     self.solution_invalid_cnt = 0
 
@@ -64,6 +65,9 @@ class LateralPlanner:
       self.use_lanelines = not Params().get_bool("EndToEndToggle")
       self.dynamic_lane_profile = int(Params().get("DynamicLaneProfile", encoding="utf8"))
       self.second = 0.0
+    elif self.readParams == 50:
+      self.pathOffset = float(int(Params().get("PathOffset", encoding="utf8")))*0.01
+      
     v_ego = sm['carState'].vEgo
     measured_curvature = sm['controlsState'].curvature
 
@@ -89,24 +93,24 @@ class LateralPlanner:
     # Calculate final driving path and set MPC costs
     if self.use_lanelines:
       d_path_xyz = self.LP.get_d_path(v_ego, self.t_idxs, self.path_xyz)
-      d_path_xyz[:, 1] += -(float(Decimal(Params().get("PathOffsetAdj", encoding="utf8")) * Decimal('0.001')))
+      d_path_xyz[:, 1] += self.pathOffset
       self.lat_mpc.set_weights(MPC_COST_LAT.PATH, MPC_COST_LAT.HEADING, MPC_COST_LAT.STEER_RATE)
       self.dynamic_lane_profile_status = False
     elif self.dynamic_lane_profile == 0:
       d_path_xyz = self.LP.get_d_path(v_ego, self.t_idxs, self.path_xyz)
-      d_path_xyz[:, 1] += -(float(Decimal(Params().get("PathOffsetAdj", encoding="utf8")) * Decimal('0.001')))
+      d_path_xyz[:, 1] += self.pathOffset
       self.lat_mpc.set_weights(MPC_COST_LAT.PATH, MPC_COST_LAT.HEADING, MPC_COST_LAT.STEER_RATE)
       self.dynamic_lane_profile_status = False
     elif self.dynamic_lane_profile == 1:
       d_path_xyz = self.path_xyz
-      d_path_xyz[:, 1] += -(float(Decimal(Params().get("PathOffsetAdj", encoding="utf8")) * Decimal('0.001')))
+      d_path_xyz[:, 1] += self.pathOffset
       # Heading cost is useful at low speed, otherwise end of plan can be off-heading
       heading_cost = interp(v_ego, [5.0, 10.0], [MPC_COST_LAT.HEADING, 0.15])
       self.lat_mpc.set_weights(MPC_COST_LAT.PATH, heading_cost, MPC_COST_LAT.STEER_RATE)
       self.dynamic_lane_profile_status = True
     elif self.dynamic_lane_profile == 2 and ((self.LP.lll_prob + self.LP.rll_prob)/2 < 0.3) and self.DH.lane_change_state == LaneChangeState.off:
       d_path_xyz = self.path_xyz
-      d_path_xyz[:, 1] += -(float(Decimal(Params().get("PathOffsetAdj", encoding="utf8")) * Decimal('0.001')))
+      d_path_xyz[:, 1] += self.pathOffset
       # Heading cost is useful at low speed, otherwise end of plan can be off-heading
       heading_cost = interp(v_ego, [5.0, 10.0], [MPC_COST_LAT.HEADING, 0.15])
       self.lat_mpc.set_weights(MPC_COST_LAT.PATH, heading_cost, MPC_COST_LAT.STEER_RATE)
@@ -115,20 +119,20 @@ class LateralPlanner:
     elif self.dynamic_lane_profile == 2 and ((self.LP.lll_prob + self.LP.rll_prob)/2 > 0.5) and \
      self.dynamic_lane_profile_status_buffer and self.DH.lane_change_state == LaneChangeState.off:
       d_path_xyz = self.LP.get_d_path(v_ego, self.t_idxs, self.path_xyz)
-      d_path_xyz[:, 1] += -(float(Decimal(Params().get("PathOffsetAdj", encoding="utf8")) * Decimal('0.001')))
+      d_path_xyz[:, 1] += self.pathOffset
       self.lat_mpc.set_weights(MPC_COST_LAT.PATH, MPC_COST_LAT.HEADING, MPC_COST_LAT.STEER_RATE)
       self.dynamic_lane_profile_status = False
       self.dynamic_lane_profile_status_buffer = False
     elif self.dynamic_lane_profile == 2 and self.dynamic_lane_profile_status_buffer == True and self.DH.lane_change_state == LaneChangeState.off:
       d_path_xyz = self.path_xyz
-      d_path_xyz[:, 1] += -(float(Decimal(Params().get("PathOffsetAdj", encoding="utf8")) * Decimal('0.001')))
+      d_path_xyz[:, 1] += self.pathOffset
       # Heading cost is useful at low speed, otherwise end of plan can be off-heading
       heading_cost = interp(v_ego, [5.0, 10.0], [MPC_COST_LAT.HEADING, 0.15])
       self.lat_mpc.set_weights(MPC_COST_LAT.PATH, heading_cost, MPC_COST_LAT.STEER_RATE)
       self.dynamic_lane_profile_status = True
     else:
       d_path_xyz = self.LP.get_d_path(v_ego, self.t_idxs, self.path_xyz)
-      d_path_xyz[:, 1] += -(float(Decimal(Params().get("PathOffsetAdj", encoding="utf8")) * Decimal('0.001')))
+      d_path_xyz[:, 1] += self.pathOffset
       self.lat_mpc.set_weights(MPC_COST_LAT.PATH, MPC_COST_LAT.HEADING, MPC_COST_LAT.STEER_RATE)
       self.dynamic_lane_profile_status = False
       self.dynamic_lane_profile_status_buffer = False
