@@ -86,7 +86,7 @@ def manager_init() -> None:
     ("SteerDeltaUp", "3"),       
     ("SteerDeltaDown", "7"),
     ("CameraOffsetAdj", "60"),
-    ("PathOffsetAdj", "0"),
+    ("PathOffset", "0"),
     ("CloseToRoadEdge", "0"),
     ("LeftEdgeOffset", "0"),
     ("RightEdgeOffset", "0"),
