@@ -802,7 +802,6 @@ TUNINGPanel::TUNINGPanel(QWidget* parent) : QWidget(parent) {
     toggleLayout->addWidget(new CValueControl("LateralTorqueFriction", "TorqueFriction(100)", "", "../assets/offroad/icon_road.png", 0, 1000, 10));
     toggleLayout->addWidget(horizontal_line());
     toggleLayout->addWidget(new LaneChangeSpeed());
-    toggleLayout->addWidget(new SteerActuatorDelay());
     toggleLayout->addWidget(new CameraOffset());
     toggleLayout->addWidget(new PathOffset());
     toggleLayout->addWidget(new CloseToRoadEdgeToggle());
