@@ -39,9 +39,6 @@ common/spinner.py
 common/text_window.py
 common/SConscript
 
-common/kalman/.gitignore
-common/kalman/*
-
 common/transformations/__init__.py
 common/transformations/camera.py
 common/transformations/model.py
