@@ -116,14 +116,14 @@ class LateralPlanner:
 
     # Calculate final driving path and set MPC costs
     if self.use_lanelines:
-      d_path_xyz = self.LP.get_d_path(v_ego, self.t_idxs, self.path_xyz)
+      d_path_xyz = self.LP.get_d_path(self.v_ego, self.t_idxs, self.path_xyz)
       d_path_xyz[:, 1] += self.pathOffset
       self.lat_mpc.set_weights(PATH_COST, LATERAL_MOTION_COST,
                                LATERAL_ACCEL_COST, LATERAL_JERK_COST,
                                STEERING_RATE_COST)
       self.dynamic_lane_profile_status = False
     elif self.dynamic_lane_profile == 0:
-      d_path_xyz = self.LP.get_d_path(v_ego, self.t_idxs)
+      d_path_xyz = self.LP.get_d_path(self.v_ego, self.t_idxs)
       d_path_xyz[:, 1] += self.pathOffset
       self.lat_mpc.set_weights(PATH_COST, LATERAL_MOTION_COST,
                                LATERAL_ACCEL_COST, LATERAL_JERK_COST,
@@ -144,7 +144,7 @@ class LateralPlanner:
       self.dynamic_lane_profile_status_buffer = True
     elif self.dynamic_lane_profile == 2 and ((self.LP.lll_prob + self.LP.rll_prob)/2 > 0.5) and \
      self.dynamic_lane_profile_status_buffer and self.DH.lane_change_state == LaneChangeState.off:
-      d_path_xyz = self.LP.get_d_path(v_ego, self.t_idxs)
+      d_path_xyz = self.LP.get_d_path(self.v_ego, self.t_idxs)
       d_path_xyz[:, 1] += self.pathOffset
       self.lat_mpc.set_weights(PATH_COST, LATERAL_MOTION_COST,
                                LATERAL_ACCEL_COST, LATERAL_JERK_COST,
@@ -158,7 +158,7 @@ class LateralPlanner:
                                STEERING_RATE_COST)
       self.dynamic_lane_profile_status = True
     else:
-      d_path_xyz = self.LP.get_d_path(v_ego, self.t_idxs)
+      d_path_xyz = self.LP.get_d_path(self.v_ego, self.t_idxs)
       d_path_xyz[:, 1] += self.pathOffset
       self.lat_mpc.set_weights(PATH_COST, LATERAL_MOTION_COST,
                                LATERAL_ACCEL_COST, LATERAL_JERK_COST,
