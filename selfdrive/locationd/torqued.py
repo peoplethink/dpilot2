@@ -29,7 +29,7 @@ MIN_FILTER_DECAY = 50
 MAX_FILTER_DECAY = 250
 LAT_ACC_THRESHOLD = 1
 STEER_BUCKET_BOUNDS = [(-0.5, -0.3), (-0.3, -0.2), (-0.2, -0.1), (-0.1, 0), (0, 0.1), (0.1, 0.2), (0.2, 0.3), (0.3, 0.5)]
-MIN_BUCKET_POINTS = np.array([20, 60, 100, 100, 100, 100, 60, 20])
+MIN_BUCKET_POINTS = np.array([100, 300, 500, 500, 500, 500, 300, 100])
 MIN_ENGAGE_BUFFER = 2  # secs
 
 VERSION = 1  # bump this to invalidate old parameter caches
@@ -73,9 +73,7 @@ class PointBuckets:
 
   def is_valid(self):
     return all(len(v) >= min_pts for v, min_pts in zip(self.buckets.values(), self.buckets_min_points.values())) and (self.__len__() >= self.min_points_total)
-  def bucket_lengths_str(self):
-    return ','.join([str(x) for x in self.bucket_lengths()]) 
-
+    
   def add_point(self, x, y):
     for bound_min, bound_max in self.x_bounds:
       if (x >= bound_min) and (x < bound_max):
@@ -101,6 +99,7 @@ class TorqueEstimator:
       self.min_bucket_points = MIN_BUCKET_POINTS / 10
       self.min_points_total = MIN_POINTS_TOTAL_QLOG
       self.fit_points = FIT_POINTS_TOTAL_QLOG
+      
     else:
       self.min_bucket_points = MIN_BUCKET_POINTS
       self.min_points_total = MIN_POINTS_TOTAL
@@ -236,7 +235,7 @@ class TorqueEstimator:
     else:
       liveTorqueParameters.liveValid = False
 
-    liveTorqueParameters.infoText = "LiveTorque:" + "Valid" if liveTorqueParameters.liveValid else "Invalid"
+    "LiveTorque:" + "Valid" if liveTorqueParameters.liveValid else "Invalid"
     
     if with_points:
       liveTorqueParameters.points = self.filtered_points.get_points()[:, [0, 2]].tolist()
@@ -289,6 +288,11 @@ def main(sm=None, pm=None):
     if sm.frame % 5 == 0:
       pm.send('liveTorqueParameters', estimator.get_msg(valid=sm.all_checks()))
 
+    # dp - auto save every 3 mins: 4 hz * 60 * 3 = 720 (3 mins)
+    if sm.frame % 720 == 0:
+      put_nonblocking("LiveTorqueCarParams", CP.as_builder().to_bytes())
+      msg = estimator.get_msg(with_points=True)
+      put_nonblocking("LiveTorqueParameters", msg.to_bytes())
 
 if __name__ == "__main__":
   main()
