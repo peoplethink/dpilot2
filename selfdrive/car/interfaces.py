@@ -1,13 +1,14 @@
 import yaml
 import os
 import time
+import numpy as np
 from abc import abstractmethod, ABC
 from typing import Any, Dict, Tuple, List, Callable
 
 from cereal import car
 from common.basedir import BASEDIR
 from common.conversions import Conversions as CV
-from common.kalman.simple_kalman import KF1D
+from common.kalman.simple_kalman import KF1D, get_kalman_gain
 from common.numpy_fast import interp
 from common.realtime import DT_CTRL
 from selfdrive.car import gen_empty_fingerprint
@@ -287,17 +288,21 @@ class CarStateBase(ABC):
     self.left_blinker_prev = False
     self.right_blinker_prev = False
 
-    # Q = np.matrix([[10.0, 0.0], [0.0, 100.0]])
-    # R = 1e3
-    self.v_ego_kf = KF1D(x0=[[0.0], [0.0]],
-                         A=[[1.0, DT_CTRL], [0.0, 1.0]],
-                         C=[1.0, 0.0],
-                         K=[[0.12287673], [0.29666309]])
+    Q = [[0.0, 0.0], [0.0, 100.0]]
+    R = 0.3
+    A = [[1.0, DT_CTRL], [0.0, 1.0]]
+    C = [[1.0, 0.0]]
+    x0 = [[0.0], [0.0]]
+    K = get_kalman_gain(DT_CTRL, np.array(A), np.array(C), np.array(Q), R)
+    self.v_ego_kf = KF1D(x0=x0, A=A, C=C[0], K=K)
 
-    self.v_ego_clu_kf = KF1D(x0=[[0.0], [0.0]],
-                         A=[[1.0, DT_CTRL], [0.0, 1.0]],
-                         C=[1.0, 0.0],
-                         K=[[0.12287673], [0.29666309]])
+    Q = [[0.0, 0.0], [0.0, 100.0]]
+    R = 0.3
+    A = [[1.0, DT_CTRL], [0.0, 1.0]]
+    C = [[1.0, 0.0]]
+    x0 = [[0.0], [0.0]]
+    K = get_kalman_gain(DT_CTRL, np.array(A), np.array(C), np.array(Q), R)
+    self.v_ego_clu_kf = KF1D(x0=x0, A=A, C=C[0], K=K)
 
   def update_speed_kf(self, v_ego_raw):
     if abs(v_ego_raw - self.v_ego_kf.x[0][0]) > 2.0:  # Prevent large accelerations when car starts at non zero speed
