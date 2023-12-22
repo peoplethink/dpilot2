@@ -12,7 +12,7 @@ from common.realtime import Ratekeeper, Priority, config_realtime_process
 from selfdrive.swaglog import cloudlog
 from selfdrive.hardware import TICI
 
-from common.kalman.simple_kalman import KF1D
+from common.simple_kalman import KF1D
 
 from common.params import Params
 import numpy as np
