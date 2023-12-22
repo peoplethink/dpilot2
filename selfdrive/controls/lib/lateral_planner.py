@@ -18,8 +18,13 @@ PATH_COST = 1.0
 LATERAL_MOTION_COST = 0.11
 LATERAL_ACCEL_COST = 0.0
 LATERAL_JERK_COST = 0.05
+# Extreme steering rate is unpleasant, even
+# when it does not cause bad jerk.
+# TODO this cost should be lowered when low
+# speed lateral control is stable on all cars
+STEERING_RATE_COST = 800.0
 
-MIN_SPEED = 1.5
+MIN_SPEED = .3
 
 
 class LateralPlanner:
@@ -111,25 +116,29 @@ class LateralPlanner:
       d_path_xyz = self.LP.get_d_path(v_ego, self.t_idxs, self.path_xyz)
       d_path_xyz[:, 1] += self.pathOffset
       self.lat_mpc.set_weights(PATH_COST, LATERAL_MOTION_COST,
-                             LATERAL_ACCEL_COST, LATERAL_JERK_COST)
+                               LATERAL_ACCEL_COST, LATERAL_JERK_COST,
+                               STEERING_RATE_COST)
       self.dynamic_lane_profile_status = False
     elif self.dynamic_lane_profile == 0:
       d_path_xyz = self.LP.get_d_path(v_ego, self.t_idxs, self.path_xyz)
       d_path_xyz[:, 1] += self.pathOffset
       self.lat_mpc.set_weights(PATH_COST, LATERAL_MOTION_COST,
-                             LATERAL_ACCEL_COST, LATERAL_JERK_COST)
+                               LATERAL_ACCEL_COST, LATERAL_JERK_COST,
+                               STEERING_RATE_COST)
       self.dynamic_lane_profile_status = False
     elif self.dynamic_lane_profile == 1:
       d_path_xyz = self.path_xyz
       d_path_xyz[:, 1] += self.pathOffset
       self.lat_mpc.set_weights(PATH_COST, LATERAL_MOTION_COST,
-                             LATERAL_ACCEL_COST, LATERAL_JERK_COST)
+                               LATERAL_ACCEL_COST, LATERAL_JERK_COST,
+                               STEERING_RATE_COST)
       self.dynamic_lane_profile_status = True
     elif self.dynamic_lane_profile == 2 and ((self.LP.lll_prob + self.LP.rll_prob)/2 < 0.3) and self.DH.lane_change_state == LaneChangeState.off:
       d_path_xyz = self.path_xyz
       d_path_xyz[:, 1] += self.pathOffset
       self.lat_mpc.set_weights(PATH_COST, LATERAL_MOTION_COST,
-                             LATERAL_ACCEL_COST, LATERAL_JERK_COST)
+                               LATERAL_ACCEL_COST, LATERAL_JERK_COST,
+                               STEERING_RATE_COST)
       self.dynamic_lane_profile_status = True
       self.dynamic_lane_profile_status_buffer = True
     elif self.dynamic_lane_profile == 2 and ((self.LP.lll_prob + self.LP.rll_prob)/2 > 0.5) and \
@@ -137,20 +146,23 @@ class LateralPlanner:
       d_path_xyz = self.LP.get_d_path(v_ego, self.t_idxs, self.path_xyz)
       d_path_xyz[:, 1] += self.pathOffset
       self.lat_mpc.set_weights(PATH_COST, LATERAL_MOTION_COST,
-                             LATERAL_ACCEL_COST, LATERAL_JERK_COST)
+                               LATERAL_ACCEL_COST, LATERAL_JERK_COST,
+                               STEERING_RATE_COST)
       self.dynamic_lane_profile_status = False
       self.dynamic_lane_profile_status_buffer = False
     elif self.dynamic_lane_profile == 2 and self.dynamic_lane_profile_status_buffer == True and self.DH.lane_change_state == LaneChangeState.off:
       d_path_xyz = self.path_xyz
       d_path_xyz[:, 1] += self.pathOffset
       self.lat_mpc.set_weights(PATH_COST, LATERAL_MOTION_COST,
-                             LATERAL_ACCEL_COST, LATERAL_JERK_COST)
+                               LATERAL_ACCEL_COST, LATERAL_JERK_COST,
+                               STEERING_RATE_COST)
       self.dynamic_lane_profile_status = True
     else:
       d_path_xyz = self.LP.get_d_path(v_ego, self.t_idxs, self.path_xyz)
       d_path_xyz[:, 1] += self.pathOffset
       self.lat_mpc.set_weights(PATH_COST, LATERAL_MOTION_COST,
-                             LATERAL_ACCEL_COST, LATERAL_JERK_COST)
+                               LATERAL_ACCEL_COST, LATERAL_JERK_COST,
+                               STEERING_RATE_COST)
       self.dynamic_lane_profile_status = False
       self.dynamic_lane_profile_status_buffer = False
     
