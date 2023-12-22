@@ -44,7 +44,11 @@ def apply_deadzone(error, deadzone):
     error = 0.
   return error
 
-
+def apply_center_deadzone(error, deadzone):
+  if (error > - deadzone) and (error < deadzone):
+    error = 0.
+  return error
+  
 def rate_limit(new_value, last_value, dw_step, up_step):
   return clip(new_value, last_value + dw_step, last_value + up_step)
 
@@ -92,7 +96,6 @@ def initialize_v_cruise(v_ego, buttonEvents, v_cruise_last):
       return v_cruise_last
 
   return int(round(clip(v_ego * CV.MS_TO_KPH, V_CRUISE_ENABLE_MIN, V_CRUISE_MAX)))
-
 
 def get_lag_adjusted_curvature(CP, v_ego, psis, curvatures, curvature_rates, distances, average_desired_curvature):
   if len(psis) != CONTROL_N or len(distances) != CONTROL_N:
