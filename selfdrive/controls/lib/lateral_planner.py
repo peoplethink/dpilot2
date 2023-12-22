@@ -3,7 +3,7 @@ from common.realtime import sec_since_boot, DT_MDL
 from common.numpy_fast import interp
 from selfdrive.swaglog import cloudlog
 from selfdrive.controls.lib.lateral_mpc_lib.lat_mpc import LateralMpc
-from selfdrive.controls.lib.lateral_mpc_lib.lat_mpc import N as LAT_MPC_N
+from selfdrive.controls.lib.lateral_mpc_lib.lat_mpc import N as LAT_MPC_N, MIN_SPEED
 from selfdrive.controls.lib.drive_helpers import CONTROL_N
 from selfdrive.controls.lib.lane_planner import LanePlanner, TRAJECTORY_SIZE
 from selfdrive.controls.lib.desire_helper import DesireHelper#, AUTO_LCA_START_TIME
@@ -24,7 +24,6 @@ LATERAL_JERK_COST = 0.05
 # speed lateral control is stable on all cars
 STEERING_RATE_COST = 800.0
 
-MIN_SPEED = 1.5
 
 
 class LateralPlanner:
