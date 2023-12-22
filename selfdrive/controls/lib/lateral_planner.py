@@ -24,7 +24,7 @@ LATERAL_JERK_COST = 0.05
 # speed lateral control is stable on all cars
 STEERING_RATE_COST = 800.0
 
-MIN_SPEED = .3
+MIN_SPEED = 1.5
 
 
 class LateralPlanner:
