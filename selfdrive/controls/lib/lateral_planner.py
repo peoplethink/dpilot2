@@ -147,7 +147,7 @@ class LateralPlanner:
       self.dynamic_lane_profile_status = True
       self.dynamic_lane_profile_status_buffer = True
     elif self.dynamic_lane_profile == 2 and ((self.LP.lll_prob + self.LP.rll_prob)/2 > 0.5) and \
-     self.dynamic_lane_profile_status_buffer and self.DH.lane_change_state == LaneChangeState.off:
+      self.dynamic_lane_profile_status_buffer and self.DH.lane_change_state == LaneChangeState.off:
       self.path_xyz = self.LP.get_d_path(self.v_ego, self.t_idxs)
       self.path_xyz[:, 1] += self.pathOffset
       self.lat_mpc.set_weights(PATH_COST, LATERAL_MOTION_COST,
