@@ -235,7 +235,7 @@ class TorqueEstimator:
     else:
       liveTorqueParameters.liveValid = False
 
-    "LiveTorque:" + "Valid" if liveTorqueParameters.liveValid else "Invalid"
+    "ON" if torque_params.liveValid else "OFF"
     
     if with_points:
       liveTorqueParameters.points = self.filtered_points.get_points()[:, [0, 2]].tolist()
