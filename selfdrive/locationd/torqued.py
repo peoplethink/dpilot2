@@ -234,7 +234,6 @@ class TorqueEstimator:
         self.update_params({'latAccelFactor': latAccelFactor, 'latAccelOffset': latAccelOffset, 'frictionCoefficient': frictionCoeff})
     else:
       liveTorqueParameters.liveValid = False
-
     
     if with_points:
       liveTorqueParameters.points = self.filtered_points.get_points()[:, [0, 2]].tolist()
