@@ -93,7 +93,8 @@ class LateralPlanner:
       
     # clip speed , lateral planning is not possible at 0 speed
     measured_curvature = sm['controlsState'].curvature
-
+    v_ego = sm['carState'].vEgo
+    
     # Parse model predictions
     md = sm['modelV2']
     self.LP.parse_model(md)
@@ -119,62 +120,50 @@ class LateralPlanner:
       self.LP.rll_prob *= self.DH.lane_change_ll_prob
 
     # Calculate final driving path and set MPC costs
-    if self.use_lanelines:
-      self.path_xyz = self.LP.get_d_path(self.v_ego, self.t_idxs, self.path_xyz)
-      self.path_xyz[:, 1] += self.pathOffset
-      self.lat_mpc.set_weights(PATH_COST, LATERAL_MOTION_COST,
-                               LATERAL_ACCEL_COST, LATERAL_JERK_COST,
-                               STEERING_RATE_COST)
+    self.lat_mpc.set_weights(PATH_COST, LATERAL_MOTION_COST,
+                             LATERAL_ACCEL_COST, LATERAL_JERK_COST,
+                             STEERING_RATE_COST)
+    
+    if self.dynamic_lane_profile == 0:
+      d_path_xyz = self.LP.get_d_path(v_ego, self.t_idxs, self.path_xyz)
       self.dynamic_lane_profile_status = False
-    elif self.dynamic_lane_profile == 0:
-      self.path_xyz = self.LP.get_d_path(self.v_ego, self.t_idxs, self.path_xyz)
-      self.path_xyz[:, 1] += self.pathOffset
-      self.lat_mpc.set_weights(PATH_COST, LATERAL_MOTION_COST,
-                               LATERAL_ACCEL_COST, LATERAL_JERK_COST,
-                               STEERING_RATE_COST)
-      self.dynamic_lane_profile_status = False
+      y_pts = np.interp(v_ego * self.t_idxs[:LAT_MPC_N + 1], np.linalg.norm(d_path_xyz, axis=1), d_path_xyz[:, 1])
+      heading_pts = np.interp(v_ego * self.t_idxs[:LAT_MPC_N + 1], np.linalg.norm(self.path_xyz, axis=1), self.plan_yaw)
+      yaw_rate_pts = np.interp(v_ego * self.t_idxs[:LAT_MPC_N + 1], np.linalg.norm(self.path_xyz, axis=1), self.plan_yaw_rate)
     elif self.dynamic_lane_profile == 1:
-      self.path_xyz[:, 1] += self.pathOffset
-      self.lat_mpc.set_weights(PATH_COST, LATERAL_MOTION_COST,
-                               LATERAL_ACCEL_COST, LATERAL_JERK_COST,
-                               STEERING_RATE_COST)
       self.dynamic_lane_profile_status = True
+      y_pts = self.path_xyz[:LAT_MPC_N+1, 1]
+      heading_pts = self.plan_yaw[:LAT_MPC_N+1]
+      yaw_rate_pts = self.plan_yaw_rate[:LAT_MPC_N+1]
     elif self.dynamic_lane_profile == 2 and ((self.LP.lll_prob + self.LP.rll_prob)/2 < 0.3) and self.DH.lane_change_state == LaneChangeState.off:
-      self.path_xyz[:, 1] += self.pathOffset
-      self.lat_mpc.set_weights(PATH_COST, LATERAL_MOTION_COST,
-                               LATERAL_ACCEL_COST, LATERAL_JERK_COST,
-                               STEERING_RATE_COST)
       self.dynamic_lane_profile_status = True
       self.dynamic_lane_profile_status_buffer = True
+      y_pts = self.path_xyz[:LAT_MPC_N+1, 1]
+      heading_pts = self.plan_yaw[:LAT_MPC_N+1]
+      yaw_rate_pts = self.plan_yaw_rate[:LAT_MPC_N+1]
     elif self.dynamic_lane_profile == 2 and ((self.LP.lll_prob + self.LP.rll_prob)/2 > 0.5) and \
       self.dynamic_lane_profile_status_buffer and self.DH.lane_change_state == LaneChangeState.off:
-      self.path_xyz = self.LP.get_d_path(self.v_ego, self.t_idxs, self.path_xyz)
-      self.path_xyz[:, 1] += self.pathOffset
-      self.lat_mpc.set_weights(PATH_COST, LATERAL_MOTION_COST,
-                               LATERAL_ACCEL_COST, LATERAL_JERK_COST,
-                               STEERING_RATE_COST)
+      d_path_xyz = self.LP.get_d_path(v_ego, self.t_idxs, self.path_xyz)
       self.dynamic_lane_profile_status = False
       self.dynamic_lane_profile_status_buffer = False
+      y_pts = np.interp(v_ego * self.t_idxs[:LAT_MPC_N + 1], np.linalg.norm(d_path_xyz, axis=1), d_path_xyz[:, 1])
+      heading_pts = np.interp(v_ego * self.t_idxs[:LAT_MPC_N + 1], np.linalg.norm(self.path_xyz, axis=1), self.plan_yaw)
+      yaw_rate_pts = np.interp(v_ego * self.t_idxs[:LAT_MPC_N + 1], np.linalg.norm(self.path_xyz, axis=1), self.plan_yaw_rate)
     elif self.dynamic_lane_profile == 2 and self.dynamic_lane_profile_status_buffer == True and self.DH.lane_change_state == LaneChangeState.off:
-      self.path_xyz[:, 1] += self.pathOffset
-      self.lat_mpc.set_weights(PATH_COST, LATERAL_MOTION_COST,
-                               LATERAL_ACCEL_COST, LATERAL_JERK_COST,
-                               STEERING_RATE_COST)
       self.dynamic_lane_profile_status = True
+      y_pts = self.path_xyz[:LAT_MPC_N+1, 1]
+      heading_pts = self.plan_yaw[:LAT_MPC_N+1]
+      yaw_rate_pts = self.plan_yaw_rate[:LAT_MPC_N+1]
     else:
-      self.path_xyz = self.LP.get_d_path(self.v_ego, self.t_idxs, self.path_xyz)
-      self.path_xyz[:, 1] += self.pathOffset
-      self.lat_mpc.set_weights(PATH_COST, LATERAL_MOTION_COST,
-                               LATERAL_ACCEL_COST, LATERAL_JERK_COST,
-                               STEERING_RATE_COST)
+      d_path_xyz = self.LP.get_d_path(v_ego, self.t_idxs, self.path_xyz)
       self.dynamic_lane_profile_status = False
       self.dynamic_lane_profile_status_buffer = False
-    
-    y_pts = self.path_xyz[:LAT_MPC_N+1, 1]
-    heading_pts = self.plan_yaw[:LAT_MPC_N+1]
-    yaw_rate_pts = self.plan_yaw_rate[:LAT_MPC_N+1]
+      self.laneless_mode_status_buffer = False
+      y_pts = np.interp(v_ego * self.t_idxs[:LAT_MPC_N + 1], np.linalg.norm(d_path_xyz, axis=1), d_path_xyz[:, 1])
+      heading_pts = np.interp(v_ego * self.t_idxs[:LAT_MPC_N + 1], np.linalg.norm(self.path_xyz, axis=1), self.plan_yaw)
+      yaw_rate_pts = np.interp(v_ego * self.t_idxs[:LAT_MPC_N + 1], np.linalg.norm(self.path_xyz, axis=1), self.plan_yaw_rate)
     self.y_pts = y_pts
-    
+
     assert len(y_pts) == LAT_MPC_N + 1
     assert len(heading_pts) == LAT_MPC_N + 1
     assert len(yaw_rate_pts) == LAT_MPC_N + 1
