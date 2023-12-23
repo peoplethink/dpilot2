@@ -16,7 +16,7 @@ TRAJECTORY_SIZE = 33
 # model path is in the frame of the camera
 PATH_OFFSET = 0.0
 if EON:
-  CAMERA_OFFSET = -(float(Decimal(Params().get("CameraOffsetAdj", encoding="utf8")) * Decimal('0.001')))  # m from center car to camera
+  CAMERA_OFFSET = -0.06
 elif TICI:
   CAMERA_OFFSET = 0.04
 else:
