@@ -3,7 +3,7 @@ from common.realtime import DT_MDL
 from common.conversions import Conversions as CV
 from common.params import Params
 
-AUTO_LCA_START_TIME = 1.0
+AUTO_LCA_START_TIME = 0.5
 
 LaneChangeState = log.LateralPlan.LaneChangeState
 LaneChangeDirection = log.LateralPlan.LaneChangeDirection
