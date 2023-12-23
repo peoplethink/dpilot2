@@ -163,7 +163,7 @@ class LateralPlanner:
       self.dynamic_lane_profile_status = True
     else:
       self.path_xyz = self.LP.get_d_path(self.v_ego, self.t_idxs)
-      self.path_xyz [:, 1] += self.pathOffset
+      self.path_xyz[:, 1] += self.pathOffset
       self.lat_mpc.set_weights(PATH_COST, LATERAL_MOTION_COST,
                                LATERAL_ACCEL_COST, LATERAL_JERK_COST,
                                STEERING_RATE_COST)
