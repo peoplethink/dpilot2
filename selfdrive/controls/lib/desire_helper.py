@@ -2,6 +2,7 @@ from cereal import log
 from common.realtime import DT_MDL
 from common.conversions import Conversions as CV
 from common.params import Params
+from decimal import Decimal
 
 AUTO_LCA_START_TIME = 0.5
 
