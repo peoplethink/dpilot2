@@ -123,8 +123,13 @@ class LateralPlanner:
     self.lat_mpc.set_weights(PATH_COST, LATERAL_MOTION_COST,
                              LATERAL_ACCEL_COST, LATERAL_JERK_COST,
                              STEERING_RATE_COST)
-    
-    if self.dynamic_lane_profile == 0:
+    if self.use_lanelines:
+      d_path_xyz = self.LP.get_d_path(v_ego, self.t_idxs, self.path_xyz)
+      self.dynamic_lane_profile_status = False
+      y_pts = np.interp(v_ego * self.t_idxs[:LAT_MPC_N + 1], np.linalg.norm(d_path_xyz, axis=1), d_path_xyz[:, 1])
+      heading_pts = np.interp(v_ego * self.t_idxs[:LAT_MPC_N + 1], np.linalg.norm(self.path_xyz, axis=1), self.plan_yaw)
+      yaw_rate_pts = np.interp(v_ego * self.t_idxs[:LAT_MPC_N + 1], np.linalg.norm(self.path_xyz, axis=1), self.plan_yaw_rate)
+    elif self.dynamic_lane_profile == 0:
       d_path_xyz = self.LP.get_d_path(v_ego, self.t_idxs, self.path_xyz)
       self.dynamic_lane_profile_status = False
       y_pts = np.interp(v_ego * self.t_idxs[:LAT_MPC_N + 1], np.linalg.norm(d_path_xyz, axis=1), d_path_xyz[:, 1])
