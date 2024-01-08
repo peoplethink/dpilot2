@@ -18,9 +18,8 @@ from common.params import Params
 from selfdrive.controls.lib.events import Events
 
 LON_MPC_STEP = 0.2  # first step is 0.2s
-A_CRUISE_MIN = -1.2
-A_CRUISE_MIN_VALS = [-0.75, -0.77, -0.84, -0.95, -0.80, -0.70]
-A_CRUISE_MIN_BP = [0., 30 * CV.KPH_TO_MS, 50 * CV.KPH_TO_MS, 70 * CV.KPH_TO_MS, 110 * CV.KPH_TO_MS, 130 * CV.KPH_TO_MS]
+A_CRUISE_MIN_VALS = [-0.5, -0.5, -0.2, -0.3, -0.4, -1.2] # mimick stock, slightly release brakes when stopping
+A_CRUISE_MIN_BP =   [0., 0.3, 0.35, 3., 6., 20.]
 A_CRUISE_MAX_VALS = [2.2, 2.0, 1.5, 1.1, .65, .5,  .4,  0.3, 0.25, 0.09]
 A_CRUISE_MAX_BP = [0., 10 * CV.KPH_TO_MS, 20 * CV.KPH_TO_MS, 30 * CV.KPH_TO_MS, 40 * CV.KPH_TO_MS, 50 * CV.KPH_TO_MS, 70 * CV.KPH_TO_MS, 90 * CV.KPH_TO_MS, 110 * CV.KPH_TO_MS, 130 * CV.KPH_TO_MS]
 
