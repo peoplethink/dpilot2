@@ -33,7 +33,7 @@ class LateralPlanner:
     self.plan_yaw = np.zeros((TRAJECTORY_SIZE,))
     self.plan_curv_rate = np.zeros((TRAJECTORY_SIZE,))
     self.t_idxs = np.arange(TRAJECTORY_SIZE)
-    self.y_pts = np.zeros((TRAJECTORY_SIZE)
+    self.y_pts = np.zeros(TRAJECTORY_SIZE)
     self.d_path_w_lines_xyz = np.zeros((TRAJECTORY_SIZE, 3))
 
     self.lat_mpc = LateralMpc()
