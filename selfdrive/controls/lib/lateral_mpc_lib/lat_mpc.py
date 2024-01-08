@@ -37,8 +37,8 @@ def gen_lat_model():
   model.p = vertcat(v_ego, rotation_radius)
 
   # controls
-  psi_accel_ego = SX.sym('psi_accel_ego')
-  model.u = vertcat(psi_accel_ego)
+  curv_rate = SX.sym('curv_rate')
+  model.u = vertcat(curv_rate)
 
   # xdot
   x_ego_dot = SX.sym('x_ego_dot')
