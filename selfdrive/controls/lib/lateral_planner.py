@@ -14,13 +14,6 @@ from cereal import log
 
 LaneChangeState = log.LateralPlan.LaneChangeState
 
-PATH_COST = 1.0
-LATERAL_MOTION_COST = 0.11
-LATERAL_ACCEL_COST = 0.0
-LATERAL_JERK_COST = 0.04
-
-
-
 class LateralPlanner:
   def __init__(self, CP, use_lanelines=True, wide_camera=False):
     self.use_lanelines = use_lanelines
@@ -82,8 +75,8 @@ class LateralPlanner:
       self.pathOffset = float(int(Params().get("PathOffset", encoding="utf8")))*0.01
       
     # clip speed , lateral planning is not possible at 0 speed
+    v_ego = sm['carState'].vEgo
     measured_curvature = sm['controlsState'].curvature
-    self.v_ego = max(MIN_SPEED, sm['carState'].vEgo)
     
     # Parse model predictions
     md = sm['modelV2']
@@ -160,8 +153,8 @@ class LateralPlanner:
     assert len(y_pts) == LAT_MPC_N + 1
     assert len(heading_pts) == LAT_MPC_N + 1
     assert len(yaw_rate_pts) == LAT_MPC_N + 1
-    lateral_factor = max(0, self.factor1 - (self.factor2 * self.v_ego**2))
-    p = np.array([self.v_ego, lateral_factor])
+    lateral_factor = max(0, self.factor1 - (self.factor2 * v_ego**2))
+    p = np.array([v_ego, lateral_factor])
     self.lat_mpc.run(self.x0,
                      p,
                      y_pts,
@@ -175,7 +168,7 @@ class LateralPlanner:
     t = sec_since_boot()
     if mpc_nans or self.lat_mpc.solution_status != 0:
       self.reset_mpc()
-      self.x0[3] = measured_curvature * self.v_ego
+      self.x0[3] = measured_curvature
       if t > self.last_cloudlog_t + 5.0:
         self.last_cloudlog_t = t
         cloudlog.warning("Lateral mpc - nan: True")
@@ -196,8 +189,8 @@ class LateralPlanner:
     lateralPlan.dPathPoints = self.y_pts.tolist()
     lateralPlan.psis = self.lat_mpc.x_sol[0:CONTROL_N, 2].tolist()
 
-    lateralPlan.curvatures = (self.lat_mpc.x_sol[0:CONTROL_N, 3]/self.v_ego).tolist()
-    lateralPlan.curvatureRates = [float(x/self.v_ego) for x in self.lat_mpc.u_sol[0:CONTROL_N - 1]] + [0.0]
+    lateralPlan.curvatures = (self.lat_mpc.x_sol[0:CONTROL_N, 3]/sm['carState'].vEgo).tolist()
+    lateralPlan.curvatureRates = [float(x) for x in self.lat_mpc.u_sol[0:CONTROL_N - 1]] + [0.0]
     
     lateralPlan.lProb = float(self.LP.lll_prob)
     lateralPlan.rProb = float(self.LP.rll_prob)
