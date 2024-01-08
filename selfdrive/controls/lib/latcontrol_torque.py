@@ -80,20 +80,19 @@ class LatControlTorque(LatControl):
       lateral_accel_deadzone = curvature_deadzone * CS.vEgo ** 2
 
 
-      low_speed_factor = interp(CS.vEgo, LOW_SPEED_X, LOW_SPEED_Y)**2
+      low_speed_factor = interp(CS.vEgo, [0, 10, 20], [500, 500, 200])
       setpoint = desired_lateral_accel + low_speed_factor * desired_curvature
       measurement = actual_lateral_accel + low_speed_factor * actual_curvature
       error = setpoint - measurement
       gravity_adjusted_lateral_accel = desired_lateral_accel - params.roll * ACCELERATION_DUE_TO_GRAVITY
       pid_log.error = self.torque_from_lateral_accel(error, self.torque_params, error, lateral_accel_deadzone, friction_compensation=False)
       ff = self.torque_from_lateral_accel(gravity_adjusted_lateral_accel, self.torque_params, error, lateral_accel_deadzone, friction_compensation=True)
-
+      
       freeze_integrator = steer_limited or CS.steeringPressed or CS.vEgo < 5
       output_torque = self.pid.update(pid_log.error,
                                       feedforward=ff,
                                       speed=CS.vEgo,
                                       freeze_integrator=freeze_integrator)
-
       pid_log.active = True
       pid_log.p = self.pid.p
       pid_log.i = self.pid.i
