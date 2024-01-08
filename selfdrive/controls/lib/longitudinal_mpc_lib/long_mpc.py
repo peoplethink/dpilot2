@@ -280,29 +280,25 @@ class LongitudinalMpc:
   def get_cost_multipliers(self, v_lead0, v_lead1):
     v_ego = self.x0[1]
     v_ego_bps = [0, 10]
-    TFs = [0.8, 1.2, 1.45]
+    TFs = [0.9, 1.25, 1.6]
     # KRKeegan adjustments to costs for different TFs
     # these were calculated using the test_longitudial.py deceleration tests
-    a_change_tf = interp(self.t_follow, TFs, [.9, 1., 1.0])
-    j_ego_tf = interp(self.t_follow, TFs, [.5, 1., 1.0])
-    d_zone_tf = interp(self.t_follow, TFs, [1.1, 1., 1.0])
+    a_change_tf = interp(self.t_follow, TFs, [.1, .8, 1.])
+    j_ego_tf = interp(self.t_follow, TFs, [.6, .8, 1.])
+    d_zone_tf = interp(self.t_follow, TFs, [1.6, 1.3, 1.])
     # KRKeegan adjustments to improve sluggish acceleration
     # do not apply to deceleration
-    j_ego_v_ego = 1
     a_change_v_ego = 1
     if (v_lead0 - v_ego >= 0) and (v_lead1 - v_ego >= 0):
-      j_ego_v_ego = interp(v_ego, v_ego_bps, [.015, 0.25])
-      a_change_v_ego = interp(v_ego, v_ego_bps, [.015, 0.25])
-    # Select the appropriate min/max of the options
-    j_ego = min(j_ego_tf, j_ego_v_ego)
+      a_change_v_ego = interp(v_ego, v_ego_bps, [.05, 1.])
     a_change = min(a_change_tf, a_change_v_ego)
-    return (a_change, j_ego, d_zone_tf)
+    return (a_change, j_ego_tf, d_zone_tf)
   
   def set_weights_for_lead_policy(self, prev_accel_constraint=True, v_lead0=0, v_lead1=0):
     a_change_cost = self.AChangeCost if prev_accel_constraint else 0
     cost_mulitpliers = self.get_cost_multipliers(v_lead0, v_lead1)
     W = np.asfortranarray(np.diag([self.XEgoObstacleCost, X_EGO_COST, V_EGO_COST,
-                                   A_EGO_COST, a_change_cost * cost_mulitpliers[0],
+                                   A_EGO_COST, a_change_cost * cost_mulitpliers[0] * cost_mulitpliers[1],
                                    J_EGO_COST * cost_mulitpliers[1]]))
     for i in range(N):
       # reduce the cost on (a-a_prev) later in the horizon.
