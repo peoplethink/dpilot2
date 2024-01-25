@@ -620,7 +620,7 @@ void NvgWindow::drawLaneLines(QPainter &painter, const UIState *s) {
   int steerOverride = (*s->sm)["carState"].getCarState().getSteeringPressed();
 
   // paint blindspot line
-  painter.setBrush(QColor(221, 160, 221, 200));
+  painter.setBrush(QColor(255, 94, 0, 150));
 
   if( scene.leftblindspot  )
   {
