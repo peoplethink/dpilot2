@@ -373,14 +373,12 @@ class LongitudinalMpc:
   def update_TF(self, carstate, radarstate, v_ego, a_ego):
     cruise_gap = int(clip(carstate.cruiseGap, 1., 4.))
     if cruise_gap == 1:
-      self.t_follow = 1.0
+      self.t_follow = 0.9
     elif cruise_gap == 2:
-      x_vel =  [0,    11,   13,   15,   25,   40]
-      y_dist = [1.5,  1.5,  1.51,  1.5,  1.5,  1.45]
-      self.t_follow = np.interp(carstate.vEgo, x_vel, y_dist)
+      self.t_follow = 1.25
     elif cruise_gap == 3:
       x_vel = [0,    11,   13,   15,   25,   40]
-      y_dist = [1.75, 1.75, 1.77, 1.75, 1.8,  1.8]
+      y_dist = [1.75, 1.8, 1.9, 2.0, 2.2,  2.3]
       self.t_follow = np.interp(carstate.vEgo, x_vel, y_dist)
     elif cruise_gap == 4:
       x_vel = [0,    11,   13,   15,   25,   40]
