@@ -174,7 +174,7 @@ class CarInterfaceBase(ABC):
     lateralTorqueCustom = int(Params().get("LateralTorqueCustom", encoding="utf8"))
     lateralTorqueAccelFactor = float(int(Params().get("LateralTorqueAccelFactor", encoding="utf8")))*0.001
     lateralTorqueFriction = float(int(Params().get("LateralTorqueFriction", encoding="utf8")))*0.001
-    if lateralTorqueCustom == 2:
+    if lateralTorqueCustom == 1:
       tune.torque.latAccelFactor = lateralTorqueAccelFactor
       tune.torque.friction = lateralTorqueFriction
 
