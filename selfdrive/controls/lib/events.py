@@ -484,9 +484,9 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
 
   EventName.laneChange: {
     ET.WARNING: Alert(
-      "차선 변경중",
+      "Auto Lane Change",
       "",
-      AlertStatus.normal, AlertSize.none,
+      AlertStatus.normal, AlertSize.small,
       Priority.LOW, VisualAlert.none, AudibleAlert.none, .1),
   },
 
@@ -526,7 +526,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
 
   EventName.visionEntering: {
     ET.WARNING: Alert(
-      "Curve 감속 시작",
+      "Curve Entering",
       "",
       AlertStatus.normal, AlertSize.small,
       Priority.LOW, VisualAlert.none, AudibleAlert.none, 2.),
@@ -534,7 +534,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
 
     EventName.visionTurning: {
     ET.WARNING: Alert(
-      "Curve 감속중",
+      "Curve Turning",
       "",
       AlertStatus.normal, AlertSize.small,
       Priority.LOW, VisualAlert.none, AudibleAlert.none, 2.),
@@ -542,7 +542,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
 
   EventName.visionleaving: {
     ET.WARNING: Alert(
-      "Curve 감속 종료",
+      "Curve Leaving",
       "",
       AlertStatus.normal, AlertSize.small,
       Priority.LOW, VisualAlert.none, AudibleAlert.none, 2.),
