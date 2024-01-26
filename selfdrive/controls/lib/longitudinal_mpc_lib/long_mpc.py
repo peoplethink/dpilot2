@@ -41,7 +41,7 @@ J_EGO_COST = 5.0
 A_CHANGE_COST = 150.
 DANGER_ZONE_COST = 100.
 CRASH_DISTANCE = .5
-LEAD_DANGER_FACTOR = 0.75
+LEAD_DANGER_FACTOR = 0.8
 LIMIT_COST = 1e6
 ACADOS_SOLVER_TYPE = 'SQP_RTI'
 
@@ -60,9 +60,7 @@ T_FOLLOW = 1.45
 COMFORT_BRAKE = 2.5
 STOP_DISTANCE = 6.0
 
-def get_stopped_equivalence_factor(v_lead, v_ego, t_follow=T_FOLLOW, stop_distance=STOP_DISTANCE, krkeegan=False):
-  if not krkeegan:
-    return (v_lead**2) / (2 * COMFORT_BRAKE)
+def get_stopped_equivalence_factor(v_lead, v_ego, t_follow=T_FOLLOW, stop_distance=STOP_DISTANCE):
   # KRKeegan this offset rapidly decreases the following distance when the lead pulls
   # away, resulting in an early demand for acceleration.
   v_diff_offset = 0
@@ -221,17 +219,16 @@ class LongitudinalMpc:
     self.AChangeCost = 200.
     self.DangerZoneCost = 100.
     self.leadDangerFactor = LEAD_DANGER_FACTOR
-    self.applyLongDynamicCost = False
     self.XEgoObstacleCost = 3.
-    self.applyDynamicTFollow = 1.0
-    self.applyDynamicTFollowApart = 1.0
-    self.applyDynamicTFollowDecel = 1.0
     self.solver = AcadosOcpSolverCython(MODEL_NAME, ACADOS_SOLVER_TYPE, N)
     self.reset()
     self.lo_timer = 0
     self.v_cruise = 0.
     self.t_follow = T_FOLLOW
     self.comfort_brake = COMFORT_BRAKE
+    self.tFollowSpeedAdd = 0.0
+    self.tFollowSpeedAddM = 0.0
+    self.v_ego_prev = 0.0
     
     self.source = SOURCES[2]
 
@@ -345,7 +342,6 @@ class LongitudinalMpc:
   def process_lead(self, lead):
     v_ego = self.x0[1]
     if lead is not None and lead.status:
-      #x_lead = lead.dRel if lead.radar else max(lead.dRel-DIFF_RADAR_VISION, 0.)
       x_lead = lead.dRel
       v_lead = lead.vLead
       a_lead = lead.aLeadK
@@ -385,13 +381,9 @@ class LongitudinalMpc:
       y_dist = [0.9, 1.0, 1.1, 1.12, 1.22, 1.22]
       self.t_follow = np.interp(carstate.vEgo, x_vel, y_dist)
       
-    if radarstate.leadOne.status:
-      self.t_follow *= interp(radarstate.leadOne.vRel*3.6, [-100., 0, 100.], [self.applyDynamicTFollow, 1.0, self.applyDynamicTFollowApart])
-      self.t_follow *= interp(radarstate.leadOne.aLeadK, [-4, 0], [self.applyDynamicTFollowDecel, 1.0])
-      self.t_follow *= interp(a_ego, [-4, 0], [self.applyDynamicTFollowDecel, 1.0])
-
   def update(self, carstate, radarstate, v_cruise, prev_accel_constraint):
     v_ego = self.x0[1]
+    a_ego = self.x0[2]
     a_ego = carstate.aEgo
     
     self.lo_timer += 1
@@ -406,16 +398,17 @@ class LongitudinalMpc:
       self.leadDangerFactor = float(int(Params().get("LeadDangerFactor", encoding="utf8"))) * 0.01
       self.stopDistance = float(int(Params().get("StopDistance", encoding="utf8"))) / 100.
     elif self.lo_timer == 60:
-      self.applyLongDynamicCost = Params().get_bool("ApplyLongDynamicCost") 
-      self.applyDynamicTFollow = float(int(Params().get("ApplyDynamicTFollow", encoding="utf8"))) / 100.
-    elif self.lo_timer == 80:  
-      self.applyDynamicTFollowApart = float(int(Params().get("ApplyDynamicTFollowApart", encoding="utf8"))) / 100.
-      self.applyDynamicTFollowDecel = float(int(Params().get("ApplyDynamicTFollowDecel", encoding="utf8"))) / 100.
+      self.tFollowSpeedAdd = float(int(Params().get("TFollowSpeedAdd", encoding="utf8"))) / 100.
+      self.tFollowSpeedAddM = float(int(Params().get("TFollowSpeedAddM", encoding="utf8"))) / 100.
       
     self.status = radarstate.leadOne.status or radarstate.leadTwo.status
 
     lead_xv_0 = self.process_lead(radarstate.leadOne)
     lead_xv_1 = self.process_lead(radarstate.leadTwo)
+
+    if v_ego >= self.v_ego_prev:
+      self.t_follow = interp(v_ego * CV.MS_TO_KPH, [0, 40, 100], [self.t_follow, self.t_follow + self.tFollowSpeedAddM, self.t_follow + self.tFollowSpeedAdd]) 
+    self.v_ego_prev = v_ego
     
     self.update_TF(carstate, radarstate, v_ego, a_ego)
     self.comfort_brake = COMFORT_BRAKE
@@ -431,8 +424,8 @@ class LongitudinalMpc:
     # To estimate a safe distance from a moving lead, we calculate how much stopping
     # distance that lead needs as a minimum. We can add that to the current distance
     # and then treat that as a stopped car/obstacle at this new distance.
-    lead_0_obstacle = lead_xv_0[:,0] + get_stopped_equivalence_factor(lead_xv_0[:,1], self.x_sol[:,1], self.t_follow, self.stopDistance, krkeegan=self.applyLongDynamicCost)
-    lead_1_obstacle = lead_xv_1[:,0] + get_stopped_equivalence_factor(lead_xv_1[:,1], self.x_sol[:,1], self.t_follow, self.stopDistance, krkeegan=self.applyLongDynamicCost)
+    lead_0_obstacle = lead_xv_0[:,0] + get_stopped_equivalence_factor(lead_xv_0[:,1], self.x_sol[:,1], self.t_follow, self.stopDistance)
+    lead_1_obstacle = lead_xv_1[:,0] + get_stopped_equivalence_factor(lead_xv_1[:,1], self.x_sol[:,1], self.t_follow, self.stopDistance)
 
 
     # Fake an obstacle for cruise, this ensures smooth acceleration to set speed
