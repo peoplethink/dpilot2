@@ -4,7 +4,7 @@ from common.conversions import Conversions as CV
 from common.params import Params
 from decimal import Decimal
 
-AUTO_LCA_START_TIME = 0.5
+AUTO_LCA_START_TIME = 0.8
 
 LaneChangeState = log.LateralPlan.LaneChangeState
 LaneChangeDirection = log.LateralPlan.LaneChangeDirection
