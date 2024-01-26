@@ -120,6 +120,7 @@ class Controls:
     openpilot_enabled_toggle = params.get_bool("OpenpilotEnabledToggle")
     self.average_desired_curvature = self.CP.pfeiferjDesiredCurvatures
     passive = params.get_bool("Passive") or not openpilot_enabled_toggle
+    self.set_speed_offset = params.get_bool("SetSpeedOffset") * (1 if self.is_metric else CV.MPH_TO_KPH)
 
     # detect sound card presence and ensure successful init
     sounds_available = HARDWARE.get_sound_card_online()
