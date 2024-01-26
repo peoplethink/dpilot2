@@ -798,8 +798,8 @@ TUNINGPanel::TUNINGPanel(QWidget* parent) : QWidget(parent) {
     toggleLayout->addWidget(new CValueControl("MaxAngleFrames", "MaxAngleFrames(89)", "89:기본, lkas fault 발생시 87:사용", "../assets/offroad/icon_road.png", 80, 100, 1));
     toggleLayout->addWidget(horizontal_line());
     toggleLayout->addWidget(new CValueControl("LateralTorqueCustom", "TorqueCustom(1)", "0:Live, 1:Custom", "../assets/offroad/icon_road.png", 0, 1, 1));
-    toggleLayout->addWidget(new CValueControl("LateralTorqueAccelFactor", "TorqueAccelFactor(2500)", "", "../assets/offroad/icon_road.png", 1000, 4000, 10));
-    toggleLayout->addWidget(new CValueControl("LateralTorqueFriction", "TorqueFriction(100)", "", "../assets/offroad/icon_road.png", 0, 1000, 10));
+    toggleLayout->addWidget(new CValueControl("LateralTorqueAccelFactor", "TorqueAccelFactor(2200)", "", "../assets/offroad/icon_road.png", 1000, 4000, 10));
+    toggleLayout->addWidget(new CValueControl("LateralTorqueFriction", "TorqueFriction(60)", "", "../assets/offroad/icon_road.png", 0, 1000, 10));
     toggleLayout->addWidget(horizontal_line());
     toggleLayout->addWidget(new CValueControl("PathOffset", "PathOffset", "(-)Left, (+)Right", "../assets/offroad/icon_road.png", -200, 200, 1));
     toggleLayout->addWidget(new LaneChangeSpeed());
@@ -815,9 +815,10 @@ TUNINGPanel::TUNINGPanel(QWidget* parent) : QWidget(parent) {
     toggleLayout->addWidget(new RoadEdgesWidth());
     toggleLayout->addWidget(new BlindspotLineWidth());
     toggleLayout->addWidget(horizontal_line());
-    toggleLayout->addWidget(horizontal_line());
     toggleLayout->addWidget(new LabelControl("〓〓〓〓〓〓〓〓【 롱컨메뉴 】〓〓〓〓〓〓〓〓", ""));
     toggleLayout->addWidget(new CValueControl("MixRadarInfo", "MixRadarInfo for SCC Rardar", "0:Not used,1:Use", "../assets/offroad/icon_shell.png", 0, 1, 1));
+    toggleLayout->addWidget(new CValueControl("TFollowSpeedAddM", "TF(s): 차량간격40km/hx0.01s(0)", "속도(최대40km/h)에 따라 추가되는 값", "../assets/offroad/icon_road.png", -100, 200, 1));
+    toggleLayout->addWidget(new CValueControl("TFollowSpeedAdd", "TF(s): 차량간격100km/hx0.01s(0)", "속도(최대100km/h)에 따라 추가되는 값", "../assets/offroad/icon_road.png", -100, 200, 1));
     toggleLayout->addWidget(new CValueControl("ALeadTau", "ALeadTaux0.01(150)", "값이 작아지면 선행차 가속도에 민감", "../assets/offroad/icon_road.png", 0, 500, 5));
     toggleLayout->addWidget(new CValueControl("ALeadTauStart", "ALeadTauStartx0.01(50)", "값이 작아지면 선행차 가속도에 민감", "../assets/offroad/icon_road.png", 5, 80, 5));
     toggleLayout->addWidget(new CValueControl("StopDistance", "StopDistance(600cm)", "선행차와 정지하는 거리를 입력합니다.", "../assets/offroad/icon_road.png", 200, 1000, 50));
@@ -844,11 +845,6 @@ TUNINGPanel::TUNINGPanel(QWidget* parent) : QWidget(parent) {
     toggleLayout->addWidget(horizontal_line());
     toggleLayout->addWidget(new CValueControl("AutoNaviSpeedCtrlStart", "과속카메라감속 시작 시간(22초)", "감속시작시점. 값이 크면 감속을 카메라에서 멀리 시작", "../assets/offroad/icon_road.png", 10, 50, 1));
     toggleLayout->addWidget(new CValueControl("AutoNaviSpeedCtrlEnd", "과속카메라감속 완료 시간(6초)", "감속완료시점. 값이 크면 카메라에서 멀리 감속 완료", "../assets/offroad/icon_road.png", 3, 20, 1));
-    toggleLayout->addWidget(horizontal_line());
-    //toggleLayout->addWidget(new ParamControl("ApplyLongDynamicCost", "차량간격유지 응답속도(OFF)", "전방차량의 간격을 최대한 유지하도록 응답속도가 빨라집니다.", "../assets/offroad/icon_road.png", this));
-    //toggleLayout->addWidget(new CValueControl("ApplyDynamicTFollow", "차량간격제어:상대속도-(110%)", "선행차와 점점 가까와지면 차량거리를 안전하게 증가시키도록 합니다.", "../assets/offroad/icon_road.png", 100, 300, 1));
-    //toggleLayout->addWidget(new CValueControl("ApplyDynamicTFollowApart", "차량간격제어:상대속도+(95%)", "선행차와 점점 멀어지면 차량거리를 줄이도록 합니다.", "../assets/offroad/icon_road.png", 20, 100, 1 ));
-    //toggleLayout->addWidget(new CValueControl("ApplyDynamicTFollowDecel", "차량간격제어:감속(110%)", "차량이 급감속 할 수록 차량간격을 벌리도록 제어합니다.", "../assets/offroad/icon_road.png", 100, 300, 1));
 
 }
 
