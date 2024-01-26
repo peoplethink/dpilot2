@@ -87,6 +87,11 @@ def update_v_cruise(v_cruise_kph, buttonEvents, button_timers, enabled, metric):
       v_cruise_kph += v_cruise_delta * CRUISE_INTERVAL_SIGN[button_type]
     v_cruise_kph = clip(round(v_cruise_kph, 1), V_CRUISE_MIN, V_CRUISE_MAX)
 
+    v_cruise_offset = (set_speed_offset * CRUISE_INTERVAL_SIGN[button_type]) if long_press else 0
+    if v_cruise_offset < 0:
+      v_cruise_offset = set_speed_offset - v_cruise_delta
+    v_cruise_kph += v_cruise_offset
+
   return v_cruise_kph
 
 
