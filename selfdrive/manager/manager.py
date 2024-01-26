@@ -122,6 +122,7 @@ def manager_init() -> None:
     ("AverageDesiredCurvature", "1"),
     ("TFollowSpeedAdd", "2"),
     ("TFollowSpeedAddM", "2"),
+    ("SetSpeedOffset", "10"),
     ("ALeadTau", "150"), 
     ("ALeadTauStart", "50"), 
     ("PutPrebuilt", "0"), 
