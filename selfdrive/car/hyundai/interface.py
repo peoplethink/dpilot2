@@ -87,7 +87,6 @@ class CarInterface(CarInterfaceBase):
     ret.steerRatio = 15.3
 
     params = Params()
-    ret.steerActuatorDelay = float(Decimal(params.get("SteerActuatorDelayAdj", encoding="utf8")) * Decimal('0.01'))
 	  
     # genesis
     if candidate == CAR.GENESIS:
