@@ -82,7 +82,7 @@ class CarInterface(CarInterfaceBase):
         CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
 
-    ret.steerActuatorDelay = 0.1
+    ret.steerActuatorDelay = 0.3
     ret.steerLimitTimer = 0.4
     ret.steerRatio = 15.3
 
