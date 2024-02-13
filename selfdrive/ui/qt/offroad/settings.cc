@@ -817,6 +817,8 @@ TUNINGPanel::TUNINGPanel(QWidget* parent) : QWidget(parent) {
     toggleLayout->addWidget(horizontal_line());
     toggleLayout->addWidget(new LabelControl("〓〓〓〓〓〓〓〓【 롱컨메뉴 】〓〓〓〓〓〓〓〓", ""));
     toggleLayout->addWidget(new CValueControl("MixRadarInfo", "MixRadarInfo for SCC Rardar", "0:Not used,1:Use", "../assets/offroad/icon_shell.png", 0, 1, 1));
+    toggleLayout->addWidget(new CValueControl("StopAccelApply", "StoppingAccel -2.0x(50%)", "정지유지시 브레이크압을 조정합니다. 0: 사용안함. ", "../assets/offroad/icon_road.png", 0, 100, 10));
+    toggleLayout->addWidget(new CValueControl("StoppingAccel", "StoppingStartAccelx0.01(-80)", "", "../assets/offroad/icon_road.png", -100, 0, 5));
     toggleLayout->addWidget(new CValueControl("SetSpeedOffset", "Set Speed Offset(km)", "Set an offset for your desired set speed.", "../assets/offroad/icon_shell.png", 0, 150, 5));
     toggleLayout->addWidget(new CValueControl("TFollowSpeedAddM", "TF(s): 차량간격40km/hx0.01s(0)", "속도(최대40km/h)에 따라 추가되는 값", "../assets/offroad/icon_road.png", -100, 200, 1));
     toggleLayout->addWidget(new CValueControl("TFollowSpeedAdd", "TF(s): 차량간격100km/hx0.01s(0)", "속도(최대100km/h)에 따라 추가되는 값", "../assets/offroad/icon_road.png", -100, 200, 1));
