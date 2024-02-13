@@ -101,7 +101,7 @@ class LongControl:
       self.longitudinalActuatorDelayLowerBound = float(int(Params().get("LongitudinalActuatorDelayLowerBound", encoding="utf8"))) * 0.01
       self.longitudinalActuatorDelayUpperBound = float(int(Params().get("LongitudinalActuatorDelayUpperBound", encoding="utf8"))) * 0.01
     elif self.readParamCount == 40:
-      self.stopAccelApply = float(int(Params().get("StopAccelApply")) * 0.01
+      self.stopAccelApply = float(int(Params().get("StopAccelApply"))) * 0.01
       
     """Update longitudinal control. This updates the state machine and runs a PID loop"""
     # Interp control trajectory
