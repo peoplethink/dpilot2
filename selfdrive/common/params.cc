@@ -267,6 +267,8 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"SetSpeedOffset", PERSISTENT},
     {"ALeadTau", PERSISTENT},
     {"ALeadTauStart", PERSISTENT},
+    {"StopAccelApply", PERSISTENT},
+    {"StoppingAccel", PERSISTENT},
     {"Compass", PERSISTENT},
 };
 
