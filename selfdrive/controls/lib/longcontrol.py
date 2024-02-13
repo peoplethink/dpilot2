@@ -34,8 +34,10 @@ def long_control_state_trans(CP, active, long_control_state, v_ego, v_target,
   else:
     if long_control_state in (LongCtrlState.off, LongCtrlState.pid):
       long_control_state = LongCtrlState.pid
-      if stopping_condition and a_target_now > -1.0:
-        long_control_state = LongCtrlState.stopping
+      if stopping_condition: 
+        stoppingAccel = float(int(Params().get("StoppingAccel")) * 0.01
+        if a_target_now > stoppingAccel:  
+          long_control_state = LongCtrlState.stopping
 
     elif long_control_state == LongCtrlState.stopping:
       if starting_condition and CP.startingState:
@@ -99,7 +101,7 @@ class LongControl:
       self.longitudinalActuatorDelayLowerBound = float(int(Params().get("LongitudinalActuatorDelayLowerBound", encoding="utf8"))) * 0.01
       self.longitudinalActuatorDelayUpperBound = float(int(Params().get("LongitudinalActuatorDelayUpperBound", encoding="utf8"))) * 0.01
     elif self.readParamCount == 40:
-      self.stopAccelApply = float(Params().get_int("StopAccelApply")) * 0.01
+      self.stopAccelApply = float(int(Params().get("StopAccelApply")) * 0.01
       
     """Update longitudinal control. This updates the state machine and runs a PID loop"""
     # Interp control trajectory
@@ -144,7 +146,7 @@ class LongControl:
     elif self.long_control_state == LongCtrlState.stopping:
       if output_accel > self.CP.stopAccel:
         output_accel = min(output_accel, 0.0)
-        output_accel -= interp(output_accel, [-1.5, -0.5], [self.CP.stoppingDecelRate / 2., self.CP.stoppingDecelRate]) * DT_CTRL
+        output_accel -= self.CP.stoppingDecelRate * DT_CTRL
       self.reset(CS.vEgo)
 
     elif self.long_control_state == LongCtrlState.starting:
