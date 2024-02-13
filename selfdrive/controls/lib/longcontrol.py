@@ -35,7 +35,7 @@ def long_control_state_trans(CP, active, long_control_state, v_ego, v_target,
     if long_control_state in (LongCtrlState.off, LongCtrlState.pid):
       long_control_state = LongCtrlState.pid
       if stopping_condition: 
-        stoppingAccel = float(int(Params().get("StoppingAccel")) * 0.01
+        stoppingAccel = float(int(Params().get("StoppingAccel"))) * 0.01
         if a_target_now > stoppingAccel:  
           long_control_state = LongCtrlState.stopping
 
