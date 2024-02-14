@@ -117,7 +117,7 @@ class CarController:
       apply_steer = 0
 
      # Hold torque with induced temporary fault when cutting the actuation bit
-    torque_fault = CC.latActive and not apply_steer_req
+    torque_fault = lat_active and not apply_steer_req
     
     self.apply_steer_last = apply_steer
 
