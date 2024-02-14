@@ -98,12 +98,12 @@ class CarController:
     apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, self.params)
 
     # >90 degree steering fault prevention
-    self.angle_limit_counter, apply_steer_req = common_fault_avoidance(abs(CS.out.steeringAngleDeg) >= MAX_ANGLE, CC.latActive,
+    self.angle_limit_counter, apply_steer_req = common_fault_avoidance(abs(CS.out.steeringAngleDeg) >= MAX_ANGLE, lat_active,
                                                                        self.angle_limit_counter, self.maxAngleFrames,
                                                                        MAX_ANGLE_CONSECUTIVE_FRAMES)
     
     # disable when temp fault is active, or below LKA minimum speed
-    lkas_active = CC.latActive
+    lkas_active = lat_active
 
     # Disable steering while turning blinker on and speed below 60 kph
     if CS.out.leftBlinker or CS.out.rightBlinker:
