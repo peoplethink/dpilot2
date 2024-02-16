@@ -298,6 +298,7 @@ selfdrive/locationd/models/live_kf.cc
 
 selfdrive/locationd/calibrationd.py
 selfdrive/locationd/torqued.py
+selfdrive/locationd/helpers.py
 
 selfdrive/logcatd/SConscript
 selfdrive/logcatd/logcatd_android.cc
