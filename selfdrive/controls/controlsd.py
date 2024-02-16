@@ -134,6 +134,11 @@ class Controls:
       safety_config.safetyModel = car.CarParams.SafetyModel.noOutput
       self.CP.safetyConfigs = [safety_config]
 
+    # Write previous route's CarParams
+    prev_cp = params.get("CarParamsPersistent")
+    if prev_cp is not None:
+      params.put("CarParamsPrevRoute", prev_cp)
+      
     # Write CarParams for radard
     cp_bytes = self.CP.to_bytes()
     params.put("CarParams", cp_bytes)
