@@ -233,7 +233,7 @@ def main(sm=None, pm=None):
     # Cache points every 60 seconds while onroad
     if sm.frame % 240 == 0:
       msg = estimator.get_msg(valid=sm.all_checks(), with_points=True)
-      params.put_nonblocking("LiveTorqueParameters", msg.to_bytes())
+      put_nonblocking("LiveTorqueParameters", msg.to_bytes())
 
 if __name__ == "__main__":
   main()
