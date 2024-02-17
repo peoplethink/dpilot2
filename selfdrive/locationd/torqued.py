@@ -4,7 +4,7 @@ from collections import deque, defaultdict
 
 import cereal.messaging as messaging
 from cereal import car, log
-from common.params import Params
+from common.params import Params, put_nonblocking
 from common.realtime import config_realtime_process, DT_MDL, Priority
 from common.filter_simple import FirstOrderFilter
 from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
