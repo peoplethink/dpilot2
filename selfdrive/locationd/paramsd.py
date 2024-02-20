@@ -215,7 +215,6 @@ def main(sm=None, pm=None):
       roll_valid = check_valid_with_hysteresis(roll_valid, roll, ROLL_MAX, ROLL_LOWERED_MAX)
       
       msg = messaging.new_message('liveParameters')
-      msg.logMonoTime = sm.logMonoTime['carState']
 
       liveParameters = msg.liveParameters
       liveParameters.posenetValid = True
