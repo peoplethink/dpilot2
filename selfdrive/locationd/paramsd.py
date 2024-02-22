@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import gc
 import os
 import math
 
@@ -9,7 +10,7 @@ import cereal.messaging as messaging
 from cereal import car
 from cereal import log
 from common.params import Params, put_nonblocking
-from common.realtime import config_realtime_process, DT_MDL
+from common.realtime import set_realtime_priority, DT_MDL
 from common.numpy_fast import clip
 from selfdrive.locationd.models.car_kf import CarKalman, ObservationKind, States
 from selfdrive.locationd.models.constants import GENERATED_DIR
@@ -119,7 +120,8 @@ def check_valid_with_hysteresis(current_valid: bool, val: float, threshold: floa
 
 
 def main(sm=None, pm=None):
-  config_realtime_process([0, 1, 2, 3], 5)
+  gc.disable()
+  set_realtime_priority(5)
 
   DEBUG = bool(int(os.getenv("DEBUG", "0")))
   REPLAY = bool(int(os.getenv("REPLAY", "0")))
