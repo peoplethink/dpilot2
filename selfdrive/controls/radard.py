@@ -206,7 +206,7 @@ def get_lead(v_ego: float, ready: bool, tracks: Dict[int, Track], lead_msg: capn
   track_scc = tracks.get(0)
   
   # Determine leads, this is where the essential logic happens
-  if len(tracks) > 0 and ready and lead_msg.prob > .5:
+  if len(tracks) > 0 and ready and lead_msg.prob > .4:
     track = match_vision_to_track(v_ego, lead_msg, tracks)
   else:
     track = None
@@ -224,7 +224,7 @@ def get_lead(v_ego: float, ready: bool, tracks: Dict[int, Track], lead_msg: capn
   if track is not None:
     lead_dict = track.get_RadarState2(lead_msg.prob, lead_msg, mixRadarInfo)
     global_vision_aLeadTau = _LEAD_ACCEL_TAU
-  elif (track is None) and ready and (lead_msg.prob > .5):
+  elif (track is None) and ready and (lead_msg.prob > .4):
     lead_dict = get_RadarState_from_vision(lead_msg, v_ego, model_v_ego)
 
   if low_speed_override:
