@@ -73,7 +73,6 @@ class LongControl:
     self.readParamCount = 0
     self.longitudinalTuningKpV = 1.0
     self.longitudinalTuningKiV = 0.0
-    self.stopAccelApply = 0.0
     self.longitudinalActuatorDelayLowerBound = float(int(Params().get("LongitudinalActuatorDelayLowerBound", encoding="utf8"))) * 0.01
     self.longitudinalActuatorDelayUpperBound = float(int(Params().get("LongitudinalActuatorDelayUpperBound", encoding="utf8"))) * 0.01
 
@@ -100,8 +99,6 @@ class LongControl:
     elif self.readParamCount == 30:
       self.longitudinalActuatorDelayLowerBound = float(int(Params().get("LongitudinalActuatorDelayLowerBound", encoding="utf8"))) * 0.01
       self.longitudinalActuatorDelayUpperBound = float(int(Params().get("LongitudinalActuatorDelayUpperBound", encoding="utf8"))) * 0.01
-    elif self.readParamCount == 40:
-      self.stopAccelApply = float(int(Params().get("StopAccelApply"))) * 0.01
       
     """Update longitudinal control. This updates the state machine and runs a PID loop"""
     # Interp control trajectory
@@ -131,8 +128,6 @@ class LongControl:
     self.pid.neg_limit = accel_limits[0]
     self.pid.pos_limit = accel_limits[1]
 
-    self.CP.stopAccel = -2.0 * self.stopAccelApply
-    
     output_accel = self.last_output_accel
     
     self.long_control_state = long_control_state_trans(self.CP, active, self.long_control_state, CS.vEgo,
