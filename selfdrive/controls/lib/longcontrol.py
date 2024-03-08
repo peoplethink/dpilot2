@@ -34,10 +34,8 @@ def long_control_state_trans(CP, active, long_control_state, v_ego, v_target,
   else:
     if long_control_state in (LongCtrlState.off, LongCtrlState.pid):
       long_control_state = LongCtrlState.pid
-      if stopping_condition: 
-        stoppingAccel = float(int(Params().get("StoppingAccel"))) * 0.01
-        if a_target_now > stoppingAccel:  
-          long_control_state = LongCtrlState.stopping
+      if stopping_condition and a_target_now > -1.0:
+        long_control_state = LongCtrlState.stopping
 
     elif long_control_state == LongCtrlState.stopping:
       if starting_condition and CP.startingState:
