@@ -276,7 +276,7 @@ class CarInterface(CarInterfaceBase):
         ret.lateralTuning.torque.kd = 0.0
 
 
-    ret.radarTimeStep = 0.05
+    ret.radarTimeStep = 0.02
 
     if ret.centerToFront == 0:
       ret.centerToFront = ret.wheelbase * 0.4
@@ -302,14 +302,14 @@ class CarInterface(CarInterfaceBase):
     ret.longitudinalTuning.kpV = [0.4, 0.9]
 
     ret.longitudinalTuning.kiBP = [2.0, 7.0]
-    ret.longitudinalTuning.kiV = [0.0, 0.19]
+    ret.longitudinalTuning.kiV = [0.0, 0.15]
 
     ret.stoppingControl = True
     ret.startingState = False
-    ret.vEgoStarting = 0.15
-    ret.vEgoStopping = 0.15
+    ret.vEgoStarting = 0.1
+    ret.vEgoStopping = 0.1
     ret.startAccel = 1.5
-    ret.stoppingDecelRate = 0.25
+    ret.stoppingDecelRate = 0.3
 	  
     ret.enableBsm = 0x58b in fingerprint[0]
     ret.enableAutoHold = 1151 in fingerprint[0]
@@ -330,7 +330,7 @@ class CarInterface(CarInterfaceBase):
     ret.radarOffCan = ret.sccBus == -1
     ret.pcmCruise = not ret.radarOffCan
 
-    ret.radarTimeStep = (1.0 / 50)
+    ret.radarTimeStep = 0.02
 	  
     # Detect smartMDPS: the smartMDPS allows openpilot to continue lateral actuation past the lateral low speed lockout by intercepting CF_Clu_Vanz from the MDPS
     smartMdps = 0x2AA in fingerprint[0]
