@@ -311,9 +311,6 @@ class CarInterface(CarInterfaceBase):
     ret.startAccel = 1.5
     ret.stoppingDecelRate = 0.25
 	  
-    ret.longitudinalActuatorDelayLowerBound = 0.4
-    ret.longitudinalActuatorDelayUpperBound = 0.4
-	  
     ret.enableBsm = 0x58b in fingerprint[0]
     ret.enableAutoHold = 1151 in fingerprint[0]
 
