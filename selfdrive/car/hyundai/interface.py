@@ -82,7 +82,7 @@ class CarInterface(CarInterfaceBase):
         CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
 
-    ret.steerActuatorDelay = 0.3
+    ret.steerActuatorDelay = 0.47
     ret.steerLimitTimer = 0.4
     ret.steerRatio = 15.3
 
@@ -276,8 +276,6 @@ class CarInterface(CarInterfaceBase):
         ret.lateralTuning.torque.kd = 0.0
 
 
-    ret.radarTimeStep = 0.02
-
     if ret.centerToFront == 0:
       ret.centerToFront = ret.wheelbase * 0.4
 
@@ -309,7 +307,7 @@ class CarInterface(CarInterfaceBase):
     ret.vEgoStarting = 0.2
     ret.vEgoStopping = 0.2
     ret.startAccel = 1.5
-    ret.stoppingDecelRate = 0.25
+    ret.stoppingDecelRate = 0.3
 	  
     ret.enableBsm = 0x58b in fingerprint[0]
     ret.enableAutoHold = 1151 in fingerprint[0]
