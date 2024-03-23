@@ -33,8 +33,8 @@ from selfdrive.car.hyundai.scc_smoother import SccSmoother
 from selfdrive.ntune import ntune_common_get, ntune_common_enabled, ntune_scc_get
 from decimal import Decimal
 
-SR_SCALE_BP = [0., 05., 10., 15., 20., 25., 30., 35., 40., 45., 50., 55., 60., 65., 70., 75., 80., 85., 90., 95., 100., 105., 110., 115., 120., 125., 130.]
-SR_SCALE_V = [15.3, 15.3, 15.3, 15.3, 15.4, 15.4, 15.5, 15.5, 15.5, 15.5, 15.5, 15.6, 15.6, 15.6, 15.5, 15.5, 15.5, 15.5, 15.2, 15.2, 15.0, 14.8, 14.8, 14.8, 14.6, 14.5, 14.6]
+SR_SCALE_BP = [0., 40., 60., 80., 100.]
+SR_SCALE_V = [15.3, 15.0, 14.5, 14.0, 13.0]
 
 SOFT_DISABLE_TIME = 3  # seconds
 LDW_MIN_SPEED = 31 * CV.MPH_TO_MS
