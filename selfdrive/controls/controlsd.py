@@ -34,7 +34,7 @@ from selfdrive.ntune import ntune_common_get, ntune_common_enabled, ntune_scc_ge
 from decimal import Decimal
 
 SR_SCALE_BP = [0., 40., 60., 80., 100.]
-SR_SCALE_V = [15.3, 15.0, 14.5, 14.0, 13.0]
+SR_SCALE_V = [16.0, 15.0, 14.0, 13.0, 12.0]
 
 SOFT_DISABLE_TIME = 3  # seconds
 LDW_MIN_SPEED = 31 * CV.MPH_TO_MS
