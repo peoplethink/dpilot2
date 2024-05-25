@@ -20,7 +20,7 @@ from common.params import Params
 
 
 LOW_SPEED_X = [0, 10, 20, 30]
-LOW_SPEED_Y = [14, 12, 9, 2]
+LOW_SPEED_Y = [15, 13, 10, 5]
 
 
 class LatControlTorque(LatControl):
