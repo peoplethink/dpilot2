@@ -1107,7 +1107,7 @@ void NvgWindow::drawCommunity(QPainter &p) {
   infoText.sprintf("  %s   LT[%.0f]:%s (%.4f/%.4f) SR(%.2f) 온도(%.0f°C) load(%d%%) 주행거리(%.1f km) SCC(%d)",
 		      lateral_state[lateralControlState],
 	              live_torque_params.getTotalBucketPoints(),
-	              ive_torque_params.getLiveValid() ? "ON" : "OFF",
+	              live_torque_params.getLiveValid() ? "ON" : "OFF",
 	              live_torque_params.getLatAccelFactorFiltered(), 
 	              live_torque_params.getFrictionCoefficientFiltered(),
 
