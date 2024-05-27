@@ -1030,6 +1030,10 @@ void NvgWindow::drawCommunity(QPainter &p) {
 
   UIState *s = uiState();
   SubMaster &sm = *(s->sm);
+
+  if (!sm.alive("lateralPlan") || !sm.alive("longitudinalPlan") || !sm.alive("liveParameters") || !sm.alive("roadLimitSpeed") || !sm.alive("liveTorqueParameters")) {
+      return;
+  }
   const double start_draw_t = millis_since_boot();
   const cereal::ModelDataV2::Reader &model = sm["modelV2"].getModelV2();
   const cereal::RadarState::Reader &radar_state = sm["radarState"].getRadarState();
@@ -1100,9 +1104,10 @@ void NvgWindow::drawCommunity(QPainter &p) {
   int scc_bus = car_params.getSccBus();
 
   QString infoText;
-  infoText.sprintf("  %s   LT[%.0f] (%.4f/%.4f) SR(%.2f) 온도(%.0f°C) load(%d%%) 주행거리(%.1f km) SCC(%d)",
+  infoText.sprintf("  %s   LT[%.0f]:%s (%.4f/%.4f) SR(%.2f) 온도(%.0f°C) load(%d%%) 주행거리(%.1f km) SCC(%d)",
 		      lateral_state[lateralControlState],
 	              live_torque_params.getTotalBucketPoints(),
+	              ive_torque_params.getLiveValid() ? "ON" : "OFF",
 	              live_torque_params.getLatAccelFactorFiltered(), 
 	              live_torque_params.getFrictionCoefficientFiltered(),
 
