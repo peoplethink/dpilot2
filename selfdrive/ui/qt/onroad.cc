@@ -1077,13 +1077,14 @@ void NvgWindow::drawCommunity(QPainter &p) {
     drawCgear(p);//기어
   	
   char str[1024];
+  char  str[128];	
   const auto car_state = sm["carState"].getCarState();
   const auto controls_state = sm["controlsState"].getControlsState();
   const auto car_params = sm["carParams"].getCarParams();
   const auto live_params = sm["liveParameters"].getLiveParameters();
   const auto device_state = sm["deviceState"].getDeviceState();
-  const auto live_torque_params = sm["liveTorqueParameters"].getLiveTorqueParameters();
   float distance_traveled = sm["controlsState"].getControlsState().getDistanceTraveled() / 1000;
+  	
   	
   int lateralControlState = controls_state.getLateralControlSelect();
   const char* lateral_state[] = {"PID", "INDI", "LQR", "TORQUE" };
