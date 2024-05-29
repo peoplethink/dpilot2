@@ -1076,8 +1076,7 @@ void NvgWindow::drawCommunity(QPainter &p) {
   if(s->show_gear && width() > 1200)
     drawCgear(p);//기어
   	
-  char str[1024];
-  char  str[128];	
+  char str[128];	
   const auto car_state = sm["carState"].getCarState();
   const auto controls_state = sm["controlsState"].getControlsState();
   const auto car_params = sm["carParams"].getCarParams();
