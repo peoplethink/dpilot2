@@ -294,20 +294,19 @@ class CarInterface(CarInterfaceBase):
     ret.steerControlType = car.CarParams.SteerControlType.torque
 
     # longitudinal
-    #ret.longitudinalTuning.kpV = [0.5]
-    #ret.longitudinalTuning.kiV = [0.0]
-    ret.longitudinalTuning.kpBP = [0., 10.]
-    ret.longitudinalTuning.kpV = [1.0, 0.6]
-
-    #ret.longitudinalTuning.kiBP = [0.0]
-    ret.longitudinalTuning.kiV = [0.0]
+    ret.longitudinalTuning.deadzoneBP = [0., 16., 20., 30.]
+    ret.longitudinalTuning.deadzoneV = [.04, .05, .08, .15]
+    ret.longitudinalTuning.kpBP = [0., 5.]
+    ret.longitudinalTuning.kpV = [0.8, 1.]
+    ret.longitudinalTuning.kiBP = [0., 5.]
+    ret.longitudinalTuning.kiV = [0.3, 1.]
 
     ret.stoppingControl = True
     ret.startingState = False
     ret.vEgoStarting = 0.2
     ret.vEgoStopping = 0.3
     ret.startAccel = 1.5
-    ret.stoppingDecelRate = 0.3
+    ret.stoppingDecelRate = 0.17
 	  
     ret.enableBsm = 0x58b in fingerprint[0]
     ret.enableAutoHold = 1151 in fingerprint[0]
