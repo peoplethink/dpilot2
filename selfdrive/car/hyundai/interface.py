@@ -295,18 +295,19 @@ class CarInterface(CarInterfaceBase):
 
     # longitudinal
     ret.longitudinalTuning.deadzoneBP = [0., 16., 20., 30.]
-    ret.longitudinalTuning.deadzoneV = [.04, .05, .08, .15]
-    ret.longitudinalTuning.kpBP = [0., 5.]
-    ret.longitudinalTuning.kpV = [0.8, 1.]
-    ret.longitudinalTuning.kiBP = [0., 5.]
-    ret.longitudinalTuning.kiV = [0.3, 1.]
+    ret.longitudinalTuning.deadzoneV = [0., .03, .06, .15]
+    ret.longitudinalTuning.kpBP = [0., 5., 20.]
+    ret.longitudinalTuning.kpV = [1.3, 1.0, 0.7]
+    ret.longitudinalTuning.kiBP = [ 0.,  12.,  20., 27., 40.]
+    ret.longitudinalTuning.kiV = [.35, .215, .195, .10, .01]
 
     ret.stoppingControl = True
     ret.startingState = False
-    ret.vEgoStarting = 0.2
-    ret.vEgoStopping = 0.3
+    ret.vEgoStarting = 0.1
+    ret.vEgoStopping = 0.1
     ret.startAccel = 1.5
-    ret.stoppingDecelRate = 0.17
+    ret.stopAccel = -0.40 
+    ret.stoppingDecelRate = 0.5
 	  
     ret.enableBsm = 0x58b in fingerprint[0]
     ret.enableAutoHold = 1151 in fingerprint[0]
