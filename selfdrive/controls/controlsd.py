@@ -30,7 +30,7 @@ from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.hardware import HARDWARE, TICI, EON
 from selfdrive.manager.process_config import managed_processes
 from selfdrive.car.hyundai.scc_smoother import SccSmoother
-from selfdrive.ntune import ntune_common_get, ntune_common_enabled, ntune_scc_get
+from selfdrive.controls.ntune import ntune_common_get, ntune_common_enabled, ntune_scc_get
 from decimal import Decimal
 
 SR_SCALE_BP = [0., 40., 60., 80., 100.]
