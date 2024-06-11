@@ -267,6 +267,7 @@ class nTune():
           self.config["useLiveSteerRatio"] = 1.
           self.config["steerRatio"] = round(self.CP.steerRatio, 2)
           self.config["steerActuatorDelay"] = round(self.CP.steerActuatorDelay, 2)
+          self.config["steerRateCost"] = round(self.CP.steerRateCost, 2)
 
     except:
       pass
