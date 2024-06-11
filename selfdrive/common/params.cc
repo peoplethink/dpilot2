@@ -255,6 +255,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"ALeadTau", PERSISTENT},
     {"ALeadTauStart", PERSISTENT},
     {"Compass", PERSISTENT},
+    {"StopDistance", PERSISTENT},
 };
 
 } // namespace
