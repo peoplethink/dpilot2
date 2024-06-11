@@ -12,8 +12,8 @@ QList<QString> nTuneMainWidget::mainTitles = {
 
 QList<QList<TuneItemInfo>> nTuneMainWidget::mainItems = {
 {
-    TuneItemInfo("common.json", "pathFactor", tr("If oversteer occurs in a corner, reduce it."),
-                 0.96f, 0.9f, 1.1f, 0.01f, 2),
+    TuneItemInfo("common.json", "cameraOffset", "",
+                 0.06f, -1.0f, 1.0f, 0.01f, 2),
     TuneItemInfo("common.json", "steerActuatorDelay", "",
                  0.3f, 0.0f, 0.8f, 0.05f, 2),
 },
