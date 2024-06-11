@@ -262,6 +262,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"LeftEdgeOffset", PERSISTENT},
     {"RightEdgeOffset", PERSISTENT},
     {"SteerActuatorDelayAdj", PERSISTENT},
+    {"LongitudinalTuningKpV", PERSISTENT},
 };
 
 } // namespace
