@@ -256,6 +256,12 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"ALeadTauStart", PERSISTENT},
     {"Compass", PERSISTENT},
     {"StopDistance", PERSISTENT},
+    {"CameraOffsetAdj", PERSISTENT},
+    {"PathOffset", PERSISTENT},
+    {"CloseToRoadEdge", PERSISTENT},
+    {"LeftEdgeOffset", PERSISTENT},
+    {"RightEdgeOffset", PERSISTENT},
+    {"SteerActuatorDelayAdj", PERSISTENT},
 };
 
 } // namespace
