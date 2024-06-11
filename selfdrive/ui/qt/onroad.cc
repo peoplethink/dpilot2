@@ -1083,6 +1083,7 @@ void NvgWindow::drawCommunity(QPainter &p) {
   const auto live_params = sm["liveParameters"].getLiveParameters();
   const auto device_state = sm["deviceState"].getDeviceState();
   const auto live_torque_params = sm["liveTorqueParameters"].getLiveTorqueParameters();
+  const auto torque_state = controls_state.getLateralControlState().getTorqueState();
   float distance_traveled = sm["controlsState"].getControlsState().getDistanceTraveled() / 1000;
   	
   	
@@ -1105,16 +1106,13 @@ void NvgWindow::drawCommunity(QPainter &p) {
   int scc_bus = car_params.getSccBus();
 
   QString infoText;
-  infoText.sprintf("  %s   LT[%.0f]:%s (%.4f/%.4f) SR(%.2f) 온도(%.0f°C) load(%d%%) 주행거리(%.1f km) SCC(%d)",
-		      lateral_state[lateralControlState],
-	              live_torque_params.getTotalBucketPoints(),
-	              live_torque_params.getLiveValid() ? "ON" : "OFF",
-	              live_torque_params.getLatAccelFactorFiltered(), 
-	              live_torque_params.getFrictionCoefficientFiltered(),
+  infoText.sprintf("TP(%.2f/%.2f) LTP(%.2f/%.2f/%.0f) SR(%.2f) 온도(%.0f°C) load(%d%%) 주행거리(%.1f km) SCC(%d)",
+	              torque_state.getLatAccelFactor(),
+                      torque_state.getFriction(),
 
-                      //live_params.getAngleOffsetDeg(),
-                      //live_params.getAngleOffsetAverageDeg(),
-	              //controls_state.getTotalCameraOffset(),
+                      live_torque_params.getLatAccelFactorRaw(),
+                      live_torque_params.getFrictionCoefficientRaw(),
+                      live_torque_params.getTotalBucketPoints(),
                       controls_state.getSteerRatio(),
                       //controls_state.getSteerActuatorDelay(),
 		      cpuTemp,
