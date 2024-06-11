@@ -6,6 +6,7 @@ from selfdrive.controls.lib.latcontrol import LatControl
 from selfdrive.controls.lib.pid import PIDController
 from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
 from common.params import Params
+from selfdrive.controls.ntune import nTune
 
 # At higher speeds (25+mph) we can assume:
 # Lateral acceleration achieved by a specific car correlates to
@@ -32,31 +33,16 @@ class LatControlTorque(LatControl):
     self.torque_from_lateral_accel = CI.torque_from_lateral_accel()
     self.use_steering_angle = self.torque_params.useSteeringAngle
     self.steering_angle_deadzone_deg = self.torque_params.steeringAngleDeadzoneDeg
-
-    self.paramsCount = 0
-    self.lateralTorqueCustom = int(Params().get("LateralTorqueCustom", encoding="utf8"))
-    self.lateralTorqueAccelFactor = float(int(Params().get("LateralTorqueAccelFactor", encoding="utf8")))*0.001
-    self.lateralTorqueFriction = float(int(Params().get("LateralTorqueFriction", encoding="utf8")))*0.001
+    self.tune = nTune(CP, self)
 
   def update_live_torque_params(self, latAccelFactor, latAccelOffset, friction):
     self.torque_params.latAccelFactor = latAccelFactor
     self.torque_params.latAccelOffset = latAccelOffset
     self.torque_params.friction = friction
-
-  def update_params(self):
-    self.paramsCount += 1
-    if self.paramsCount > 30:
-      self.paramsCount = 0
-    elif self.paramsCount == 10:
-      self.lateralTorqueCustom = int(Params().get("LateralTorqueCustom", encoding="utf8"))
-      self.lateralTorqueAccelFactor = float(int(Params().get("LateralTorqueAccelFactor", encoding="utf8")))*0.001
-      self.lateralTorqueFriction = float(int(Params().get("LateralTorqueFriction", encoding="utf8")))*0.001
-      if self.lateralTorqueCustom > 0:
-        self.torque_params.latAccelFactor = self.lateralTorqueAccelFactor
-        self.torque_params.friction = self.lateralTorqueFriction
         
+  
   def update(self, active, CS, VM, params, last_actuators, steer_limited, desired_curvature, desired_curvature_rate, llk):
-    self.update_params()
+    self.tune.updateTorque() 
     pid_log = log.ControlsState.LateralTorqueState.new_message()
 
     if not active:
@@ -105,5 +91,9 @@ class LatControlTorque(LatControl):
 
       angle_steers_des = math.degrees(VM.get_steer_from_curvature(-desired_curvature, CS.vEgo, params.roll)) + params.angleOffsetDeg
 
+    pid_log.latAccelFactor = self.torque_params.latAccelFactor
+    pid_log.latAccelOffset = self.torque_params.latAccelOffset
+    pid_log.friction = self.torque_params.friction
+    
     # TODO left is positive in this convention
     return -output_torque, angle_steers_des, pid_log
