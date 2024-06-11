@@ -406,7 +406,7 @@ class LongitudinalMpc:
     self.v_ego_prev = v_ego
     
     self.update_TF(carstate, radarstate, v_ego, a_ego)
-    omfort_brake = ntune_scc_get('comfortBrake')
+    comfort_brake = ntune_scc_get('comfortBrake')
     stop_distance = ntune_scc_get('stopDistance')
     
     self.set_weights(prev_accel_constraint=prev_accel_constraint, v_lead0=lead_xv_0[0,1], v_lead1=lead_xv_1[0,1])
