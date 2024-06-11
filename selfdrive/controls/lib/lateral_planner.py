@@ -208,6 +208,4 @@ class LateralPlanner:
     
     lateralPlan.dynamicLaneProfile = bool(self.dynamic_lane_profile_status)
     
-    lateralPlan.totalCameraOffset = float(self.LP.total_camera_offset)
-    
     pm.send('lateralPlan', plan_send)
