@@ -6,7 +6,7 @@ from common.filter_simple import FirstOrderFilter
 from common.numpy_fast import clip, interp
 from common.realtime import DT_CTRL
 from selfdrive.controls.lib.latcontrol import LatControl
-from selfdrive.controls.ntune import ntune
+from selfdrive.controls.ntune import nTune
 
 
 class LatControlINDI(LatControl):
