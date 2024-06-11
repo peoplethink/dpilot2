@@ -25,6 +25,7 @@
 #include "selfdrive/ui/ui.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/qt_window.h"
+#include "selfdrive/ui/qt/ntune/ntunepannel.h"
 
 #include <QProcess> // opkr
 #include <QDateTime> // opkr
