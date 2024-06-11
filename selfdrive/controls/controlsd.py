@@ -842,6 +842,12 @@ class Controls:
     controlsState.sccStockCamStatus = self.sccStockCamStatus
 
     controlsState.steerRatio = self.VM.sR
+    controlsState.steerActuatorDelay = float(Decimal(Params().get("SteerActuatorDelayAdj", encoding="utf8")) * Decimal('0.01'))
+
+    controlsState.sccGasFactor = ntune_scc_get('sccGasFactor')
+    controlsState.sccBrakeFactor = ntune_scc_get('sccBrakeFactor')
+    controlsState.sccCurvatureFactor = ntune_scc_get('sccCurvatureFactor')
+    controlsState.totalCameraOffset = totalCameraOffset
     controlsState.lateralControlSelect = int(self.lateral_control_select)
     
     if self.joystick_mode:
