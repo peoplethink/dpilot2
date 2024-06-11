@@ -11,7 +11,7 @@ from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
 from selfdrive.hardware import TICI
 from selfdrive.swaglog import cloudlog
 from selfdrive.locationd.helpers import PointBuckets, ParameterEstimator
-from selfdrive.ntune import ntune_common_get
+from selfdrive.controls.ntune import ntune_torque_get, ntune_common_get
 
 HISTORY = 5  # secs
 POINTS_PER_BUCKET = 1500
@@ -48,6 +48,13 @@ class TorqueBuckets(PointBuckets):
         break
 
 class TorqueEstimator(ParameterEstimator):
+
+  def get_friction(self):
+    return ntune_torque_get('friction')
+
+  def get_lat_accel_factor(self):
+    return ntune_torque_get('latAccelFactor')
+    
   def __init__(self, CP, decimated=False):
     self.hist_len = int(HISTORY / DT_MDL)
     self.lag = ntune_common_get('steerActuatorDelay') + .2   # from controlsd
@@ -177,6 +184,10 @@ class TorqueEstimator(ParameterEstimator):
     liveTorqueParameters.version = VERSION
     liveTorqueParameters.useParams = self.use_params
 
+    self.checkNTune()
+
+    try:
+
     if self.filtered_points.is_valid():
       latAccelFactor, latAccelOffset, frictionCoeff = self.estimate_params()
       liveTorqueParameters.latAccelFactorRaw = float(latAccelFactor)
@@ -194,7 +205,10 @@ class TorqueEstimator(ParameterEstimator):
         self.update_params({'latAccelFactor': latAccelFactor, 'latAccelOffset': latAccelOffset, 'frictionCoefficient': frictionCoeff})
     else:
       liveTorqueParameters.liveValid = False
-    
+
+    except:
+      pass
+      
     if with_points:
       liveTorqueParameters.points = self.filtered_points.get_points()[:, [0, 2]].tolist()
 
@@ -206,7 +220,13 @@ class TorqueEstimator(ParameterEstimator):
     liveTorqueParameters.maxResets = self.resets
     return msg
 
-
+  def checkNTune(self):
+    if abs(self.get_friction() - self.offline_friction) > 0.0001 \
+            or abs(self.get_lat_accel_factor() - self.offline_latAccelFactor) > 0.0001:
+      self.reset()
+      self.offline_friction = self.get_friction()
+      self.offline_latAccelFactor = self.get_lat_accel_factor()
+              
 def main(sm=None, pm=None):
   config_realtime_process(5 if TICI else 2, Priority.CTRL_LOW)
 
