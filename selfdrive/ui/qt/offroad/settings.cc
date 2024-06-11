@@ -540,6 +540,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
 
   QList<QPair<QString, QWidget *>> panels = {
     {"장치", device},
+    {"주행값", new nTuneMainWidget(this)},
     {"VIP메뉴", new VIPPanel(this)},
     {"TUNING", new TUNINGPanel(this)},
     {"네트워크", network_panel(this)},
