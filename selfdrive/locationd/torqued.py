@@ -75,8 +75,8 @@ class TorqueEstimator(ParameterEstimator):
     #self.use_params = CP.carName in ALLOWED_CARS and CP.lateralTuning.which() == 'torque'
 
     if CP.lateralTuning.which() == 'torque':
-      self.offline_friction = CP.lateralTuning.torque.friction
-      self.offline_latAccelFactor = CP.lateralTuning.torque.latAccelFactor
+      self.offline_friction = self.get_friction()
+      self.offline_latAccelFactor = self.get_lat_accel_factor()
 
     self.reset()
 
@@ -122,8 +122,8 @@ class TorqueEstimator(ParameterEstimator):
   def get_restore_key(self, CP, version):
     a, b = None, None
     if CP.lateralTuning.which() == 'torque':
-      a = CP.lateralTuning.torque.friction
-      b = CP.lateralTuning.torque.latAccelFactor
+      a = self.get_friction()
+      b = self.get_lat_accel_factor()
     return (CP.carFingerprint, CP.lateralTuning.which(), a, b, version)
 
   def reset(self):
