@@ -50,7 +50,7 @@ def manager_init() -> None:
     ("UseClusterSpeed", "0"),
     ("LongControlEnabled", "0"),
     ("IsLdwsCar", "0"),
-    ("LateralControlSelect", "0"),
+    ("LateralControlSelect", "3"),
     ("LongControlEnabled", "0"),
     ("MadModeEnabled", "1"),
     ("SccSmootherSlowOnCurves", "0"),
