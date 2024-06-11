@@ -224,7 +224,6 @@ class LongitudinalMpc:
     self.lo_timer = 0
     self.v_cruise = 0.
     self.t_follow = T_FOLLOW
-    self.comfort_brake = COMFORT_BRAKE
     self.tFollowSpeedAdd = 0.0
     self.tFollowSpeedAddM = 0.0
     self.v_ego_prev = 0.0
@@ -248,7 +247,6 @@ class LongitudinalMpc:
     self.u_sol = np.zeros((N,1))
     self.params = np.zeros((N+1, PARAM_DIM))
     self.t_follow = T_FOLLOW
-    self.comfort_brake = COMFORT_BRAKE
     
     for i in range(N+1):
       self.solver.set(i, 'x', np.zeros(X_DIM))
@@ -408,8 +406,7 @@ class LongitudinalMpc:
     self.v_ego_prev = v_ego
     
     self.update_TF(carstate, radarstate, v_ego, a_ego)
-    self.comfort_brake = COMFORT_BRAKE
-
+    omfort_brake = ntune_scc_get('comfortBrake')
     stop_distance = ntune_scc_get('stopDistance')
     
     self.set_weights(prev_accel_constraint=prev_accel_constraint, v_lead0=lead_xv_0[0,1], v_lead1=lead_xv_1[0,1])
@@ -432,14 +429,14 @@ class LongitudinalMpc:
     v_cruise_clipped = np.clip(v_cruise * np.ones(N+1),
                                v_lower,
                                v_upper)
-    cruise_obstacle = np.cumsum(T_DIFFS * v_cruise_clipped) + get_safe_obstacle_distance(v_cruise_clipped, self.t_follow, self.comfort_brake, stop_distance)
+    cruise_obstacle = np.cumsum(T_DIFFS * v_cruise_clipped) + get_safe_obstacle_distance(v_cruise_clipped, self.t_follow, comfort_brake, stop_distance)
 
     x_obstacles = np.column_stack([lead_0_obstacle, lead_1_obstacle, cruise_obstacle])
     self.source = SOURCES[np.argmin(x_obstacles[0])]
     self.params[:,2] = np.min(x_obstacles, axis=1)
     self.params[:,3] = np.copy(self.prev_a)
     self.params[:,4] = self.t_follow
-    self.params[:,5] = self.comfort_brake
+    self.params[:,5] = comfort_brake
     self.params[:,6] = stop_distance
     self.params[:,7] = self.leadDangerFactor
     
