@@ -1106,7 +1106,7 @@ void NvgWindow::drawCommunity(QPainter &p) {
   int scc_bus = car_params.getSccBus();
 
   QString infoText;
-  infoText.sprintf("TP(%.2f/%.2f) LTP(%.2f/%.2f/%.0f) SR(%.2f) 온도(%.0f°C) load(%d%%) 주행거리(%.1f km) SCC(%d)",
+  infoText.sprintf("TP(%.2f/%.2f) LTP(%.2f/%.2f/%.0f) SR(%.2f) SAD(%.2f) 온도(%.0f°C) load(%d%%) 주행거리(%.1f km) SCC(%d)",
 	              torque_state.getLatAccelFactor(),
                       torque_state.getFriction(),
 
@@ -1114,7 +1114,7 @@ void NvgWindow::drawCommunity(QPainter &p) {
                       live_torque_params.getFrictionCoefficientRaw(),
                       live_torque_params.getTotalBucketPoints(),
                       controls_state.getSteerRatio(),
-                      //controls_state.getSteerActuatorDelay(),
+                      controls_state.getSteerActuatorDelay(),
 		      cpuTemp,
 	              cpu_usage,
 		      controls_state.getDistanceTraveled() / 1000,
