@@ -220,7 +220,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"DangerZoneCost", PERSISTENT},
     {"Steer_SRTune", PERSISTENT},
     {"Steer_SRTune_v", PERSISTENT},
-     {"AutoLaneChangeSpeed", PERSISTENT},
+    {"AutoLaneChangeSpeed", PERSISTENT},
     {"SteerDeltaUp", PERSISTENT},
     {"SteerDeltaDown", PERSISTENT},
     {"ShowDateTime", PERSISTENT},
@@ -263,6 +263,8 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"RightEdgeOffset", PERSISTENT},
     {"SteerActuatorDelayAdj", PERSISTENT},
     {"LongitudinalTuningKpV", PERSISTENT},
+    {"LaneChangeEnabled", PERSISTENT},
+    {"AutoLaneChangeEnabled", PERSISTENT},
 };
 
 } // namespace
