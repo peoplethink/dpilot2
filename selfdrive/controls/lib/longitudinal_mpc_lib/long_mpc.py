@@ -217,7 +217,8 @@ def gen_long_ocp():
 
 
 class LongitudinalMpc:
-  def __init__(self, e2e=False):
+  def __init__(self, e2e=False, dt=DT_MDL):
+    self.dt = dt
     self.e2e = e2e
     self.JEgoCost = 5.
     self.DangerZoneCost = 100.
@@ -501,7 +502,7 @@ class LongitudinalMpc:
     self.a_solution = self.x_sol[:,2]
     self.j_solution = self.u_sol[:,0]
 
-    self.prev_a = np.interp(T_IDXS + 0.05, T_IDXS, self.a_solution)
+    self.prev_a = np.interp(T_IDXS + self.dt, T_IDXS, self.a_solution)
 
     t = sec_since_boot()
     if self.solution_status != 0:
