@@ -78,7 +78,7 @@ class CarInterface(CarInterfaceBase):
     
     # --------------Torque
     elif Params().get("LateralControlSelect", encoding='utf8') == "3":
-      if candidate in [CAR.GENESIS, CAR.GENESIS_G80]:
+      if candidate in [CAR.GENESIS, CAR.GENESIS_G80, CAR.GENESIS_G90]:
         CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
 
@@ -305,6 +305,7 @@ class CarInterface(CarInterfaceBase):
     ret.vEgoStopping = 0.3
     ret.startAccel = 1.5
     ret.stoppingDecelRate = 0.25
+    ret.longitudinalActuatorDelay = 0.5
 	  
     ret.enableBsm = 0x58b in fingerprint[0]
     ret.enableAutoHold = 1151 in fingerprint[0]
