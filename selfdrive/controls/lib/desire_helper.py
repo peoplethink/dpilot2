@@ -2,19 +2,13 @@ from cereal import log
 from common.realtime import DT_MDL
 from common.conversions import Conversions as CV
 from common.params import Params
-from decimal import Decimal
 
 AUTO_LCA_START_TIME = 0.8
 
 LaneChangeState = log.LateralPlan.LaneChangeState
 LaneChangeDirection = log.LateralPlan.LaneChangeDirection
 
-if int(Params().get("OpkrLaneChangeSpeed", encoding="utf8")) < 1:
-  LANE_CHANGE_SPEED_MIN = -1
-elif Params().get_bool("IsMetric"):
-  LANE_CHANGE_SPEED_MIN = float(int(Params().get("OpkrLaneChangeSpeed", encoding="utf8")) * CV.KPH_TO_MS)
-else:
-  LANE_CHANGE_SPEED_MIN = float(int(Params().get("OpkrLaneChangeSpeed", encoding="utf8")) * CV.MPH_TO_MS)
+LANE_CHANGE_SPEED_MIN = 30 * CV.MPH_TO_MS
 LANE_CHANGE_TIME_MAX = 10.
 
 DESIRES = {
@@ -48,7 +42,9 @@ class DesireHelper:
     self.keep_pulse_timer = 0.0
     self.prev_one_blinker = False
     self.desire = log.LateralPlan.Desire.none
-    
+
+    self.paramsCount = 100
+    self.update_params()
     self.lane_change_enabled = True #Params().get_bool('LaneChangeEnabled')
     self.auto_lane_change_enabled = True #Params().get_bool('AutoLaneChangeEnabled')
     self.auto_lane_change_timer = 0.0
@@ -143,3 +139,9 @@ class DesireHelper:
         self.keep_pulse_timer = 0.0
       elif self.desire in (log.LateralPlan.Desire.keepLeft, log.LateralPlan.Desire.keepRight):
         self.desire = log.LateralPlan.Desire.none
+
+  def update_params(self):
+    self.paramsCount += 1
+    if self.paramsCount > 100:
+      self.autoLaneChangeSpeed = int(Params().get("AutoLaneChangeSpeed", encoding="'utf8"))
+      self.paramsCount = 0
