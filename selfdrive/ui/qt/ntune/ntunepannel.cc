@@ -14,7 +14,7 @@ QList<QList<TuneItemInfo>> nTuneMainWidget::mainItems = {
 {
     TuneItemInfo("common.json", "cameraOffset", "우측이동 - , 좌측이동 +",
                  0.06f, -1.0f, 1.0f, 0.01f, 2),
-    TuneItemInfo("common.json", "steerActuatorDelay", "",
+    TuneItemInfo("common.json", "steerActuatorDelay", "값이크면 조향을 좀더 미리함",
                  0.3f, 0.0f, 0.8f, 0.05f, 2),
 },
 {
