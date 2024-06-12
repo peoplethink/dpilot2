@@ -174,6 +174,9 @@ class nTune():
     if self.checkValue("cameraOffset", -1.0, 1.0, 0.06):
       updated = True
 
+    if self.checkValue("longitudinalActuatorDelay", 0., 1.0, 0.5):
+      updated = True
+
     return updated
 
   def checkValidIndi(self):
@@ -268,6 +271,7 @@ class nTune():
           self.config["steerRatio"] = round(self.CP.steerRatio, 2)
           self.config["steerActuatorDelay"] = round(self.CP.steerActuatorDelay, 2)
           self.config["steerRateCost"] = round(self.CP.steerRateCost, 2)
+          self.config["longitudinalActuatorDelay"] = round(self.CP.longitudinalActuatorDelay, 2)
 
     except:
       pass
