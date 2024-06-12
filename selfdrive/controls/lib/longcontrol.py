@@ -5,7 +5,6 @@ from selfdrive.controls.lib.drive_helpers import CONTROL_N, apply_deadzone
 from selfdrive.controls.lib.pid import PIDController
 from selfdrive.modeld.constants import T_IDXS
 from common.conversions import Conversions as CV
-from common.params import Params
 from selfdrive.controls.ntune import ntune_common_get
 
 LongCtrlState = car.CarControl.Actuators.LongControlState
@@ -65,13 +64,8 @@ class LongControl:
                              (CP.longitudinalTuning.kiBP, CP.longitudinalTuning.kiV),
                              k_f=CP.longitudinalTuning.kf,
                              k_d=(CP.longitudinalTuning.kdBP, CP.longitudinalTuning.kdV),
-                             # TODO: add support for this kind of derivative back
-                             derivative_period=0.5, rate=1 / DT_CTRL)
     self.v_pid = 0.0
     self.last_output_accel = 0.0
-    self.readParamCount = 0
-    self.longitudinalTuningKpV = 1.0
-    self.longitudinalTuningKiV = 0.0
 
   def reset(self, v_pid):
     """Reset PID controller and change setpoint"""
@@ -79,20 +73,6 @@ class LongControl:
     self.v_pid = v_pid
     
   def update(self, active, CS, long_plan, accel_limits, t_since_plan):
-    self.readParamCount += 1
-    if self.readParamCount >= 100:
-      self.readParamCount = 0
-    elif self.readParamCount == 10:
-      self.longitudinalTuningKpV = float(int(Params().get("LongitudinalTuningKpV", encoding="utf8"))) * 0.01
-      self.longitudinalTuningKiV = float(int(Params().get("LongitudinalTuningKiV", encoding="utf8"))) * 0.001
-
-      ## longcontrolTuning이 한개일때만 적용
-      if len(self.CP.longitudinalTuning.kpBP) == 1 and len(self.CP.longitudinalTuning.kiBP)==1:
-        self.CP.longitudinalTuning.kpV = [self.longitudinalTuningKpV]
-        self.CP.longitudinalTuning.kiV = [self.longitudinalTuningKiV]
-        self.pid._k_p = (self.CP.longitudinalTuning.kpBP, self.CP.longitudinalTuning.kpV)
-        self.pid._k_i = (self.CP.longitudinalTuning.kiBP, self.CP.longitudinalTuning.kiV)
-      
     """Update longitudinal control. This updates the state machine and runs a PID loop"""
     # Interp control trajectory
     speeds = long_plan.speeds
