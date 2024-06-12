@@ -45,8 +45,8 @@ class DesireHelper:
 
     self.paramsCount = 100
     self.update_params()
-    self.lane_change_enabled = True #Params().get_bool('LaneChangeEnabled')
-    self.auto_lane_change_enabled = True #Params().get_bool('AutoLaneChangeEnabled')
+    self.lane_change_enabled = Params().get_bool('LaneChangeEnabled')
+    self.auto_lane_change_enabled = Params().get_bool('AutoLaneChangeEnabled')
     self.auto_lane_change_timer = 0.0
     self.prev_torque_applied = False
     
