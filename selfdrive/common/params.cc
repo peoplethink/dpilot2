@@ -220,7 +220,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"DangerZoneCost", PERSISTENT},
     {"Steer_SRTune", PERSISTENT},
     {"Steer_SRTune_v", PERSISTENT},
-    {"OpkrLaneChangeSpeed", PERSISTENT},
+     {"AutoLaneChangeSpeed", PERSISTENT},
     {"SteerDeltaUp", PERSISTENT},
     {"SteerDeltaDown", PERSISTENT},
     {"ShowDateTime", PERSISTENT},
