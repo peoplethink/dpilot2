@@ -77,7 +77,7 @@ def manager_init() -> None:
     ("DangerZoneCost", "100"),
     ("Steer_SRTune", "1"),
     ("Steer_SRTune_v", "100"),
-    ("OpkrLaneChangeSpeed", "30"),
+    ("AutoLaneChangeSpeed", "30"),
     ("SteerDeltaUp", "3"),       
     ("SteerDeltaDown", "7"),
     ("PathOffset", "0"),
