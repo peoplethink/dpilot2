@@ -6,6 +6,7 @@ from selfdrive.controls.lib.pid import PIDController
 from selfdrive.modeld.constants import T_IDXS
 from common.conversions import Conversions as CV
 from common.params import Params
+from selfdrive.controls.ntune import ntune_common_get
 
 LongCtrlState = car.CarControl.Actuators.LongControlState
 
@@ -100,10 +101,10 @@ class LongControl:
       v_target_now = interp(t_since_plan, T_IDXS[:CONTROL_N], speeds)
       a_target_now = interp(t_since_plan, T_IDXS[:CONTROL_N], long_plan.accels)
 
-      v_target = interp(self.CP.longitudinalActuatorDelay + t_since_plan, T_IDXS[:CONTROL_N], speeds)
-      a_target = 2 * (v_target - v_target_now) / self.CP.longitudinalActuatorDelay - a_target_now
+      v_target = interp(ntune_common_get('longitudinalActuatorDelay') + t_since_plan, T_IDXS[:CONTROL_N], speeds)
+      a_target = 2 * (v_target - v_target_now) / ntune_common_get('longitudinalActuatorDelay') - a_target_now
 
-      v_target_1sec = interp(self.CP.longitudinalActuatorDelay + t_since_plan + 1.0, T_IDXS[:CONTROL_N], speeds)
+      v_target_1sec = interp(ntune_common_get('longitudinalActuatorDelay')+ t_since_plan + 1.0, T_IDXS[:CONTROL_N], speeds)
     else:
       v_target = 0.0
       v_target_now = 0.0
