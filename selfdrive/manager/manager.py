@@ -78,6 +78,8 @@ def manager_init() -> None:
     ("Steer_SRTune", "1"),
     ("Steer_SRTune_v", "100"),
     ("AutoLaneChangeSpeed", "30"),
+    ("LaneChangeEnabled", "1"),
+    ("AutoLaneChangeEnabled", "1"),
     ("SteerDeltaUp", "3"),       
     ("SteerDeltaDown", "7"),
     ("PathOffset", "0"),
