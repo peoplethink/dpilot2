@@ -293,6 +293,11 @@ class LongitudinalMpc:
     return (a_change, j_ego_tf, d_zone_tf)
   
   def set_weights_for_lead_policy(self, prev_accel_constraint=True, v_lead0=0, v_lead1=0):
+    # Prevent sudden acceleration changes (jerk) after gas overriding.
+    # Proposed by ajouatom
+    if not prev_accel_constraint:
+      self.prev_a = np.full(N+1, a_desired)
+      
     a_change_cost = A_CHANGE_COST if prev_accel_constraint else 0
     cost_mulitpliers = self.get_cost_multipliers(v_lead0, v_lead1)
     W = np.asfortranarray(np.diag([self.XEgoObstacleCost, X_EGO_COST, V_EGO_COST,
