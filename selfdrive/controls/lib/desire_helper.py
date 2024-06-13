@@ -43,10 +43,9 @@ class DesireHelper:
     self.prev_one_blinker = False
     self.desire = log.LateralPlan.Desire.none
 
-    self.paramsCount = 100
-    self.update_params()
     self.lane_change_enabled = Params().get_bool('LaneChangeEnabled')
     self.auto_lane_change_enabled = Params().get_bool('AutoLaneChangeEnabled')
+    self.autoLaneChangeSpeed = int(Params().get("AutoLaneChangeSpeed", encoding="'utf8"))
     self.auto_lane_change_timer = 0.0
     self.prev_torque_applied = False
     
@@ -139,9 +138,3 @@ class DesireHelper:
         self.keep_pulse_timer = 0.0
       elif self.desire in (log.LateralPlan.Desire.keepLeft, log.LateralPlan.Desire.keepRight):
         self.desire = log.LateralPlan.Desire.none
-
-  def update_params(self):
-    self.paramsCount += 1
-    if self.paramsCount > 100:
-      self.autoLaneChangeSpeed = int(Params().get("AutoLaneChangeSpeed", encoding="'utf8"))
-      self.paramsCount = 0
