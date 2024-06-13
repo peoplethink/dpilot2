@@ -66,8 +66,6 @@ class Planner:
     self.events = Events()
 
   def update(self, sm):
-    self.update_params()
-    
     v_ego = sm['carState'].vEgo
     v_cruise_kph = sm['controlsState'].vCruise
     v_cruise_kph = min(v_cruise_kph, V_CRUISE_MAX)
