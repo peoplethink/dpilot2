@@ -16,8 +16,6 @@ QList<QList<TuneItemInfo>> nTuneMainWidget::mainItems = {
                  0.06f, -1.0f, 1.0f, 0.01f, 2),
     TuneItemInfo("common.json", "steerActuatorDelay", "값이크면 조향을 좀더 미리함",
                  0.3f, 0.0f, 0.8f, 0.05f, 2),
-    TuneItemInfo("common.json", "longitudinalActuatorDelay", "값이크면 롱컨을 좀더 미리함",
-                 0.5f, 0.0f, 1.0f, 0.05f, 2),
 },
 {
     //TuneItemInfo("scc_v2.json", "longStartingFactor", tr("Acceleration at start, increasing this value will make the acceleration faster."),
@@ -34,7 +32,7 @@ QList<QList<TuneItemInfo>> nTuneMainWidget::mainItems = {
 {
     TuneItemInfo("lat_torque_v4.json", "latAccelFactor", "", 2.5f, 0.5f, 4.5f, 0.1f, 2),
     TuneItemInfo("lat_torque_v4.json", "friction", "", 0.1f, 0.0f, 0.2f, 0.01f, 3),
-    //TuneItemInfo("lat_torque_v4.json", "angle_deadzone_v2", "", 0.0f, 0.0f, 2.0f, 0.01f, 3),
+    TuneItemInfo("lat_torque_v4.json", "angle_deadzone_v2", "", 0.0f, 0.0f, 2.0f, 0.01f, 3),
 },
 };
 
