@@ -8,7 +8,8 @@ AUTO_LCA_START_TIME = 0.8
 LaneChangeState = log.LateralPlan.LaneChangeState
 LaneChangeDirection = log.LateralPlan.LaneChangeDirection
 
-LANE_CHANGE_SPEED_MIN = 30 * CV.MPH_TO_MS
+#LANE_CHANGE_SPEED_MIN = 30 * CV.MPH_TO_MS
+LANE_CHANGE_SPEED_MIN = float(int(Params().get("AutoLaneChangeSpeed", encoding="utf8")) * CV.KPH_TO_MS)
 LANE_CHANGE_TIME_MAX = 10.
 
 DESIRES = {
@@ -45,7 +46,7 @@ class DesireHelper:
 
     self.lane_change_enabled = Params().get_bool('LaneChangeEnabled')
     self.auto_lane_change_enabled = Params().get_bool('AutoLaneChangeEnabled')
-    self.autoLaneChangeSpeed = int(Params().get("AutoLaneChangeSpeed", encoding="'utf8"))
+    #self.autoLaneChangeSpeed = int(Params().get("AutoLaneChangeSpeed", encoding="'utf8"))
     self.auto_lane_change_timer = 0.0
     self.prev_torque_applied = False
     
