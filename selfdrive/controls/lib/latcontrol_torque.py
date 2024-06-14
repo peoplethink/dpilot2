@@ -5,7 +5,6 @@ from common.numpy_fast import interp
 from selfdrive.controls.lib.latcontrol import LatControl
 from selfdrive.controls.lib.pid import PIDController
 from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
-from common.params import Params
 from selfdrive.controls.ntune import nTune
 
 # At higher speeds (25+mph) we can assume:
@@ -44,7 +43,6 @@ class LatControlTorque(LatControl):
   def update(self, active, CS, VM, params, last_actuators, steer_limited, desired_curvature, desired_curvature_rate, llk):
     self.tune.updateTorque() 
     pid_log = log.ControlsState.LateralTorqueState.new_message()
-
     if not active:
       output_torque = 0.0
       pid_log.active = False
