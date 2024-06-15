@@ -225,10 +225,6 @@ class LongitudinalMpc:
     self.lo_timer = 0
     self.v_cruise = 0.
     self.t_follow = T_FOLLOW
-    self.tFollowSpeedAdd = 0.0
-    self.tFollowSpeedAddM = 0.0
-    self.v_ego_prev = 0.0
-    
     self.source = SOURCES[2]
 
   def reset(self):
@@ -393,19 +389,12 @@ class LongitudinalMpc:
       self.DangerZoneCost = float(int(Params().get("DangerZoneCost", encoding="utf8")))
     elif self.lo_timer == 40:
       self.leadDangerFactor = float(int(Params().get("LeadDangerFactor", encoding="utf8"))) * 0.01
-    elif self.lo_timer == 60:
-      self.tFollowSpeedAdd = float(int(Params().get("TFollowSpeedAdd", encoding="utf8"))) / 100.
-      self.tFollowSpeedAddM = float(int(Params().get("TFollowSpeedAddM", encoding="utf8"))) / 100.
       
     self.status = radarstate.leadOne.status or radarstate.leadTwo.status
 
     lead_xv_0 = self.process_lead(radarstate.leadOne)
     lead_xv_1 = self.process_lead(radarstate.leadTwo)
 
-    if v_ego >= self.v_ego_prev:
-      self.t_follow = interp(v_ego * CV.MS_TO_KPH, [0, 40, 100], [self.t_follow, self.t_follow + self.tFollowSpeedAddM, self.t_follow + self.tFollowSpeedAdd]) 
-    self.v_ego_prev = v_ego
-    
     self.update_TF(carstate, radarstate, v_ego, a_ego)
     comfort_brake = ntune_scc_get('comfortBrake')
     stop_distance = ntune_scc_get('stopDistance')
