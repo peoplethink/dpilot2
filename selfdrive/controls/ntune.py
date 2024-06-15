@@ -174,6 +174,9 @@ class nTune():
     if self.checkValue("cameraOffset", -1.0, 1.0, 0.06):
       updated = True
 
+    if self.checkValue("autoLaneChangeSpeed", 10.0, 60.0, 30.0):
+      updated = True
+      
     return updated
 
   def checkValidIndi(self):
