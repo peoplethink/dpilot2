@@ -811,7 +811,7 @@ TUNINGPanel::TUNINGPanel(QWidget* parent) : QWidget(parent) {
     toggleLayout->addWidget(new CValueControl("Steer_SRTune_v", "SR가변 비율", "SR가변시 비율값(추천:95)", "../assets/offroad/icon_road.png", 80, 120, 1));
     toggleLayout->addWidget(new CValueControl("MaxAngleFrames", "MaxAngleFrames(89)", "89:기본, lkas fault 발생시 87:사용", "../assets/offroad/icon_road.png", 80, 100, 1));
     toggleLayout->addWidget(horizontal_line());
-    toggleLayout->addWidget(new CValueControl("AutoLaneChangeSpeed", "LANE CHANGE: Speed (30)", "해당속도 이상에서만 자동차선변경", "../assets/offroad/icon_road.png", 5, 60, 5));
+    toggleLayout->addWidget(new CValueControl("AutoLaneChangeSpeed", "LANE CHANGE: Speed (30)", "해당속도 이상에서만 자동차선변경", "../assets/offroad/icon_road.png", 5, 100, 5));
     toggleLayout->addWidget(new ParamControl("AverageDesiredCurvature", "Average Desired Curvature", "Use for smoother handling of curves.", "../assets/offroad/icon_road.png", this));
     toggleLayout->addWidget(horizontal_line());
     toggleLayout->addWidget(new BrightnessControl());
@@ -823,8 +823,6 @@ TUNINGPanel::TUNINGPanel(QWidget* parent) : QWidget(parent) {
     toggleLayout->addWidget(horizontal_line());
     toggleLayout->addWidget(new LabelControl("〓〓〓〓〓〓〓〓【 롱컨메뉴 】〓〓〓〓〓〓〓〓", ""));
     toggleLayout->addWidget(new CValueControl("MixRadarInfo", "MixRadarInfo for SCC Rardar", "0:Not used,1:Use", "../assets/offroad/icon_shell.png", 0, 1, 1));
-    toggleLayout->addWidget(new CValueControl("TFollowSpeedAddM", "TF(s): 차량간격40km/hx0.01s(0)", "속도(최대40km/h)에 따라 추가되는 값", "../assets/offroad/icon_road.png", -100, 200, 1));
-    toggleLayout->addWidget(new CValueControl("TFollowSpeedAdd", "TF(s): 차량간격100km/hx0.01s(0)", "속도(최대100km/h)에 따라 추가되는 값", "../assets/offroad/icon_road.png", -100, 200, 1));
     toggleLayout->addWidget(new CValueControl("ALeadTau", "ALeadTaux0.01(150)", "값이 작아지면 선행차 가속도에 민감", "../assets/offroad/icon_road.png", 0, 500, 5));
     toggleLayout->addWidget(new CValueControl("ALeadTauStart", "ALeadTauStartx0.01(50)", "값이 작아지면 선행차 가속도에 민감", "../assets/offroad/icon_road.png", 5, 80, 5));
     toggleLayout->addWidget(new CValueControl("LeadDangerFactor", "LEAD_DANGER_FACTOR(80)", "", "../assets/offroad/icon_road.png", 75, 100, 1));
