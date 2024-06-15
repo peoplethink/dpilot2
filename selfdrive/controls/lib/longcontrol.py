@@ -8,6 +8,8 @@ from common.conversions import Conversions as CV
 
 LongCtrlState = car.CarControl.Actuators.LongControlState
 
+ACCEL_MIN_ISO = -3.5  # m/s^2
+ACCEL_MAX_ISO = 2.0  # m/s^2
 
 def long_control_state_trans(CP, active, long_control_state, v_ego, v_target,
                              v_target_future, brake_pressed, cruise_standstill):
