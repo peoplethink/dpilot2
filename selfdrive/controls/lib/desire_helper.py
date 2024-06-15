@@ -9,7 +9,8 @@ LaneChangeState = log.LateralPlan.LaneChangeState
 LaneChangeDirection = log.LateralPlan.LaneChangeDirection
 
 #LANE_CHANGE_SPEED_MIN = 30 * CV.MPH_TO_MS
-LANE_CHANGE_SPEED_MIN = float(int(Params().get("AutoLaneChangeSpeed", encoding="utf8")) * CV.KPH_TO_MS)
+if Params().get_bool("IsMetric"):
+  LANE_CHANGE_SPEED_MIN = float(int(Params().get("AutoLaneChangeSpeed", encoding="utf8")) * CV.KPH_TO_MS)
 LANE_CHANGE_TIME_MAX = 10.
 
 DESIRES = {
