@@ -1,6 +1,7 @@
 from cereal import log
 from common.realtime import DT_MDL
 from common.conversions import Conversions as CV
+from common.params import Params
 from selfdrive.controls.ntune import ntune_common_get
 
 AUTO_LCA_START_TIME = 0.8
