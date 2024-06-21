@@ -20,11 +20,11 @@ from selfdrive.controls.lib.events import Events
 LON_MPC_STEP = 0.2  # first step is 0.2s
 A_CRUISE_MIN_VALS = [-0.5, -0.5, -0.2, -0.3, -0.4, -1.2] # mimick stock, slightly release brakes when stopping
 A_CRUISE_MIN_BP =   [0., 0.3, 0.35, 3., 6., 20.]
-A_CRUISE_MAX_VALS = [1.6, 1.2, 0.8, 0.6]
-A_CRUISE_MAX_BP = [0., 10.0, 25., 40.]
+A_CRUISE_MAX_VALS = [2.0, 1.4, 0.5, 0.2, 0.15]
+A_CRUISE_MAX_BP = [0., 40 * CV.KPH_TO_MS, 60 * CV.KPH_TO_MS, 80 * CV.KPH_TO_MS, 110 * CV.KPH_TO_MS, 140 * CV.KPH_TO_MS]
 
 # Lookup table for turns
-_A_TOTAL_MAX_V = [1.7, 3.2]
+_A_TOTAL_MAX_V = [2.5, 3.2]
 _A_TOTAL_MAX_BP = [20., 40.]
 
 def get_min_accel(v_ego):
@@ -69,7 +69,35 @@ class Planner:
     self.vision_turn_controller = VisionTurnController(CP)
     self.events = Events()
 
+    self.params = Params()
+    self.param_read_counter = 0
+    self.read_param()
+
+    self.params_count = 0
+    self.cruiseMaxVals1 = float(int(Params().get("CruiseMaxVals1", encoding="utf8"))) / 100.
+    self.cruiseMaxVals2 = float(int(Params().get("CruiseMaxVals2", encoding="utf8"))) / 100.
+    self.cruiseMaxVals3 = float(int(Params().get("CruiseMaxVals3", encoding="utf8"))) / 100.
+    self.cruiseMaxVals4 = float(int(Params().get("CruiseMaxVals4", encoding="utf8"))) / 100.
+    self.cruiseMaxVals5 = float(int(Params().get("CruiseMaxVals5", encoding="utf8"))) / 100.
+    self.cruiseMaxVals6 = float(int(Params().get("CruiseMaxVals6", encoding="utf8"))) / 100.
+    
+  def read_param(self):
+    self.cruiseMaxVals1 = float(int(Params().get("CruiseMaxVals1", encoding="utf8"))) / 100.
+    self.cruiseMaxVals2 = float(int(Params().get("CruiseMaxVals2", encoding="utf8"))) / 100.
+    self.cruiseMaxVals3 = float(int(Params().get("CruiseMaxVals3", encoding="utf8"))) / 100.
+    self.cruiseMaxVals4 = float(int(Params().get("CruiseMaxVals4", encoding="utf8"))) / 100.
+    self.cruiseMaxVals5 = float(int(Params().get("CruiseMaxVals5", encoding="utf8"))) / 100.
+    self.cruiseMaxVals6 = float(int(Params().get("CruiseMaxVals6", encoding="utf8"))) / 100.
+
+  def get_max_accel(self, v_ego):
+    cruiseMaxVals = [self.cruiseMaxVals1, self.cruiseMaxVals2, self.cruiseMaxVals3, self.cruiseMaxVals4, self.cruiseMaxVals5, self.cruiseMaxVals6]
+    return interp(v_ego, A_CRUISE_MAX_BP, cruiseMaxVals)
+    
   def update(self, sm):
+    if self.param_read_counter % 50 == 0:
+      self.read_param()
+    self.param_read_counter += 1
+    
     v_ego = sm['carState'].vEgo
     v_cruise_kph = sm['controlsState'].vCruise
     v_cruise_kph = min(v_cruise_kph, V_CRUISE_MAX)
@@ -91,7 +119,7 @@ class Planner:
     # No change cost when user is controlling the speed, or when standstill
     prev_accel_constraint = not sm['carState'].standstill
     
-    accel_limits = [get_min_accel(v_ego), get_max_accel(v_ego)]
+    accel_limits = [get_min_accel(v_ego), self.get_max_accel(v_ego)]
     accel_limits_turns = limit_accel_in_turns(v_ego, sm['carState'].steeringAngleDeg, accel_limits, self.CP)
 
     if reset_state:
