@@ -484,7 +484,7 @@ class LongitudinalMpc:
       self.lo_timer = 0
     elif self.lo_timer == 20:
       pass
-    elif self.lo_timer = 40
+    elif self.lo_timer = 40:
       self.XEgoObstacleCost = float(int(Params().get("XEgoObstacleCost", encoding="utf8")))
       self.JEgoCost = float(int(Params().get("JEgoCost", encoding="utf8")))
     elif self.lo_timer == 60:
