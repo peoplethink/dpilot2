@@ -247,6 +247,8 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"LeftEdgeOffset", PERSISTENT},
     {"RightEdgeOffset", PERSISTENT},
     {"LaneChangeEnabled", PERSISTENT},
+    {"TFollowSpeedAdd", PERSISTENT},
+    {"TFollowSpeedAddM", PERSISTENT},
     {"AutoLaneChangeEnabled", PERSISTENT},
 };
 
