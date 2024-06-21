@@ -225,6 +225,10 @@ class LongitudinalMpc:
     self.lo_timer = 0
     self.v_cruise = 0.
     self.t_follow = T_FOLLOW
+    elf.tFollowSpeedAdd = 0.0
+    self.tFollowSpeedAddM = 0.0
+    self.v_ego_prev = 0.0
+    
     self.source = SOURCES[2]
 
   def reset(self):
@@ -360,41 +364,22 @@ class LongitudinalMpc:
     self.cruise_min_a = min_a
     self.cruise_max_a = max_a
 
-  def update_TF(self, carstate, radarstate, v_ego, a_ego):
-    cruise_gap = int(clip(carstate.cruiseGap, 1., 4.))
-    if cruise_gap == 1:
-      self.t_follow = 0.9
-    elif cruise_gap == 2:
-      self.t_follow = 1.25
-    elif cruise_gap == 3:
-      x_vel = [0,    11,   13,   15,   25,   40]
-      y_dist = [1.75, 1.8, 1.9, 2.0, 2.2,  2.3]
-      self.t_follow = np.interp(carstate.vEgo, x_vel, y_dist)
-    elif cruise_gap == 4:
-      x_vel = [0,    11,   13,   15,   25,   40]
-      y_dist = [0.9, 1.0, 1.1, 1.12, 1.22, 1.22]
-      self.t_follow = np.interp(carstate.vEgo, x_vel, y_dist)
-      
   def update(self, carstate, radarstate, v_cruise, prev_accel_constraint):
+    
+    self.update_params()
     v_ego = self.x0[1]
     a_ego = self.x0[2]
     a_ego = carstate.aEgo
-    
-    self.lo_timer += 1
-    if self.lo_timer > 200:
-      self.lo_timer = 0
-      self.XEgoObstacleCost = float(int(Params().get("XEgoObstacleCost", encoding="utf8")))
-      self.JEgoCost = float(int(Params().get("JEgoCost", encoding="utf8")))
-    elif self.lo_timer == 20:
-      self.DangerZoneCost = float(int(Params().get("DangerZoneCost", encoding="utf8")))
-    elif self.lo_timer == 40:
-      self.leadDangerFactor = float(int(Params().get("LeadDangerFactor", encoding="utf8"))) * 0.01
       
     self.status = radarstate.leadOne.status or radarstate.leadTwo.status
 
     lead_xv_0 = self.process_lead(radarstate.leadOne)
     lead_xv_1 = self.process_lead(radarstate.leadTwo)
 
+    if v_ego >= self.v_ego_prev:
+      self.t_follow = interp(v_ego * CV.MS_TO_KPH, [0, 40, 100], [self.t_follow, self.t_follow + self.tFollowSpeedAddM, self.t_follow + self.tFollowSpeedAdd]) 
+    self.v_ego_prev = v_ego
+    
     self.update_TF(carstate, radarstate, v_ego, a_ego)
     comfort_brake = ntune_scc_get('comfortBrake')
     stop_distance = ntune_scc_get('stopDistance')
@@ -493,6 +478,38 @@ class LongitudinalMpc:
       # reset = 1
     # print(f"long_mpc timings: total internal {self.solve_time:.2e}, external: {(sec_since_boot() - t0):.2e} qp {self.time_qp_solution:.2e}, lin {self.time_linearization:.2e} qp_iter {qp_iter}, reset {reset}")
 
+  def update_params(self):
+    self.lo_timer += 1
+    if self.lo_timer > 200:
+      self.lo_timer = 0
+    elif self.lo_timer == 20:
+      pass
+    elif self.lo_timer = 40
+      self.XEgoObstacleCost = float(int(Params().get("XEgoObstacleCost", encoding="utf8")))
+      self.JEgoCost = float(int(Params().get("JEgoCost", encoding="utf8")))
+    elif self.lo_timer == 60:
+      self.DangerZoneCost = float(int(Params().get("DangerZoneCost", encoding="utf8")))
+    elif self.lo_timer == 80:
+      self.leadDangerFactor = float(int(Params().get("LeadDangerFactor", encoding="utf8"))) * 0.01
+      self.stopDistance = float(int(Params().get("StopDistance", encoding="utf8"))) / 100.
+    elif self.lo_timer == 100:
+      self.tFollowSpeedAdd = float(int(Params().get("TFollowSpeedAdd", encoding="utf8"))) / 100.
+      self.tFollowSpeedAddM = float(int(Params().get("TFollowSpeedAddM", encoding="utf8"))) / 100.
+
+  def update_TF(self, carstate, radarstate, v_ego, a_ego):
+    cruise_gap = int(clip(carstate.cruiseGap, 1., 4.))
+    if cruise_gap == 1:
+      self.t_follow = 0.9
+    elif cruise_gap == 2:
+      self.t_follow = 1.25
+    elif cruise_gap == 3:
+      x_vel = [0,    11,   13,   15,   25,   40]
+      y_dist = [1.75, 1.8, 1.9, 2.0, 2.2,  2.3]
+      self.t_follow = np.interp(carstate.vEgo, x_vel, y_dist)
+    elif cruise_gap == 4:
+      x_vel = [0,    11,   13,   15,   25,   40]
+      y_dist = [0.9, 1.0, 1.1, 1.12, 1.22, 1.22]
+      self.t_follow = np.interp(carstate.vEgo, x_vel, y_dist)
 
 if __name__ == "__main__":
   ocp = gen_long_ocp()
