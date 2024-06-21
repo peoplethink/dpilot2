@@ -104,6 +104,8 @@ def manager_init() -> None:
     ("SetSpeedOffset", "10"),
     ("ALeadTau", "150"), 
     ("ALeadTauStart", "50"),
+    ("TFollowSpeedAdd", "2"),
+    ("TFollowSpeedAddM", "2"),
     ("PutPrebuilt", "0"), 
   ]
   if not PC:
