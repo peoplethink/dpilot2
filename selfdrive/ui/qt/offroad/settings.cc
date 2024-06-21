@@ -822,6 +822,8 @@ TUNINGPanel::TUNINGPanel(QWidget* parent) : QWidget(parent) {
     toggleLayout->addWidget(horizontal_line());
     toggleLayout->addWidget(new LabelControl("〓〓〓〓〓〓〓〓【 롱컨메뉴 】〓〓〓〓〓〓〓〓", ""));
     toggleLayout->addWidget(new CValueControl("MixRadarInfo", "MixRadarInfo for SCC Rardar", "0:Not used,1:Use", "../assets/offroad/icon_shell.png", 0, 1, 1));
+    toggleLayout->addWidget(new CValueControl("TFollowSpeedAddM", "TF(s): 차량간격40km/hx0.01s(0)", "속도(최대40km/h)에 따라 추가되는 값", "../assets/offroad/icon_road.png", -100, 200, 1));
+    toggleLayout->addWidget(new CValueControl("TFollowSpeedAdd", "TF(s): 차량간격100km/hx0.01s(0)", "속도(최대100km/h)에 따라 추가되는 값", "../assets/offroad/icon_road.png", -100, 200, 1));
     toggleLayout->addWidget(new CValueControl("ALeadTau", "ALeadTaux0.01(150)", "값이 작아지면 선행차 가속도에 민감", "../assets/offroad/icon_road.png", 0, 500, 5));
     toggleLayout->addWidget(new CValueControl("ALeadTauStart", "ALeadTauStartx0.01(50)", "값이 작아지면 선행차 가속도에 민감", "../assets/offroad/icon_road.png", 5, 80, 5));
     toggleLayout->addWidget(new CValueControl("LeadDangerFactor", "LEAD_DANGER_FACTOR(80)", "", "../assets/offroad/icon_road.png", 75, 100, 1));
