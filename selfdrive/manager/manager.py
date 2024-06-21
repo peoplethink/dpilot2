@@ -106,6 +106,12 @@ def manager_init() -> None:
     ("ALeadTauStart", "50"),
     ("TFollowSpeedAdd", "2"),
     ("TFollowSpeedAddM", "2"),
+    ("CruiseMaxVals1", "160"),
+    ("CruiseMaxVals2", "120"),
+    ("CruiseMaxVals3", "100"),
+    ("CruiseMaxVals4", "80"),
+    ("CruiseMaxVals5", "70"),
+    ("CruiseMaxVals6", "60"),
     ("PutPrebuilt", "0"), 
   ]
   if not PC:
