@@ -225,7 +225,7 @@ class LongitudinalMpc:
     self.lo_timer = 0
     self.v_cruise = 0.
     self.t_follow = T_FOLLOW
-    elf.tFollowSpeedAdd = 0.0
+    self.tFollowSpeedAdd = 0.0
     self.tFollowSpeedAddM = 0.0
     self.v_ego_prev = 0.0
     
