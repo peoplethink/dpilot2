@@ -10,7 +10,7 @@ from selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
 from common.params import Params
-from decimal import Decimal
+from selfdrive.controls.ntune import ntune_scc_get
 from selfdrive.controls.lib.desire_helper import LANE_CHANGE_SPEED_MIN
 
 GearShifter = car.CarState.GearShifter
@@ -304,10 +304,10 @@ class CarInterface(CarInterfaceBase):
 
     ret.stoppingControl = True
     ret.startingState = False
-    ret.vEgoStarting = 0.2
-    ret.vEgoStopping = 0.2
-    ret.startAccel = 1.5
-    ret.stoppingDecelRate = 0.3
+    ret.vEgoStarting = ntune_scc_get('vEgoStarting')
+    ret.vEgoStopping = ntune_scc_get('vEgoStopping')
+    ret.stoppingDecelRate = ntune_scc_get('stoppingDecelRate')
+    ret.startAccel = 1.5  
 	  
     ret.enableBsm = 0x58b in fingerprint[0]
     ret.enableAutoHold = 1151 in fingerprint[0]
