@@ -73,8 +73,18 @@ class LongControl:
     """Reset PID controller and change setpoint"""
     self.pid.reset()
     self.v_pid = v_pid
+    self.readParamCount = 0
+    self.startAccelApply = 0.0
+    self.stopAccelApply = 0.0
     
   def update(self, active, CS, long_plan, accel_limits, t_since_plan):
+    self.readParamCount += 1
+    if self.readParamCount >= 100:
+      self.readParamCount = 0
+    elif self.readParamCount == 10:
+      self.startAccelApply = float(int(Params().get("StartAccelApply", encoding="utf8"))) * 0.01
+      self.stopAccelApply = float(int(Params().get("StopAccelApply", encoding="utf8"))) * 0.01
+      
     """Update longitudinal control. This updates the state machine and runs a PID loop"""
     # Interp control trajectory
     speeds = long_plan.speeds
@@ -103,6 +113,10 @@ class LongControl:
     self.pid.neg_limit = accel_limits[0]
     self.pid.pos_limit = accel_limits[1]
 
+    self.CP.startingState = True if self.startAccelApply > 0.0 else False
+    self.CP.startAccel = 2.0 * self.startAccelApply
+    self.CP.stopAccel = -2.0 * self.stopAccelApply
+    
     output_accel = self.last_output_accel
     
     self.long_control_state = long_control_state_trans(self.CP, active, self.long_control_state, CS.vEgo,
@@ -140,4 +154,4 @@ class LongControl:
 
     self.last_output_accel = clip(output_accel, accel_limits[0], accel_limits[1])
     
-    return self.last_output_accel
+    return self.last_output_accel, -0.5 if planned_stop
