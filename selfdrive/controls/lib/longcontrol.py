@@ -5,16 +5,13 @@ from selfdrive.controls.lib.drive_helpers import CONTROL_N, apply_deadzone
 from selfdrive.controls.lib.pid import PIDController
 from selfdrive.modeld.constants import T_IDXS
 from common.conversions import Conversions as CV
-from common.params import Params
 
 LongCtrlState = car.CarControl.Actuators.LongControlState
 
 
 def long_control_state_trans(CP, active, long_control_state, v_ego, v_target,
-                             v_target_1sec, brake_pressed, cruise_standstill, a_target_now):
-  # Ignore cruise standstill if car has a gas interceptor
-  cruise_standstill = cruise_standstill and not CP.enableGasInterceptor
-  accelerating = v_target_1sec > (v_target + 0.01)
+                             v_target_1sec, brake_pressed, cruise_standstill):
+  accelerating = v_target_1sec > v_target
   planned_stop = (v_target < CP.vEgoStopping and
                   v_target_1sec < CP.vEgoStopping and
                   not accelerating)
@@ -34,7 +31,7 @@ def long_control_state_trans(CP, active, long_control_state, v_ego, v_target,
   else:
     if long_control_state in (LongCtrlState.off, LongCtrlState.pid):
       long_control_state = LongCtrlState.pid
-      if stopping_condition and a_target_now > -1.0:
+      if stopping_condition:
         long_control_state = LongCtrlState.stopping
 
     elif long_control_state == LongCtrlState.stopping:
@@ -47,13 +44,10 @@ def long_control_state_trans(CP, active, long_control_state, v_ego, v_target,
       if stopping_condition:
         long_control_state = LongCtrlState.stopping
       elif started_condition:
-        long_control_state = LongCtrlState.pid
-        
-        
-        
-        
+        long_control_state = LongCtrlState.pid  
 
-  return long_control_state, planned_stop
+  return long_control_state
+
 
 class LongControl:
   def __init__(self, CP):
@@ -66,23 +60,13 @@ class LongControl:
                              derivative_period=0.5, rate=1 / DT_CTRL)
     self.v_pid = 0.0
     self.last_output_accel = 0.0
-    self.readParamCount = 0
-    self.startAccelApply = 0.0
-    self.stopAccelApply = 0.0
     
   def reset(self, v_pid):
     """Reset PID controller and change setpoint"""
     self.pid.reset()
     self.v_pid = v_pid
     
-  def update(self, active, CS, long_plan, accel_limits, t_since_plan, CC):
-    self.readParamCount += 1
-    if self.readParamCount >= 100:
-      self.readParamCount = 0
-    elif self.readParamCount == 10:
-      self.startAccelApply = float(int(Params().get("StartAccelApply", encoding="utf8"))) * 0.01
-      self.stopAccelApply = float(int(Params().get("StopAccelApply", encoding="utf8"))) * 0.01
-      
+  def update(self, active, CS, long_plan, accel_limits, t_since_plan):
     """Update longitudinal control. This updates the state machine and runs a PID loop"""
     # Interp control trajectory
     speeds = long_plan.speeds
@@ -106,20 +90,15 @@ class LongControl:
       v_target_now = 0.0
       v_target_1sec = 0.0
       a_target = 0.0
-      a_target_lower = a_target_upper = 0.0
 
     self.pid.neg_limit = accel_limits[0]
     self.pid.pos_limit = accel_limits[1]
 
-    self.CP.startingState = True if self.startAccelApply > 0.0 else False
-    self.CP.startAccel = 2.0 * self.startAccelApply
-    self.CP.stopAccel = -2.0 * self.stopAccelApply
-    
     output_accel = self.last_output_accel
     
-    self.long_control_state, planned_stop = long_control_state_trans(self.CP, active, self.long_control_state, CS.vEgo,
+    self.long_control_state = long_control_state_trans(self.CP, active, self.long_control_state, CS.vEgo,
                                                        v_target, v_target_1sec, CS.brakePressed,
-                                                       CS.cruiseState.standstill, a_target_now)
+                                                       CS.cruiseState.standstill)
 
     if self.long_control_state == LongCtrlState.off:
       self.reset(CS.vEgo)
@@ -152,4 +131,4 @@ class LongControl:
 
     self.last_output_accel = clip(output_accel, accel_limits[0], accel_limits[1])
     
-    return self.last_output_accel, -0.5
+    return self.last_output_accel
