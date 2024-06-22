@@ -233,6 +233,15 @@ class nTune():
 
     if self.checkValue("sccCurvatureFactor", 0.5, 1.5, 0.98):
       updated = True
+
+    if self.checkValue("stoppingDecelRate", 0.0, 1.0, 0.3):
+      updated = True
+
+    if self.checkValue("vEgoStopping", 0.0, 1.0, 0.3):
+      updated = True
+
+    if self.checkValue("vEgoStarting", 0.0, 1.0, 0.3):
+      updated = True
       
     return updated
 
