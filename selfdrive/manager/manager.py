@@ -112,6 +112,8 @@ def manager_init() -> None:
     ("CruiseMaxVals4", "80"),
     ("CruiseMaxVals5", "70"),
     ("CruiseMaxVals6", "60"),
+    ("StartAccelApply", "0"),
+    ("StopAccelApply", "30"),
     ("PutPrebuilt", "0"), 
   ]
   if not PC:
