@@ -100,13 +100,13 @@ class LongControl:
       output_accel = 0.
 
     elif self.long_control_state == LongCtrlState.stopping:
-      if output_accel > self.CP.stopAccel:
+      if output_accel > ntune_scc_get('stopAccel'):
         output_accel = min(output_accel, 0.0)
         output_accel -= ntune_scc_get('stoppingDecelRate') * DT_CTRL
       self.reset(CS.vEgo)
 
     elif self.long_control_state == LongCtrlState.starting:
-      output_accel = self.CP.startAccel
+      output_accel = ntune_scc_get('startAccel')
       self.reset(CS.vEgo)
       
     elif self.long_control_state == LongCtrlState.pid:
