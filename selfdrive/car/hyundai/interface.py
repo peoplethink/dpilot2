@@ -23,7 +23,7 @@ class CarInterface(CarInterfaceBase):
     self.cp2 = self.CS.get_can2_parser(CP)
     self.mad_mode_enabled = Params().get_bool('MadModeEnabled')
 
-   @staticmethod
+  @staticmethod
   def get_pid_accel_limits(CP, current_speed, cruise_speed):
 
     v_current_kph = current_speed * CV.MS_TO_KPH
