@@ -307,8 +307,8 @@ class CarInterface(CarInterfaceBase):
     ret.vEgoStarting = ntune_scc_get('vEgoStarting')
     ret.vEgoStopping = ntune_scc_get('vEgoStopping')
     ret.stoppingDecelRate = ntune_scc_get('stoppingDecelRate')
-    ret.longitudinalActuatorDelay = 0.5  
-    ret.startAccel = 1.5  
+    ret.startAccel = ntune_scc_get('startAccel')  
+    ret.longitudinalActuatorDelay = ntune_scc_get('longitudinalActuatorDelay')
 	  
     ret.enableBsm = 0x58b in fingerprint[0]
     ret.enableAutoHold = 1151 in fingerprint[0]
