@@ -303,10 +303,11 @@ class CarInterface(CarInterfaceBase):
     #ret.longitudinalTuning.kiV = [0.1, 0.05]
 
     ret.stoppingControl = True
-    ret.startingState = False
+    ret.startingState = True
     ret.vEgoStarting = ntune_scc_get('vEgoStarting')
     ret.vEgoStopping = ntune_scc_get('vEgoStopping')
     ret.stoppingDecelRate = ntune_scc_get('stoppingDecelRate')
+    ret.longitudinalActuatorDelay = 0.5  
     ret.startAccel = 1.5  
 	  
     ret.enableBsm = 0x58b in fingerprint[0]
