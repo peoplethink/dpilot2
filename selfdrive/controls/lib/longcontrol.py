@@ -56,7 +56,7 @@ def long_control_state_trans(CP, active, long_control_state, v_ego, v_target,
         
         
 
-  return long_control_state
+  return long_control_state, planned_stop
 
 class LongControl:
   def __init__(self, CP):
@@ -119,7 +119,7 @@ class LongControl:
     
     output_accel = self.last_output_accel
     
-    self.long_control_state = long_control_state_trans(self.CP, active, self.long_control_state, CS.vEgo,
+    self.long_control_state, planned_stop = long_control_state_trans(self.CP, active, self.long_control_state, CS.vEgo,
                                                        v_target, v_target_1sec, CS.brakePressed,
                                                        CS.cruiseState.standstill, a_target_now)
 
