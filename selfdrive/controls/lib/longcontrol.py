@@ -5,6 +5,7 @@ from selfdrive.controls.lib.drive_helpers import CONTROL_N, apply_deadzone
 from selfdrive.controls.lib.pid import PIDController
 from selfdrive.modeld.constants import T_IDXS
 from common.conversions import Conversions as CV
+from selfdrive.controls.ntune import ntune_scc_get
 
 LongCtrlState = car.CarControl.Actuators.LongControlState
 
@@ -12,14 +13,14 @@ LongCtrlState = car.CarControl.Actuators.LongControlState
 def long_control_state_trans(CP, active, long_control_state, v_ego, v_target,
                              v_target_1sec, brake_pressed, cruise_standstill):
   accelerating = v_target_1sec > v_target
-  planned_stop = (v_target < CP.vEgoStopping and
-                  v_target_1sec < CP.vEgoStopping and
+  planned_stop = (v_target < ntune_scc_get('vEgoStopping') and
+                  v_target_1sec < ntune_scc_get('vEgoStopping') and
                   not accelerating)
-  stay_stopped = (v_ego < CP.vEgoStopping and
+  stay_stopped = (v_ego < ntune_scc_get('vEgoStopping') and
                   (brake_pressed or cruise_standstill))
   stopping_condition = planned_stop or stay_stopped
 
-  starting_condition = (v_target_1sec > CP.vEgoStarting and
+  starting_condition = (v_target_1sec > ntune_scc_get('vEgoStarting') and
                         accelerating and
                         not cruise_standstill and
                         not brake_pressed)
@@ -101,7 +102,7 @@ class LongControl:
     elif self.long_control_state == LongCtrlState.stopping:
       if output_accel > self.CP.stopAccel:
         output_accel = min(output_accel, 0.0)
-        output_accel -= self.CP.stoppingDecelRate * DT_CTRL
+        output_accel -= ntune_scc_get('stoppingDecelRate') * DT_CTRL
       self.reset(CS.vEgo)
 
     elif self.long_control_state == LongCtrlState.starting:
