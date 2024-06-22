@@ -38,8 +38,6 @@ QList<QList<TuneItemInfo>> nTuneMainWidget::mainItems = {
                  2.7f, 2.3f, 3.2f, 0.1f, 1, "m/s²"),
     TuneItemInfo("scc_v2.json", "stopDistance", tr("정지시 앞차와의 거리."),
                  5.0f, 4.0f, 7.0f, 0.1f, 1, "m"),
-    TuneItemInfo("scc_v2.json", "longitudinalActuatorDelay", tr(""),
-                 0.5f, 0.0f, 1.0f, 0.05f, 2),
     //TuneItemInfo("scc_v2.json", "longDisableRadar", "(0: Use radar, 1: Do not use radar)",
     //             0.0f, 0.0f, 1.0f, 1.0f, 0),
 },
