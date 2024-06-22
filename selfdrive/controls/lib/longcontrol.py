@@ -9,9 +9,6 @@ from common.params import Params
 
 LongCtrlState = car.CarControl.Actuators.LongControlState
 
-ACCEL_MIN_ISO = -3.5  # m/s^2
-ACCEL_MAX_ISO = 2.0  # m/s^2
-
 
 def long_control_state_trans(CP, active, long_control_state, v_ego, v_target,
                              v_target_1sec, brake_pressed, cruise_standstill, a_target_now):
@@ -60,6 +57,7 @@ def long_control_state_trans(CP, active, long_control_state, v_ego, v_target,
 
 class LongControl:
   def __init__(self, CP):
+    self.CP = CP
     self.long_control_state = LongCtrlState.off  # initialized to off
     self.pid = PIDController((CP.longitudinalTuning.kpBP, CP.longitudinalTuning.kpV),
                              (CP.longitudinalTuning.kiBP, CP.longitudinalTuning.kiV),
@@ -68,14 +66,14 @@ class LongControl:
                              derivative_period=0.5, rate=1 / DT_CTRL)
     self.v_pid = 0.0
     self.last_output_accel = 0.0
-
+    self.readParamCount = 0
+    self.startAccelApply = 0.0
+    self.stopAccelApply = 0.0
+    
   def reset(self, v_pid):
     """Reset PID controller and change setpoint"""
     self.pid.reset()
     self.v_pid = v_pid
-    self.readParamCount = 0
-    self.startAccelApply = 0.0
-    self.stopAccelApply = 0.0
     
   def update(self, active, CS, CP, long_plan, accel_limits, t_since_plan):
     self.readParamCount += 1
