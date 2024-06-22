@@ -77,7 +77,7 @@ class LongControl:
     self.startAccelApply = 0.0
     self.stopAccelApply = 0.0
     
-  def update(self, active, CS, long_plan, accel_limits, t_since_plan):
+  def update(self, active, CS, CP, long_plan, accel_limits, t_since_plan):
     self.readParamCount += 1
     if self.readParamCount >= 100:
       self.readParamCount = 0
