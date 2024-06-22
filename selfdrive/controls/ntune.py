@@ -248,9 +248,6 @@ class nTune():
 
     if self.checkValue("startAccel", 0.0, 5.0, 1.5):
       updated = True
-
-    if self.checkValue("longitudinalActuatorDelay", 0.0, 1.0, 0.5):
-      updated = True
       
     return updated
 
