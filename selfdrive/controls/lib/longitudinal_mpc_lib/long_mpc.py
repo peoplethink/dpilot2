@@ -491,7 +491,6 @@ class LongitudinalMpc:
       self.DangerZoneCost = float(int(Params().get("DangerZoneCost", encoding="utf8")))
     elif self.lo_timer == 80:
       self.leadDangerFactor = float(int(Params().get("LeadDangerFactor", encoding="utf8"))) * 0.01
-      self.stopDistance = float(int(Params().get("StopDistance", encoding="utf8"))) / 100.
     elif self.lo_timer == 100:
       self.tFollowSpeedAdd = float(int(Params().get("TFollowSpeedAdd", encoding="utf8"))) / 100.
       self.tFollowSpeedAddM = float(int(Params().get("TFollowSpeedAddM", encoding="utf8"))) / 100.
