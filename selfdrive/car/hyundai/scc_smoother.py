@@ -146,7 +146,7 @@ class SccSmoother:
 
     road_speed_limiter = get_road_speed_limiter()
     apply_limit_speed, road_limit_speed, left_dist, first_started, max_speed_log = \
-      road_speed_limiter.get_max_speed(clu11_speed, self.is_metric, self.autoNaviSpeedCtrlStart, self.autoNaviSpeedCtrlEnd)
+      road_speed_limiter.get_max_speed(clu_speed, self.is_metric)
 
     curv_limit = 0
     self.cal_curve_speed(sm, CS.out.vEgo, frame)
