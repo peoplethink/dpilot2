@@ -17,7 +17,6 @@ class LateralPlanner:
   def __init__(self, CP, use_lanelines=True, wide_camera=False):
     self.use_lanelines = use_lanelines
     self.LP = LanePlanner(wide_camera)
-    self.readParams = 0
     self.DH = DesireHelper()
 
      # Vehicle model parameters used to calculate lateral movement of car
@@ -44,6 +43,16 @@ class LateralPlanner:
 
     self.vision_curve_laneless = Params().get_bool("VisionCurveLaneless")
     self.average_desired_curvature = CP.pfeiferjDesiredCurvatures
+
+    self.param_read_counter = 0
+    self.read_param()
+    
+  def read_param(self):
+    self.use_lanelines = not Params().get_bool("EndToEndToggle")
+    self.dynamic_lane_profile = int(Params().get("DynamicLaneProfile", encoding="utf8"))
+    if self.param_read_counter % 50 == 0:
+      self.vision_curve_laneless = Params().get_bool("VisionCurveLaneless")
+    self.param_read_counter += 1
     
   def reset_mpc(self, x0=np.zeros(4)):
     self.x0 = x0
@@ -61,10 +70,8 @@ class LateralPlanner:
         self.output_scale = sm['controlsState'].lateralControlState.torqueState.output  
     except:
       pass
-    self.use_lanelines = not Params().get_bool("EndToEndToggle")
-    self.dynamic_lane_profile = int(Params().get("DynamicLaneProfile", encoding="utf8"))
-    self.vision_curve_laneless = Params().get_bool("VisionCurveLaneless")
     
+    self.read_param()
     # clip speed , lateral planning is not possible at 0 speed
     v_ego = sm['carState'].vEgo
     measured_curvature = sm['controlsState'].curvature
