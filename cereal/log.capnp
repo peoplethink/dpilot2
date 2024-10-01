@@ -909,6 +909,8 @@ struct LongitudinalPlan @0xe00b5b3eba12876c {
   lead1Obstacle @52 :List(Float64) = [0.];
   cruiseTarget @53 :List(Float64) = [0.];
   onStop @54 : Bool;
+  visionCurrentLatAcc @56 :Float32;
+  visionMaxPredLatAcc @57 :Float32;
   
   enum LongitudinalPlanSource {
     cruise @0;
