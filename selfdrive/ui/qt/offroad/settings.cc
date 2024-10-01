@@ -58,6 +58,12 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       "차선 유무에 따라 laneline, laneless 자동 적용",
       "../assets/offroad/icon_road.png",
     },
+    {
+      "VisionCurveLaneless",
+      "VisionCurveLaneless",
+      "커브인식시 laneless적용",
+      "../assets/offroad/icon_road.png",
+    },
     // ignore charging error
     {
       "IsChargerFaultIgnored",
