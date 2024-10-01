@@ -45,6 +45,7 @@ def manager_init() -> None:
     ("IsMetric", "1"),
     ("DynamicLaneProfile", "2"),
     ("EndToEndToggle", "1"),
+    ("VisionCurveLaneless", "1"),
 
     # HKG
     ("UseClusterSpeed", "0"),
