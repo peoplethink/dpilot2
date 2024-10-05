@@ -1,3 +1,4 @@
+import json
 import yaml
 import os
 import time
@@ -11,9 +12,9 @@ from cereal import car
 from common.basedir import BASEDIR
 from common.conversions import Conversions as CV
 from common.simple_kalman import KF1D, get_kalman_gain
-from common.numpy_fast import interp
+from common.numpy_fast import clip
 from common.realtime import DT_CTRL
-from selfdrive.car import gen_empty_fingerprint, scale_rot_inertia
+from selfdrive.car import gen_empty_fingerprint, scale_rot_inertia, scale_tire_stiffness
 from selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, get_friction
 from selfdrive.controls.lib.events import Events
 from selfdrive.controls.lib.vehicle_model import VehicleModel
@@ -41,13 +42,7 @@ class LatControlInputs(NamedTuple):
   vego: float
   aego: float
 
-
 TorqueFromLateralAccelCallbackType = Callable[[LatControlInputs, car.CarParams.LateralTorqueTuning, float, float, bool, bool], float]
-
-
-
-def similarity(s1: str, s2: str) -> float:
-  return SequenceMatcher(None, s1, s2).ratio()
 
 
 def get_torque_params(candidate, default=float('NaN')):
@@ -73,6 +68,7 @@ def get_torque_params(candidate, default=float('NaN')):
     raise NotImplementedError(f"Did not find torque params for {candidate}")
   return {key:out[i] for i, key in enumerate(params['legend'])}
 
+
 # Twilsonco's Lateral Neural Network Feedforward
 class FluxModel:
   # dict used to rename activation functions whose names aren't valid python identifiers
@@ -80,13 +76,13 @@ class FluxModel:
   def __init__(self, params_file, zero_bias=False):
     with open(params_file, "r") as f:
       params = load(f)
-      
+
     self.input_size = params["input_size"]
     self.output_size = params["output_size"]
     self.input_mean = np.array(params["input_mean"], dtype=np.float32).T
     self.input_std = np.array(params["input_std"], dtype=np.float32).T
     self.layers = []
-    
+
     for layer_params in params["layers"]:
       W = np.array(layer_params[next(key for key in layer_params.keys() if key.endswith('_W'))], dtype=np.float32).T
       b = np.array(layer_params[next(key for key in layer_params.keys() if key.endswith('_b'))], dtype=np.float32).T
@@ -96,24 +92,24 @@ class FluxModel:
       for k, v in self.activation_function_names.items():
         activation = activation.replace(k, v)
       self.layers.append((W, b, activation))
-      
+
     self.validate_layers()
     self.check_for_friction_override()
-    
+
   # Begin activation functions.
   # These are called by name using the keys in the model json file
   def sigmoid(self, x):
     return 1 / (1 + np.exp(-x))
-    
+
   def identity(self, x):
     return x
   # End activation functions
-  
+
   def forward(self, x):
     for W, b, activation in self.layers:
       x = getattr(self, activation)(x.dot(W) + b)
     return x
-    
+
   def evaluate(self, input_array):
     in_len = len(input_array)
     if in_len != self.input_size:
@@ -123,25 +119,25 @@ class FluxModel:
         input_array = input_array + [0] * (self.input_size - in_len)
       else:
         raise ValueError(f"Input array length {len(input_array)} must be length 2 or greater")
-        
+
     input_array = np.array(input_array, dtype=np.float32)
-    
+
     # Rescale the input array using the input_mean and input_std
     input_array = (input_array - self.input_mean) / self.input_std
-    
+
     output_array = self.forward(input_array)
-    
+
     return float(output_array[0, 0])
-    
+
   def validate_layers(self):
     for W, b, activation in self.layers:
       if not hasattr(self, activation):
         raise ValueError(f"Unknown activation: {activation}")
-        
+
   def check_for_friction_override(self):
     y = self.evaluate([10.0, 0.0, 0.2])
     self.friction_override = (y < 0.1)
-    
+
 def get_nn_model_path(car, eps_firmware) -> Tuple[Union[str, None, float]]:
   def check_nn_path(check_model):
     model_path = None
@@ -154,7 +150,7 @@ def get_nn_model_path(car, eps_firmware) -> Tuple[Union[str, None, float]]:
           max_similarity = similarity_score
           model_path = os.path.join(TORQUE_NN_MODEL_PATH, f)
     return model_path, max_similarity
-    
+
   car1 = car.replace('_', ' ')
   car1 = car1.replace(' HEV', ' HYBRID')
   car = car1.replace('EV ', 'ELECTRIC ')
@@ -171,14 +167,14 @@ def get_nn_model_path(car, eps_firmware) -> Tuple[Union[str, None, float]]:
     if max_similarity < 0.9:
       model_path = None
   return model_path, max_similarity
-  
+
 def get_nn_model(car, eps_firmware) -> Tuple[Union[FluxModel, None, float]]:
   print("###########get_nn_model", car)
   model, similarity_score = get_nn_model_path(car, eps_firmware)
   if model is not None:
     model = FluxModel(model)
   return model, similarity_score
-
+  
 # generic car and radar interfaces
 
 class CarInterfaceBase(ABC):
@@ -208,7 +204,7 @@ class CarInterfaceBase(ABC):
     self.CC = None
     if CarController is not None:
       self.CC = CarController(self.cp.dbc_name, CP, self.VM)
-      
+
     self.params = Params()
     lateral_tune = True
     print("$$$$$$$$$$$ NNFF")
@@ -220,7 +216,7 @@ class CarInterfaceBase(ABC):
     print("$$$$$$$$$$$ use_nnff = ", self.use_nnff)
     self.use_nnff_lite = not use_comma_nnff and not nnff_supported and lateral_tune and self.params.get_bool("NNFFLite")
     print("$$$$$$$$$$$ use_nnff_lite = ", self.use_nnff_lite)
-    
+
   def get_ff_nn(self, x):
     return self.lat_torque_nn_model.evaluate(x)
 
@@ -234,7 +230,6 @@ class CarInterfaceBase(ABC):
       print("Failed to open neural_ff_weights file.")
       return False
 
-  
   def initialize_lat_torque_nn(self, car, eps_firmware):
     self.lat_torque_nn_model, _ = get_nn_model(car, eps_firmware)
     return (self.lat_torque_nn_model is not None)
@@ -251,23 +246,29 @@ class CarInterfaceBase(ABC):
     return cls.get_params(candidate, gen_empty_fingerprint(), list(), False)
 
   @classmethod
-  def get_params(cls, candidate: str, fingerprint: Dict[int, Dict[int, int]], car_fw: List[car.CarParams.CarFw], disable_radar: bool): 
+  def get_params(cls, candidate: str, fingerprint: Dict[int, Dict[int, int]], car_fw: List[car.CarParams.CarFw], disable_radar: bool):
+
     ret = CarInterfaceBase.get_std_params(candidate)
     ret = cls._get_params(ret, candidate, fingerprint, car_fw, disable_radar)
-    
+
+    # Set common params using fields set by the car interface
+    # TODO: get actual value, for now starting with reasonable value for
+    # civic and scaling by mass and wheelbase
+    ret.rotationalInertia = scale_rot_inertia(ret.mass, ret.wheelbase)
+
+    # TODO: some car interfaces set stiffness factor
+    if ret.tireStiffnessFront == 0 or ret.tireStiffnessRear == 0:
+      # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
+      # mass and CG position, so all cars will have approximately similar dyn behaviors
+      ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront)
     params = Params()
     if ret.steerControlType != car.CarParams.SteerControlType.angle and params.get_bool("NNFF"):
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
       eps_firmware = str(next((fw.fwVersion for fw in car_fw if fw.ecu == "eps"), ""))
       model, similarity_score = get_nn_model_path(candidate, eps_firmware)
       if model is not None:
-        params.put("NNFFModelName", candidate)
+        params.put("NNFFModelName", candidate) 
         
-    # Set common params using fields set by the car interface
-    # TODO: get actual value, for now starting with reasonable value for
-    # civic and scaling by mass and wheelbase
-    ret.rotationalInertia = scale_rot_inertia(ret.mass, ret.wheelbase)
-    
     return ret
     
   @staticmethod
@@ -288,9 +289,9 @@ class CarInterfaceBase(ABC):
   def get_steer_feedforward_function(self):
     return self.get_steer_feedforward_default
 
-  @staticmethod
   def torque_from_lateral_accel_linear(self, latcontrol_inputs: LatControlInputs, torque_params: car.CarParams.LateralTorqueTuning,
                                        lateral_accel_error: float, lateral_accel_deadzone: float, friction_compensation: bool, gravity_adjusted: bool) -> float:
+                                         
     # The default is a linear relationship between torque and lateral acceleration (accounting for road roll and steering friction)
     friction = get_friction(lateral_accel_error, lateral_accel_deadzone, FRICTION_THRESHOLD, torque_params, friction_compensation)
     return (latcontrol_inputs.lateral_acceleration / float(torque_params.latAccelFactor)) + friction
@@ -589,3 +590,35 @@ def get_interface_attr(attr: str, combine_brands: bool = False, ignore_none: boo
       pass
 
   return result
+
+
+class NanoFFModel:
+  def __init__(self, weights_loc: str, platform: str):
+    self.weights_loc = weights_loc
+    self.platform = platform
+    self.load_weights(platform)
+
+  def load_weights(self, platform: str):
+    with open(self.weights_loc, 'r') as fob:
+      self.weights = {k: np.array(v) for k, v in json.load(fob)[platform].items()}
+
+  def relu(self, x: np.ndarray):
+    return np.maximum(0.0, x)
+
+  def forward(self, x: np.ndarray):
+    assert x.ndim == 1
+    x = (x - self.weights['input_norm_mat'][:, 0]) / (self.weights['input_norm_mat'][:, 1] - self.weights['input_norm_mat'][:, 0])
+    x = self.relu(np.dot(x, self.weights['w_1']) + self.weights['b_1'])
+    x = self.relu(np.dot(x, self.weights['w_2']) + self.weights['b_2'])
+    x = self.relu(np.dot(x, self.weights['w_3']) + self.weights['b_3'])
+    x = np.dot(x, self.weights['w_4']) + self.weights['b_4']
+    return x
+
+  def predict(self, x: List[float], do_sample: bool = False):
+    x = self.forward(np.array(x))
+    if do_sample:
+      pred = np.random.laplace(x[0], np.exp(x[1]) / self.weights['temperature'])
+    else:
+      pred = x[0]
+    pred = pred * (self.weights['output_norm_mat'][1] - self.weights['output_norm_mat'][0]) + self.weights['output_norm_mat'][0]
+    return pred
