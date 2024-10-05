@@ -2,6 +2,7 @@ import numpy as np
 from common.realtime import sec_since_boot, DT_MDL
 from common.numpy_fast import interp
 from selfdrive.swaglog import cloudlog
+from common.conversions import Conversions as CV
 from selfdrive.controls.lib.lateral_mpc_lib.lat_mpc import LateralMpc
 from selfdrive.controls.lib.drive_helpers import CONTROL_N, MPC_COST_LAT, LAT_MPC_N
 from selfdrive.controls.lib.lane_planner import LanePlanner, TRAJECTORY_SIZE
@@ -96,16 +97,19 @@ class LateralPlanner:
       self.LP.rll_prob *= self.DH.lane_change_ll_prob
 
     # Calculate final driving path and set MPC costs
-    if self.get_dynamic_lane_profile(sm['longitudinalPlan']):
+    low_speed = v_ego_car < 20 * CV.KPH_TO_MS
+    
+    if not self.get_dynamic_lane_profile(sm['longitudinalPlan']) and not low_speed:
+      d_path_xyz = self.LP.get_d_path(v_ego, self.t_idxs, self.path_xyz)
+      self.lat_mpc.set_weights(MPC_COST_LAT.PATH, MPC_COST_LAT.HEADING, MPC_COST_LAT.STEER_RATE)
+      self.dynamic_lane_profile_status = False
+      d_path_xyz = self.path_xyz
+    else:
       d_path_xyz = self.path_xyz
       path_cost = np.clip(abs(self.path_xyz[0, 1] / self.path_xyz_stds[0, 1]), 0.5, 1.5) * MPC_COST_LAT.PATH
       heading_cost = interp(v_ego, [5.0, 10.0], [MPC_COST_LAT.HEADING, 0.1])
       self.lat_mpc.set_weights(path_cost, heading_cost, MPC_COST_LAT.STEER_RATE)
       self.dynamic_lane_profile_status = True
-    else:
-      d_path_xyz = self.LP.get_d_path(v_ego, self.t_idxs, self.path_xyz)
-      self.lat_mpc.set_weights(MPC_COST_LAT.PATH, MPC_COST_LAT.HEADING, MPC_COST_LAT.STEER_RATE)
-      self.dynamic_lane_profile_status = False
     
     y_pts = np.interp(v_ego * self.t_idxs[:LAT_MPC_N + 1], np.linalg.norm(d_path_xyz, axis=1), d_path_xyz[:, 1])
     heading_pts = np.interp(v_ego * self.t_idxs[:LAT_MPC_N + 1], np.linalg.norm(self.path_xyz, axis=1), self.plan_yaw)
