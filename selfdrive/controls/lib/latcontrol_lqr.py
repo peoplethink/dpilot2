@@ -35,7 +35,7 @@ class LatControlLQR(LatControl):
     super().reset()
     self.i_lqr = 0.0
 
-  def update(self, active, CS, CP, VM, params, last_actuators, steer_limited, desired_curvature, desired_curvature_rate, llk):
+  def update(self, active, CS, CP, VM, params, last_actuators, steer_limited, desired_curvature, desired_curvature_rate, llk, lat_plan=None, model_data=None):
     self.tune.check()
     lqr_log = log.ControlsState.LateralLQRState.new_message()
 
