@@ -224,7 +224,7 @@ class CarInterfaceBase(ABC):
   def get_ff_nn(self, x):
     return self.lat_torque_nn_model.evaluate(x)
 
-   def check_comma_nn_ff_support(self, car):
+  def check_comma_nn_ff_support(self, car):
     try:
       with open("../car/torque_data/neural_ff_weights.json", "r") as file:
         data = json.load(file)
