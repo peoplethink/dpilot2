@@ -10,7 +10,7 @@ from selfdrive.controls.lib.drive_helpers import CONTROL_N, apply_deadzone
 from selfdrive.controls.lib.latcontrol import LatControl
 from selfdrive.controls.lib.pid import PIDController
 from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
-from selfdrive.modeld.constants import ModelConstants
+from selfdrive.modeld.constants import T_IDXS
 from common.params import Params
 from selfdrive.controls.ntune import nTune
 
