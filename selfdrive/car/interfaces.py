@@ -5,7 +5,7 @@ import numpy as np
 from abc import abstractmethod, ABC
 from difflib import SequenceMatcher
 from json import load
-from typing import Any, Dict, Tuple, List, Callable, NamedTuple
+from typing import Any, Callable, Dict, List, NamedTuple, Optional, Tuple, Union
 
 from cereal import car
 from common.basedir import BASEDIR
@@ -32,9 +32,8 @@ TORQUE_OVERRIDE_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data/override
 TORQUE_SUBSTITUTE_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data/substitute.yaml')
 TORQUE_NN_MODEL_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data/lat_models')
 
-# dict used to rename activation functions whose names aren't valid python identifiers
-ACTIVATION_FUNCTION_NAMES = {'σ': 'sigmoid'}
-
+def similarity(s1:str, s2:str) -> float:
+  return SequenceMatcher(None, s1, s2).ratio()
 
 class LatControlInputs(NamedTuple):
   lateral_acceleration: float
@@ -74,9 +73,10 @@ def get_torque_params(candidate, default=float('NaN')):
     raise NotImplementedError(f"Did not find torque params for {candidate}")
   return {key:out[i] for i, key in enumerate(params['legend'])}
 
-
-# lateral neural network feedforward
+# Twilsonco's Lateral Neural Network Feedforward
 class FluxModel:
+  # dict used to rename activation functions whose names aren't valid python identifiers
+  activation_function_names = {'σ': 'sigmoid'}
   def __init__(self, params_file, zero_bias=False):
     with open(params_file, "r") as f:
       params = load(f)
@@ -86,7 +86,6 @@ class FluxModel:
     self.input_mean = np.array(params["input_mean"], dtype=np.float32).T
     self.input_std = np.array(params["input_std"], dtype=np.float32).T
     self.layers = []
-    self.friction_override = False
     
     for layer_params in params["layers"]:
       W = np.array(layer_params[next(key for key in layer_params.keys() if key.endswith('_W'))], dtype=np.float32).T
@@ -94,7 +93,7 @@ class FluxModel:
       if zero_bias:
         b = np.zeros_like(b)
       activation = layer_params["activation"]
-      for k, v in ACTIVATION_FUNCTION_NAMES.items():
+      for k, v in self.activation_function_names.items():
         activation = activation.replace(k, v)
       self.layers.append((W, b, activation))
       
@@ -103,12 +102,10 @@ class FluxModel:
     
   # Begin activation functions.
   # These are called by name using the keys in the model json file
-  @staticmethod
-  def sigmoid(x):
+  def sigmoid(self, x):
     return 1 / (1 + np.exp(-x))
     
-  @staticmethod
-  def identity(x):
+  def identity(self, x):
     return x
   # End activation functions
   
@@ -145,38 +142,42 @@ class FluxModel:
     y = self.evaluate([10.0, 0.0, 0.2])
     self.friction_override = (y < 0.1)
     
-def get_nn_model_path(_car, eps_firmware) -> Tuple[Optional[str], float]:
-  def check_nn_path(_check_model):
-    _model_path = None
-    _max_similarity = -1.0
+def get_nn_model_path(car, eps_firmware) -> Tuple[Union[str, None, float]]:
+  def check_nn_path(check_model):
+    model_path = None
+    max_similarity = -1.0
     for f in os.listdir(TORQUE_NN_MODEL_PATH):
-      if f.endswith(".json"):
+      if f.endswith(".json") and car in f:
         model = f.replace(".json", "").replace(f"{TORQUE_NN_MODEL_PATH}/", "")
-        similarity_score = similarity(model, _check_model)
-        if similarity_score > _max_similarity:
-          _max_similarity = similarity_score
-          _model_path = os.path.join(TORQUE_NN_MODEL_PATH, f)
-    return _model_path, _max_similarity
+        similarity_score = similarity(model, check_model)
+        if similarity_score > max_similarity:
+          max_similarity = similarity_score
+          model_path = os.path.join(TORQUE_NN_MODEL_PATH, f)
+    return model_path, max_similarity
     
+  car1 = car.replace('_', ' ')
+  car1 = car1.replace(' HEV', ' HYBRID')
+  car = car1.replace('EV ', 'ELECTRIC ')
+  print("########get_nn_model_path :", car, eps_firmware)
   if len(eps_firmware) > 3:
     eps_firmware = eps_firmware.replace("\\", "")
-    check_model = f"{_car} {eps_firmware}"
+    check_model = f"{car} {eps_firmware}"
   else:
-    check_model = _car
+    check_model = car
   model_path, max_similarity = check_nn_path(check_model)
-  if 0.0 <= max_similarity < 0.9:
-    check_model = _car
+  if max_similarity < 0.9:
+    check_model = car
     model_path, max_similarity = check_nn_path(check_model)
-    if 0.0 <= max_similarity < 0.9:
+    if max_similarity < 0.9:
       model_path = None
   return model_path, max_similarity
   
-def get_nn_model(_car, eps_firmware) -> Tuple[Optional[FluxModel], float]:
-  model, similarity_score = get_nn_model_path(_car, eps_firmware)
+def get_nn_model(car, eps_firmware) -> Tuple[Union[FluxModel, None, float]]:
+  print("###########get_nn_model", car)
+  model, similarity_score = get_nn_model_path(car, eps_firmware)
   if model is not None:
     model = FluxModel(model)
   return model, similarity_score
-
 
 # generic car and radar interfaces
 
@@ -184,6 +185,7 @@ class CarInterfaceBase(ABC):
   def __init__(self, CP, CarController, CarState):
     self.CP = CP
     self.VM = VehicleModel(CP)
+    eps_firmware = str(next((fw.fwVersion for fw in CP.carFw if fw.ecu == "eps"), ""))
 
     self.frame = 0
     self.steering_unpressed = 0
@@ -207,17 +209,35 @@ class CarInterfaceBase(ABC):
     if CarController is not None:
       self.CC = CarController(self.cp.dbc_name, CP, self.VM)
       
-    self.param_s = Params()
-    self.lat_torque_nn_model = None
-    eps_firmware = str(next((fw.fwVersion for fw in CP.carFw if fw.ecu == "eps"), ""))
-    self.has_lateral_torque_nn = self.initialize_lat_torque_nn(CP.carFingerprint, eps_firmware)
+    self.params = Params()
+    lateral_tune = True
+    print("$$$$$$$$$$$ NNFF")
+    nnff_supported = self.initialize_lat_torque_nn(CP.carFingerprint, eps_firmware)
+    print("$$$$$$$$$$$ nnff_supported = ", nnff_supported)
+    use_comma_nnff = self.check_comma_nn_ff_support(CP.carFingerprint)
+    print("$$$$$$$$$$$ use_comma_nnff = ", use_comma_nnff)
+    self.use_nnff = not use_comma_nnff and nnff_supported and lateral_tune and self.params.get_bool("NNFF")
+    print("$$$$$$$$$$$ use_nnff = ", self.use_nnff)
+    self.use_nnff_lite = not use_comma_nnff and not nnff_supported and lateral_tune and self.params.get_bool("NNFFLite")
+    print("$$$$$$$$$$$ use_nnff_lite = ", self.use_nnff_lite)
     
   def get_ff_nn(self, x):
     return self.lat_torque_nn_model.evaluate(x)
-    
-  def initialize_lat_torque_nn(self, _car, eps_firmware) -> bool:
-    self.lat_torque_nn_model, _ = get_nn_model(_car, eps_firmware)
-    return self.lat_torque_nn_model is not None and self.param_s.get_bool("NNFF")
+
+   def check_comma_nn_ff_support(self, car):
+    try:
+      with open("../car/torque_data/neural_ff_weights.json", "r") as file:
+        data = json.load(file)
+      return car in data
+
+    except FileNotFoundError:
+      print("Failed to open neural_ff_weights file.")
+      return False
+
+  
+  def initialize_lat_torque_nn(self, car, eps_firmware):
+    self.lat_torque_nn_model, _ = get_nn_model(car, eps_firmware)
+    return (self.lat_torque_nn_model is not None)
     
   @staticmethod
   def get_pid_accel_limits(CP, current_speed, cruise_speed):
@@ -241,8 +261,7 @@ class CarInterfaceBase(ABC):
       eps_firmware = str(next((fw.fwVersion for fw in car_fw if fw.ecu == "eps"), ""))
       model, similarity_score = get_nn_model_path(candidate, eps_firmware)
       if model is not None:
-        ret.lateralTuning.torque.nnModelName = os.path.splitext(os.path.basename(model))[0]
-        ret.lateralTuning.torque.nnModelFuzzyMatch = (similarity_score < 0.99)
+        params.put("NNFFModelName", candidate)
         
     # Set common params using fields set by the car interface
     # TODO: get actual value, for now starting with reasonable value for
