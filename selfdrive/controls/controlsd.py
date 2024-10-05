@@ -191,6 +191,8 @@ class Controls:
     self.steer_limited = False
     self.desired_curvature = 0.0
     self.desired_curvature_rate = 0.0
+    self.nn_alert_shown = False
+    self.enable_nnff = self.params.get_bool("NNFF")
 
     # scc smoother
     self.is_cruise_enabled = False
@@ -249,6 +251,12 @@ class Controls:
       self.events.add(EventName.controlsInitializing)
       return
 
+    # show alert to indicate whether NNFF is loaded
+    if self.enable_nnff and not self.nn_alert_shown and self.sm.frame % 1000 == 0 and \
+            self.CP.lateralTuning.which() == 'torque':
+      self.nn_alert_shown = True
+      self.events.add(EventName.torqueNNLoad)
+              
     # Disable on rising edge of accelerator or brake. Also disable on brake when speed > 0
     #if (CS.gasPressed and not self.CS_prev.gasPressed and self.disengage_on_accelerator) or \
     #        (CS.brakePressed and (not self.CS_prev.brakePressed or not CS.standstill)):
@@ -658,7 +666,8 @@ class Controls:
                                                                                        self.average_desired_curvature)
       actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(CC.latActive, CS, self.VM, params,
                                                                              self.last_actuators, self.steer_limited, self.desired_curvature,
-                                                                             self.desired_curvature_rate, self.sm['liveLocationKalman'])
+                                                                             self.desired_curvature_rate, self.sm['liveLocationKalman'],
+                                                                             lat_plan=lat_plan, model_data=self.sm['modelV2'])
     else:
       lac_log = log.ControlsState.LateralDebugState.new_message()
       if self.sm.rcv_frame['testJoystick'] > 0:
