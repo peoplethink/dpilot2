@@ -213,16 +213,26 @@ class CarInterfaceBase(ABC):
     return ACCEL_MIN, ACCEL_MAX
 
   @classmethod
-  def get_params(cls, candidate: str, fingerprint: Optional[Dict[int, Dict[int, int]]] = None, car_fw: Optional[List[car.CarParams.CarFw]] = None, disable_radar: bool = False):
-    if fingerprint is None:
-      fingerprint = gen_empty_fingerprint()
-      
-    if car_fw is None:
-      car_fw = list()
-      
+  def get_non_essential_params(cls, candidate: str):
+    """
+    Parameters essential to controlling the car may be incomplete or wrong without FW versions or fingerprints.
+    """
+    return cls.get_params(candidate, gen_empty_fingerprint(), list(), False)
+
+  @classmethod
+  def get_params(cls, candidate: str, fingerprint: Dict[int, Dict[int, int]], car_fw: List[car.CarParams.CarFw], disable_radar: bool): 
     ret = CarInterfaceBase.get_std_params(candidate)
     ret = cls._get_params(ret, candidate, fingerprint, car_fw, disable_radar)
     
+    params = Params()
+    if ret.steerControlType != car.CarParams.SteerControlType.angle and params.get_bool("NNFF"):
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+      eps_firmware = str(next((fw.fwVersion for fw in car_fw if fw.ecu == "eps"), ""))
+      model, similarity_score = get_nn_model_path(candidate, eps_firmware)
+      if model is not None:
+        ret.lateralTuning.torque.nnModelName = os.path.splitext(os.path.basename(model))[0]
+        ret.lateralTuning.torque.nnModelFuzzyMatch = (similarity_score < 0.99)
+        
     # Set common params using fields set by the car interface
     # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase
