@@ -113,6 +113,8 @@ def manager_init() -> None:
     ("CruiseMaxVals4", "80"),
     ("CruiseMaxVals5", "70"),
     ("CruiseMaxVals6", "60"),
+    ("NNFF", "0"),
+    ("NNFFLite", "0"),
     ("PutPrebuilt", "0"), 
   ]
   if not PC:
