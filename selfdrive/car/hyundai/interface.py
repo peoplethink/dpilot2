@@ -52,7 +52,7 @@ class CarInterface(CarInterfaceBase):
 
     # -------------PID
     if Params().get("LateralControlSelect", encoding='utf8') == "0":
-      if candidate in [CAR.GENESIS, CAR.GENESIS_G80]:
+      if candidate in [CAR.HYUNDAI_GENESIS, CAR.GENESIS_G80]:
         ret.lateralTuning.pid.kf = 0.00007
         ret.lateralTuning.pid.kpBP = [0., 10., 30.]
         ret.lateralTuning.pid.kpV = [0.018, 0.035, 0.088]
@@ -88,7 +88,7 @@ class CarInterface(CarInterfaceBase):
     
     # --------------Torque
     elif Params().get("LateralControlSelect", encoding='utf8') == "3":
-      if candidate in [CAR.GENESIS, CAR.GENESIS_G80, CAR.GENESIS_G90]:
+      if candidate in [CAR.HYUNDAI_GENESIS, CAR.GENESIS_G80, CAR.GENESIS_G90]:
         CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
 
@@ -99,7 +99,7 @@ class CarInterface(CarInterfaceBase):
     params = Params()
 	  
     # genesis
-    if candidate == CAR.GENESIS:
+    if candidate == CAR.HYUNDAI_GENESIS:
       ret.mass = 2060. + STD_CARGO_KG
       ret.wheelbase = 3.01
       ret.centerToFront = ret.wheelbase * 0.4
