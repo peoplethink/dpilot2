@@ -16,7 +16,7 @@ class CarControllerParams:
 
 class CAR:
   # genesis
-  GENESIS = "GENESIS 2015-2016"
+  HYUNDAI_GENESIS = "GENESIS 2015-2016"
   GENESIS_G70 = "GENESIS G70 2018"
   GENESIS_G80 = "GENESIS G80 2017"
   GENESIS_EQ900 = "GENESIS EQ900 2017"
@@ -78,7 +78,7 @@ class Buttons:
 
 FINGERPRINTS = {
   # genesis
-  CAR.GENESIS: [{
+  CAR.HYUNDAI_GENESIS: [{
     67: 8, 68: 8, 304: 8, 320: 8, 339: 8, 356: 4, 544: 7, 593: 8, 608: 8, 682: 4, 688: 5, 809: 8, 832: 8, 854: 7, 870: 7, 871: 8, 872: 5, 897: 8, 902: 8, 903: 6, 916: 8, 1024: 2, 1040: 8, 1056: 8, 1057: 8, 1078: 4, 1107: 5, 1136: 8, 1151: 6, 1168: 7, 1170: 8, 1173: 8, 1184: 8, 1265: 4, 1280: 1, 1287: 4, 1292: 8, 1312: 8, 1322: 8, 1331: 8, 1332: 8, 1333: 8, 1334: 8, 1335: 8, 1342: 6, 1345: 8, 1363: 8, 1369: 8, 1370: 8, 1371: 8, 1378: 4, 1384: 5, 1407: 8, 1419: 8, 1427: 6, 1434: 2, 1456: 4
     },
     {
@@ -328,7 +328,7 @@ FW_VERSIONS = {}
 CHECKSUM = {
   "crc8": [CAR.SANTA_FE, CAR.SONATA, CAR.PALISADE, CAR.SONATA_HEV, CAR.SONATA21_HEV, CAR.SELTOS, CAR.ELANTRA_2021,
            CAR.ELANTRA_HEV_2021, CAR.SANTA_FE_HEV_2022, CAR.K5_2021],
-  "6B": [CAR.SORENTO, CAR.GENESIS, CAR.SANTA_FE_2022],
+  "6B": [CAR.SORENTO, CAR.HYUNDAI_GENESIS, CAR.SANTA_FE_2022],
 }
 
 FEATURES = {
@@ -370,7 +370,7 @@ EV_HYBRID_CAR = EV_CAR | HYBRID_CAR
 
 DBC = {
   # genesis
-  CAR.GENESIS: dbc_dict('hyundai_kia_generic', None),
+  CAR.HYUNDAI_GENESIS: dbc_dict('hyundai_kia_generic', None),
   CAR.GENESIS_G70: dbc_dict('hyundai_kia_generic', None),  
   CAR.GENESIS_G80: dbc_dict('hyundai_kia_generic', None),
   CAR.GENESIS_EQ900: dbc_dict('hyundai_kia_generic', None),
