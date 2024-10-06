@@ -97,7 +97,7 @@ class LateralPlanner:
       self.LP.rll_prob *= self.DH.lane_change_ll_prob
 
     # Calculate final driving path and set MPC costs
-    low_speed = v_ego_car < 20 * CV.KPH_TO_MS
+    low_speed = v_ego < 20 * CV.KPH_TO_MS
     
     if not self.get_dynamic_lane_profile(sm['longitudinalPlan']) and not low_speed:
       d_path_xyz = self.LP.get_d_path(v_ego, self.t_idxs, self.path_xyz)
