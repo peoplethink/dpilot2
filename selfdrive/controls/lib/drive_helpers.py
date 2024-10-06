@@ -50,6 +50,11 @@ def apply_deadzone(error, deadzone):
     error = 0.
   return error
 
+def apply_center_deadzone(error, deadzone):
+  if (error > - deadzone) and (error < deadzone):
+    error = 0.
+  return error
+  
 def rate_limit(new_value, last_value, dw_step, up_step):
   return clip(new_value, last_value + dw_step, last_value + up_step)
 
