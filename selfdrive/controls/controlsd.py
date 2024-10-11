@@ -191,6 +191,7 @@ class Controls:
     self.steer_limited = False
     self.desired_curvature = 0.0
     self.desired_curvature_rate = 0.0
+    self.nn_alert_shown = False
 
     # scc smoother
     self.is_cruise_enabled = False
