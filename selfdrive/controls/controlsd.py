@@ -435,9 +435,9 @@ class Controls:
     #  and self.CP.openpilotLongitudinalControl and CS.vEgo < 0.3:
     #  self.events.add(EventName.noTarget)
 
-    if self.sm.frame == 900 and self.CP.lateralTuning.which() == 'torque' and self.CI.use_nnff:
+    if not self.nn_alert_shown and self.sm.frame * DT_CTRL == 5.5 and self.CP.lateralTuning.which() == 'torque' and self.CI.use_nnff:
+      self.nn_alert_shown = True
       self.events.add(EventName.torqueNNLoad)
-      print("NNFF display....")
       
   def data_sample(self):
     """Receive data from sockets and update carState"""
