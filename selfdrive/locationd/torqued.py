@@ -71,8 +71,8 @@ class TorqueEstimator(ParameterEstimator):
     self.offline_friction = 0.0
     self.offline_latAccelFactor = 0.0
     self.resets = 0.0
-    self.use_params = False
-    #self.use_params = CP.carName in ALLOWED_CARS and CP.lateralTuning.which() == 'torque'
+    #self.use_params = False
+    self.use_params = CP.carName in ALLOWED_CARS and CP.lateralTuning.which() == 'torque'
 
     if CP.lateralTuning.which() == 'torque':
       self.offline_friction = self.get_friction()
