@@ -183,6 +183,7 @@ function launch {
   fi
 
   python ./selfdrive/car/hyundai/values.py > /data/params/d/SupportedCars
+  python ./selfdrive/controls/ntune.py
 
   # start manager
   cd selfdrive/manager
