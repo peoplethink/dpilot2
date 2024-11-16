@@ -546,7 +546,6 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
 
   QList<QPair<QString, QWidget *>> panels = {
     {"장치", device},
-    {"주행값", new nTuneMainWidget(this)},
     {"VIP메뉴", new VIPPanel(this)},
     {"TUNING", new TUNINGPanel(this)},
     {"네트워크", network_panel(this)},
@@ -554,6 +553,10 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     {"소프트웨어", new SoftwarePanel(this)},
     {"커뮤니티", new CommunityPanel(this)},
   };
+
+  if(nTuneMainWidget::checkFilesExist()) {
+    panels.append({"주행값", new nTuneMainWidget(this)});
+  }
 
   sidebar_layout->addSpacing(45);
   
