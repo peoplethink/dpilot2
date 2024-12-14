@@ -75,7 +75,11 @@ class LatControlTorque(LatControl):
     self.use_steering_angle = self.torque_params.useSteeringAngle
     self.steering_angle_deadzone_deg = self.torque_params.steeringAngleDeadzoneDeg
     self.tune = nTune(CP, self)
-  
+    
+    self.frame = 0
+    self.params = Params()
+    self.error_last = 0.0
+    
     # Twilsonco's Lateral Neural Network Feedforward
     self.use_nnff = CI.use_nnff
     self.use_nnff_lite = CI.use_nnff_lite
@@ -130,8 +134,15 @@ class LatControlTorque(LatControl):
         
   
   def update(self, active, CS, VM, params, last_actuators, steer_limited, desired_curvature, desired_curvature_rate, llk, model_data=None):
+    self.frame += 1
+    if self.frame % 10 == 0:
+      self.dampingFactor = self.params.get_float("DampingFactor") * 0.01
+      lateralTorqueKd = self.params.get_float("LateralTorqueKd")*0.01
+      self.pid._k_d = [[0], [lateralTorqueKd]]
+      
     self.tune.updateTorque() 
     pid_log = log.ControlsState.LateralTorqueState.new_message()
+    steeringRate = math.radians(CS.steeringRateDeg)
     nn_log = None
     
     if not active:
@@ -247,9 +258,16 @@ class LatControlTorque(LatControl):
         
       freeze_integrator = steer_limited or CS.steeringPressed or CS.vEgo < 5
       output_torque = self.pid.update(pid_log.error,
+                                      error_rate=pid_log.error - self.error_last,
                                       feedforward=ff,
                                       speed=CS.vEgo,
                                       freeze_integrator=freeze_integrator)
+
+      damping_torque = - self.dampingFactor * steeringRate
+      
+      output_torque += damping_torque
+      self.error_last = pid_log.error
+      
       pid_log.active = True
       pid_log.p = self.pid.p
       pid_log.i = self.pid.i
