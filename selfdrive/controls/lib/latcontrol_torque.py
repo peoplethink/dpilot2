@@ -78,6 +78,7 @@ class LatControlTorque(LatControl):
     
     self.frame = 0
     self.params = Params()
+    self.dampingFactor = 0
     self.error_last = 0.0
     
     # Twilsonco's Lateral Neural Network Feedforward
