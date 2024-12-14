@@ -137,8 +137,8 @@ class LatControlTorque(LatControl):
   def update(self, active, CS, VM, params, last_actuators, steer_limited, desired_curvature, desired_curvature_rate, llk, model_data=None):
     self.frame += 1
     if self.frame % 10 == 0:
-      self.dampingFactor = self.params.get_float("DampingFactor") * 0.01
-      lateralTorqueKd = self.params.get_float("LateralTorqueKd")*0.01
+      self.dampingFactor = Params().get_bool("DampingFactor") * 0.01
+      lateralTorqueKd = Params().get_bool("LateralTorqueKd")*0.01
       self.pid._k_d = [[0], [lateralTorqueKd]]
       
     self.tune.updateTorque() 
