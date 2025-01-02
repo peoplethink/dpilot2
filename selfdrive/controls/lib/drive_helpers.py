@@ -23,7 +23,7 @@ CONTROL_N = 17
 CAR_ROTATION_RADIUS = 0.0
 
 # EU guidelines
-MAX_LATERAL_JERK = 10.0
+MAX_LATERAL_JERK = 7.0
 
 CRUISE_LONG_PRESS = 50
 CRUISE_NEAREST_FUNC = {
@@ -37,8 +37,8 @@ CRUISE_INTERVAL_SIGN = {
 
 class MPC_COST_LAT:
   PATH = 1.0
-  HEADING = 1.0
-  STEER_RATE = 0.95
+  HEADING = 0.95
+  STEER_RATE = 1.0
 
 
 def apply_deadzone(error, deadzone):
