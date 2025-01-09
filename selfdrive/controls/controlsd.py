@@ -165,7 +165,7 @@ class Controls:
     elif self.CP.lateralTuning.which() == 'lqr':
       self.LaC = LatControlLQR(self.CP, self.CI)
       self.lateral_control_select = 2
-    elif self.CP.lateralTuning.which() == 'torque':
+    elif self.CP.lateralTuning.which() == 'torque' and self.CP.steerControlType != car.CarParams.SteerControlType.angle:
       self.LaC = LatControlTorque(self.CP, self.CI)
       self.lateral_control_select = 3 
 
