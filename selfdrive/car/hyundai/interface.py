@@ -305,12 +305,12 @@ class CarInterface(CarInterfaceBase):
 
     ret.stoppingControl = True
     ret.startingState = False
-    ret.vEgoStarting = 0.2 #ntune_scc_get('vEgoStarting')
-    ret.vEgoStopping = 0.2 #ntune_scc_get('vEgoStopping')
+    ret.vEgoStarting = 0.3 #ntune_scc_get('vEgoStarting')
+    ret.vEgoStopping = 0.3 #ntune_scc_get('vEgoStopping')
     ret.stoppingDecelRate = 0.2 # ntune_scc_get('stoppingDecelRate')
     ret.startAccel = ntune_scc_get('startAccel')
-    ret.stopAccel = ntune_scc_get('stopAccel')
-    ret.longitudinalActuatorDelay = 0.5
+    ret.stopAccel = ntune_scc_get('stopAccel')  
+    ret.longitudinalActuatorDelay = 0.3
 	  
     ret.enableBsm = 0x58b in fingerprint[0]
     ret.enableAutoHold = 1151 in fingerprint[0]
