@@ -2,7 +2,6 @@ import numpy as np
 from common.realtime import sec_since_boot, DT_MDL
 from common.numpy_fast import interp
 from selfdrive.swaglog import cloudlog
-from common.conversions import Conversions as CV
 from selfdrive.controls.lib.lateral_mpc_lib.lat_mpc import LateralMpc
 from selfdrive.controls.lib.drive_helpers import CONTROL_N, MPC_COST_LAT, LAT_MPC_N
 from selfdrive.controls.lib.lane_planner import LanePlanner, TRAJECTORY_SIZE
@@ -97,9 +96,8 @@ class LateralPlanner:
       self.LP.rll_prob *= self.DH.lane_change_ll_prob
 
     # Calculate final driving path and set MPC costs
-    low_speed = v_ego < 2 * CV.KPH_TO_MS
-    
-    if not self.get_dynamic_lane_profile(sm['longitudinalPlan']) and not low_speed:
+
+    if not self.get_dynamic_lane_profile(sm['longitudinalPlan']):
       d_path_xyz = self.LP.get_d_path(v_ego, self.t_idxs, self.path_xyz)
       self.lat_mpc.set_weights(MPC_COST_LAT.PATH, MPC_COST_LAT.HEADING, MPC_COST_LAT.STEER_RATE)
       self.dynamic_lane_profile_status = False
