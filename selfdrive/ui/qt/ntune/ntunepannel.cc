@@ -13,7 +13,7 @@ QList<QString> nTuneMainWidget::mainTitles = {
 QList<QList<TuneItemInfo>> nTuneMainWidget::mainItems = {
 {
     TuneItemInfo("common.json", "cameraOffset", "우측이동 - , 좌측이동 +",
-                 0.06f, -1.0f, 1.0f, 0.01f, 2),
+                 0.6f, -1.0f, 1.0f, 0.1f, 1),
     TuneItemInfo("common.json", "autoLaneChangeSpeed", "해당속도이상에서 자동차선변경",
                  30.0f, 10.0f, 60.0f, 5.0f, 1, "km"),
     TuneItemInfo("common.json", "steerActuatorDelay", "값이크면 조향을 좀더 미리함",
