@@ -1580,10 +1580,10 @@ void NvgWindow::drawMisc(QPainter &p) {
   const auto road_limit_speed = sm["roadLimitSpeed"].getRoadLimitSpeed();
   QString currentRoadName = QString::fromStdString(road_limit_speed.getCurrentRoadName().cStr());
 
-  QColor color = QColor(255, 255, 255, 230);
+  QColor color = QColor(255, 255, 255, 250);
 
-  configFont(p, "Inter", 70, "Regular");
-  drawText(p, (width()-(bdr_s*2))/4 + bdr_s + 20, 140, currentRoadName, 200);
+  configFont(p, "Open Sans", 70, "Bold");
+  drawText(p, (width()-(bdr_s*2))/4 + bdr_s + 900, 110, currentRoadName, 200);
 
   p.restore();
 }
