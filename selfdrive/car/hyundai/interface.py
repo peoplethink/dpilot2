@@ -29,7 +29,7 @@ class CarInterface(CarInterfaceBase):
     v_current_kph = current_speed * CV.MS_TO_KPH
 
     gas_max_bp = [10., 20., 50., 70., 130., 150.]
-    gas_max_v = [1.35, 1.05, 0.5, 0.32, 0.17, 0.1]
+    gas_max_v = [1.36, 1.06, 0.55, 0.35, 0.19, 0.1]
 
     return CarControllerParams.ACCEL_MIN, interp(v_current_kph, gas_max_bp, gas_max_v)
 	  
@@ -310,7 +310,7 @@ class CarInterface(CarInterfaceBase):
     ret.stoppingDecelRate = 0.2 # ntune_scc_get('stoppingDecelRate')
     ret.startAccel = ntune_scc_get('startAccel')
     ret.stopAccel = ntune_scc_get('stopAccel')  
-    ret.longitudinalActuatorDelay = 0.3
+    ret.longitudinalActuatorDelay = 0.5
 	  
     ret.enableBsm = 0x58b in fingerprint[0]
     ret.enableAutoHold = 1151 in fingerprint[0]
