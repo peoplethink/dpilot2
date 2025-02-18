@@ -28,8 +28,8 @@ class CarInterface(CarInterfaceBase):
 
     v_current_kph = current_speed * CV.MS_TO_KPH
 
-    gas_max_bp = [0., 5., 20., 30., 40., 55., 70., 90., 110., 150.]
-    gas_max_v = [1.60, 1.60, 1.58, 1.58, 0.86, .532, .432, .32,  .28,  .085]
+    gas_max_bp = [0., 10., 30., 70., 130., 150.]
+    gas_max_v = [1.5, 1.1, 0.8, 0.4, 0.15, 0.1]
 
     return CarControllerParams.ACCEL_MIN, interp(v_current_kph, gas_max_bp, gas_max_v)
 	  
