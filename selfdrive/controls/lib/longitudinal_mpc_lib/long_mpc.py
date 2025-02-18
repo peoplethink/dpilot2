@@ -61,36 +61,30 @@ T_FOLLOW = 1.45
 COMFORT_BRAKE = 2.5
 STOP_DISTANCE = 6.0
 
-def get_stopped_equivalence_factor(v_lead, v_ego, t_follow=T_FOLLOW, stop_distance=STOP_DISTANCE):
+def get_stopped_equivalence_factor(v_lead, v_ego, t_follow=T_FOLLOW, stop_distance=STOP_DISTANCE, time_to_max_brake=0.3):
+  v_diff_offset = np.zeros_like(v_lead)
   delta_speed = v_lead - v_ego
-  v_diff_offset = 0  # Initialize dynamic offset
 
-  if np.all(delta_speed > 0):  # Only when lead car is faster
-    speed_ratio = np.where(v_lead > 0, delta_speed / v_lead, 0)
-    speed_ratio = np.clip(speed_ratio, 0, 1)
+  # Smooth offset increase based on relative speed, capped to a fraction of the stop distance
+  if np.any(delta_speed > 0):
+    v_diff_offset = np.clip(delta_speed, 0, STOP_DISTANCE / 2)
+    
+    # Adaptive scaling factor based on ego vehicle speed
+    scaling_factor = np.maximum((10 - v_ego) / 10, 0)
+    v_diff_offset *= scaling_factor
+    
+    # If relative speed is high and ego speed is low, increase offset more aggressively
+    v_diff_offset = np.where((v_ego < 10) & (delta_speed > 2), np.clip(v_diff_offset * 1.5, 0, STOP_DISTANCE / 2), v_diff_offset)
+    
+  # softer initial braking
+  initial_brake_factor = np.clip(v_ego / 30, 0, 1)
+  smooth_initial_brake = np.minimum(1, initial_brake_factor / time_to_max_brake)
+  
+  # Calculate stopping distance
+  distance = (v_lead**2) / (2 * COMFORT_BRAKE) + v_diff_offset
+  distance *= smooth_initial_brake  # Apply initial smooth brake force
+  return distance
 
-    # **Anticipate smooth takeoff & stopping behavior**
-    base_multiplier = np.clip(1.0 + (2.0 - v_ego) / 3.0, 1.0, 1.3)  # More stable scaling
-    dynamic_multiplier = base_multiplier + speed_ratio
-    
-    v_diff_offset = delta_speed * dynamic_multiplier
-    
-    # **Better max offset scaling for smooth braking**
-    max_offset = STOP_DISTANCE * np.interp(v_ego, [0, 10, 25, 60], [0.4, 0.35, 0.3, 0.25])
-    v_diff_offset = np.clip(v_diff_offset, 0, max_offset)
-
-    # **Progressive threshold scaling to reduce sudden space expansion**
-    speed_threshold = np.interp(v_ego, [0, 10, 60], [8.0, 6.5, 4.5])  # Smoothed values
-    v_diff_offset *= np.maximum((speed_threshold - v_ego) / speed_threshold, 0)
-    
-    # **Smoother response scaling (avoids sudden braking)**
-    v_diff_offset *= np.clip(delta_speed / (4.0 + speed_ratio), 0, 1)
-    
-    # **Final smoothing factor for more natural deceleration**
-    smooth_factor = np.interp(v_ego, [0, 10, 25, 60], [1.0, 0.75, 0.6, 0.5])  # Reduces reaction at high speeds
-    v_diff_offset *= smooth_factor
-    
-  return (v_lead**2) / (2 * COMFORT_BRAKE) + v_diff_offset
 
 def get_safe_obstacle_distance(v_ego, t_follow=T_FOLLOW, comfort_brake=COMFORT_BRAKE, stop_distance=STOP_DISTANCE):
   return (v_ego**2) / (2 * comfort_brake) +  t_follow * v_ego + stop_distance
