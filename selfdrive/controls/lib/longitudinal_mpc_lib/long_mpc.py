@@ -239,9 +239,6 @@ class LongitudinalMpc:
     self.lo_timer = 0
     self.v_cruise = 0.
     self.t_follow = T_FOLLOW
-    self.tFollowSpeedAdd = 0.0
-    self.tFollowSpeedAddM = 0.0
-    self.v_ego_prev = 0.0
     
     self.source = SOURCES[2]
 
@@ -390,9 +387,13 @@ class LongitudinalMpc:
     lead_xv_0 = self.process_lead(radarstate.leadOne)
     lead_xv_1 = self.process_lead(radarstate.leadTwo)
 
-    if v_ego >= self.v_ego_prev:
-      self.t_follow = interp(v_ego * CV.MS_TO_KPH, [0, 40, 100], [self.t_follow, self.t_follow + self.tFollowSpeedAddM, self.t_follow + self.tFollowSpeedAdd]) 
-    self.v_ego_prev = v_ego
+    distance_factor = np.maximum(1, lead_xv_0[:,0] - (lead_xv_0[:,1] * self.t_follow))
+    standstill_offset = max(STOP_DISTANCE - (v_ego**COMFORT_BRAKE), 0)
+    acceleration_offset = np.clip((lead_xv_0[:,1] - v_ego) + standstill_offset - COMFORT_BRAKE, 1, distance_factor)
+    self.t_follow = self.t_follow / acceleration_offset
+    
+    braking_offset = np.clip((v_ego - lead_xv_0[:,1]) - COMFORT_BRAKE, 1, distance_factor)
+    self.t_follow = self.t_follow / braking_offset
     
     self.update_TF(carstate, radarstate, v_ego, a_ego)
     comfort_brake = ntune_scc_get('comfortBrake')
@@ -505,9 +506,6 @@ class LongitudinalMpc:
       self.DangerZoneCost = float(int(Params().get("DangerZoneCost", encoding="utf8")))
     elif self.lo_timer == 80:
       self.leadDangerFactor = float(int(Params().get("LeadDangerFactor", encoding="utf8"))) * 0.01
-    elif self.lo_timer == 100:
-      self.tFollowSpeedAdd = float(int(Params().get("TFollowSpeedAdd", encoding="utf8"))) / 100.
-      self.tFollowSpeedAddM = float(int(Params().get("TFollowSpeedAddM", encoding="utf8"))) / 100.
 
   def update_TF(self, carstate, radarstate, v_ego, a_ego):
     cruise_gap = int(clip(carstate.cruiseGap, 1., 4.))
