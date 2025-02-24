@@ -388,9 +388,6 @@ class LongitudinalMpc:
     lead_xv_1 = self.process_lead(radarstate.leadTwo)
 
     distance_factor = np.maximum(1, lead_xv_0[:,0] - (lead_xv_0[:,1] * self.t_follow))
-    standstill_offset = max(STOP_DISTANCE - (v_ego**COMFORT_BRAKE), 0)
-    acceleration_offset = np.clip((lead_xv_0[:,1] - v_ego) + standstill_offset - COMFORT_BRAKE, 1, distance_factor)
-    self.t_follow = self.t_follow / acceleration_offset
     
     braking_offset = np.clip((v_ego - lead_xv_0[:,1]) - COMFORT_BRAKE, 1, distance_factor)
     self.t_follow = self.t_follow / braking_offset
