@@ -74,7 +74,7 @@ def get_stopped_equivalence_factor(v_lead, v_ego, t_follow=T_FOLLOW, stop_distan
     v_diff_offset *= scaling_factor
     
     # If relative speed is high and ego speed is low, increase offset more aggressively
-    v_diff_offset = np.where((v_ego < 10) & (delta_speed > 2), np.clip(v_diff_offset * 1.5, 0, STOP_DISTANCE / 2), v_diff_offset)
+    v_diff_offset = np.where((v_ego < 10) & (delta_speed > 2), np.clip(v_diff_offset * 2.5, 0, STOP_DISTANCE / 2), v_diff_offset)
     
   # softer initial braking
   initial_brake_factor = np.clip(v_ego / 30, 0, 1)
