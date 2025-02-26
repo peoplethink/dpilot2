@@ -331,7 +331,8 @@ class CarInterfaceBase(ABC):
     ret.longitudinalTuning.kdV = [0.]
     ret.lateralTuning.pid.kdBP = [0.]
     ret.lateralTuning.pid.kdV = [0.00002]
-    ret.longitudinalActuatorDelay = 0.15
+    ret.longitudinalActuatorDelayLowerBound = 0.15
+    ret.longitudinalActuatorDelayUpperBound = 0.15
     ret.steerLimitTimer = 1.0
     return ret
 
