@@ -312,7 +312,8 @@ class CarInterface(CarInterfaceBase):
     ret.stoppingDecelRate = 0.2 # ntune_scc_get('stoppingDecelRate')
     ret.startAccel = ntune_scc_get('startAccel')
     ret.stopAccel = ntune_scc_get('stopAccel')  
-    ret.longitudinalActuatorDelay = 0.5
+    ret.longitudinalActuatorDelayLowerBound = 0.5
+    ret.longitudinalActuatorDelayUpperBound = 0.5
 	  
     ret.enableBsm = 0x58b in fingerprint[0]
     ret.enableAutoHold = 1151 in fingerprint[0]
