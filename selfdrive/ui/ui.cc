@@ -290,6 +290,7 @@ void ui_update_params(UIState *s) {
   s->scene.is_metric = params.getBool("IsMetric");
   s->scene.compass = params.getBool("Compass");
   s->scene.brightness = std::stoi(params.get("OpkrUIBrightness"));
+  s->scene.end_to_end_long = params.getBool("EndToEndLong");
   s->show_debug = params.getBool("ShowDebugUI");
   s->show_gear = params.getBool("ShowCgearUI");//기어
   s->show_tpms = params.getBool("ShowTpmsUI");
@@ -323,6 +324,7 @@ void UIState::updateStatus() {
     emit offroadTransition(!scene.started);
     //emit offroadTransition(false);
   }
+  ui_update_params(uiState());
 }
 
 UIState::UIState(QObject *parent) : QObject(parent) {
