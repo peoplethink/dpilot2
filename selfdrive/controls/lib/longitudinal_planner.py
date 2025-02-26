@@ -105,35 +105,29 @@ class Planner:
         v_cruise *= vCluRatio
         v_cruise = int(v_cruise * CV.MS_TO_KPH + 0.25) * CV.KPH_TO_MS
 
-    long_control_off = sm['controlsState'].longControlState == LongCtrlState.off
+    long_control_state = sm['controlsState'].longControlState
     force_slow_decel = sm['controlsState'].forceDecel
 
     # Reset current state when not engaged, or user is controlling the speed
-    reset_state = long_control_off if self.CP.openpilotLongitudinalControl else not sm['controlsState'].enabled
+    reset_state = long_control_state == LongCtrlState.off
 
     # No change cost when user is controlling the speed, or when standstill
     prev_accel_constraint = not sm['carState'].standstill
 
-    if self.mpc.mode == 'acc':
-      accel_limits = [get_min_accel(v_ego), get_max_accel(v_ego)]
-      accel_limits_turns = limit_accel_in_turns(v_ego, sm['carState'].steeringAngleDeg, accel_limits, self.CP)
-    else:
-      accel_limits_turns = [MIN_ACCEL, MAX_ACCEL]  
-
     if reset_state:
       self.v_desired_filter.x = v_ego
-      self.a_desired = clip(sm['carState'].aEgo, *accel_limits)
-      self.mpc.prev_a = np.full(N+1, self.a_desired)
+      self.a_desired = 0.0
 
     # Prevent divergence, smooth in current v_ego
     self.v_desired_filter.x = max(0.0, self.v_desired_filter.update(v_ego))
     
-    # Get acceleration and active solutions for custom long mpc.
-    self.cruise_source, a_min_sol, v_cruise_sol = self.cruise_solutions(not reset_state, self.v_desired_filter.x,
-                                                                        self.a_desired, v_cruise, sm)
-
+    accel_limits = [get_min_accel(v_ego), get_max_accel(v_ego)]
+    accel_limits_turns = limit_accel_in_turns(v_ego, sm['carState'].steeringAngleDeg, accel_limits, self.CP)
+    
     if force_slow_decel:
-      v_cruise = 0.0
+      # if required so, force a smooth deceleration
+      accel_limits_turns[1] = min(accel_limits_turns[1], AWARENESS_DECEL)
+      accel_limits_turns[0] = min(accel_limits_turns[0], accel_limits_turns[1])
     # clip limits, cannot init MPC outside of bounds
     accel_limits_turns[0] = min(accel_limits_turns[0], self.a_desired + 0.05, a_min_sol)
     accel_limits_turns[1] = max(accel_limits_turns[1], self.a_desired - 0.05)
