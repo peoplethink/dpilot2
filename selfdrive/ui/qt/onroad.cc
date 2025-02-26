@@ -642,10 +642,6 @@ void NvgWindow::drawLaneLines(QPainter &painter, const UIState *s) {
   end_hue = int(end_hue * 100 + 0.5) / 100;
 	
   if ((*s->sm)["controlsState"].getControlsState().getEnabled()) {
-  if (steerOverride) {
-      bg.setColorAt(0.0, redColor(100));
-      bg.setColorAt(0.5, redColor(50));  
-      bg.setColorAt(1.0, redColor(0));
   if (scene.end_to_end_long) {
       bg.setColorAt(0, QColor(0xf7, 0x8f, 0x66, 128));
       bg.setColorAt(1, QColor(0xff, 0xad, 0x00, 0));
