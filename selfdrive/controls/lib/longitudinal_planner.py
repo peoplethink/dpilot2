@@ -18,13 +18,13 @@ from common.params import Params
 from selfdrive.controls.lib.events import Events
 
 LON_MPC_STEP = 0.2  # first step is 0.2s
-A_CRUISE_MAX_VALS =   [2.0, 2.0,  2.0,  2.0,  1.26,  .72, .46,  .333,  .115]
-A_CRUISE_MAX_BP =     [0.,  1.,   6.,   8.,   11.,  20.,  25.,  30.,  55.]
-A_CRUISE_MIN_VALS =    [-0.22, -0.22,  -0.25, -1.0, -1.2]
-A_CRUISE_MIN_BP =      [0.,    5.,     11.,   20.,  30.]
+A_CRUISE_MAX_VALS = [2.0, 1.5, 0.8, 0.6]
+A_CRUISE_MAX_BP = [0., 15., 25., 40.]
+A_CRUISE_MIN_VALS = [-0.5, -0.5, -0.2, -0.3, -0.4, -1.2] # mimick stock, slightly release brakes when stopping
+A_CRUISE_MIN_BP =   [0., 0.3, 0.35, 3., 6., 20.]
 
 # Lookup table for turns
-_A_TOTAL_MAX_V = [2.5, 3.2]
+_A_TOTAL_MAX_V = [1.7, 3.2]
 _A_TOTAL_MAX_BP = [20., 40.]
 
 def get_min_accel(v_ego):
