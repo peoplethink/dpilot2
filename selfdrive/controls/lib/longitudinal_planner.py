@@ -9,7 +9,7 @@ from common.filter_simple import FirstOrderFilter
 from common.realtime import DT_MDL
 from selfdrive.modeld.constants import T_IDXS
 from selfdrive.controls.lib.longcontrol import LongCtrlState
-from selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import LongitudinalMpc, N
+from selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import LongitudinalMpc, N, MIN_ACCEL, MAX_ACCEL
 from selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import T_IDXS as T_IDXS_MPC
 from selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, CONTROL_N
 from selfdrive.swaglog import cloudlog
@@ -18,6 +18,7 @@ from common.params import Params
 from selfdrive.controls.lib.events import Events
 
 LON_MPC_STEP = 0.2  # first step is 0.2s
+AWARENESS_DECEL = -0.2  # car smoothly decel at .2m/s^2 when user is distracted
 A_CRUISE_MAX_VALS = [2.0, 1.5, 0.8, 0.6]
 A_CRUISE_MAX_BP = [0., 15., 25., 40.]
 A_CRUISE_MIN_VALS = [-0.5, -0.5, -0.2, -0.3, -0.4, -1.2] # mimick stock, slightly release brakes when stopping
@@ -112,9 +113,12 @@ class Planner:
 
     # No change cost when user is controlling the speed, or when standstill
     prev_accel_constraint = not sm['carState'].standstill
-    
-    accel_limits = [get_min_accel(v_ego), get_max_accel(v_ego)]
-    accel_limits_turns = limit_accel_in_turns(v_ego, sm['carState'].steeringAngleDeg, accel_limits, self.CP)
+
+    if self.mpc.mode == 'acc':
+      accel_limits = [get_min_accel(v_ego), get_max_accel(v_ego)]
+      accel_limits_turns = limit_accel_in_turns(v_ego, sm['carState'].steeringAngleDeg, accel_limits, self.CP)
+    else:
+      accel_limits_turns = [MIN_ACCEL, MAX_ACCEL]  
 
     if reset_state:
       self.v_desired_filter.x = v_ego
