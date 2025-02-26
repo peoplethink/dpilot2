@@ -646,9 +646,9 @@ void NvgWindow::drawLaneLines(QPainter &painter, const UIState *s) {
       bg.setColorAt(0.0, redColor(100));
       bg.setColorAt(0.5, redColor(50));  
       bg.setColorAt(1.0, redColor(0));
-  elif (scene.end_to_end_long) {
-    bg.setColorAt(0, QColor(0xf7, 0x8f, 0x66, 128));
-    bg.setColorAt(1, QColor(0xff, 0xad, 0x00, 0));
+  if (scene.end_to_end_long) {
+      bg.setColorAt(0, QColor(0xf7, 0x8f, 0x66, 128));
+      bg.setColorAt(1, QColor(0xff, 0xad, 0x00, 0));
     } else {
       bg.setColorAt(0.0, scene.lateralPlan.dynamicLaneProfileStatus ? QColor::fromHslF(start_hue / 360., 0.97, 0.56, 0.35) : QColor::fromHslF(216 / 360., 0.94, 0.51, 0.35));
       bg.setColorAt(0.5, scene.lateralPlan.dynamicLaneProfileStatus ? QColor::fromHslF(end_hue / 360., 1.0, 0.68, 0.3) : QColor::fromHslF(190 / 360., 1.0, 0.68, 0.3));
