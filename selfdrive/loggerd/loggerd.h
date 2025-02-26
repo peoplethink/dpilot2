@@ -68,7 +68,7 @@ const LogCameraInfo cameras_logged[] = {
     .has_qcamera = true,
     .trigger_rotate = true,
     .enable = true,
-    .record = true,
+    .record = false,
   },
   {
     .type = DriverCam,
@@ -94,7 +94,7 @@ const LogCameraInfo cameras_logged[] = {
     .has_qcamera = false,
     .trigger_rotate = true,
     .enable = Hardware::TICI(),
-    .record = Hardware::TICI(),
+    .record = false,
   },
 };
 const LogCameraInfo qcam_info = {
