@@ -9,6 +9,10 @@ from selfdrive.controls.ntune import ntune_scc_get
 
 LongCtrlState = car.CarControl.Actuators.LongControlState
 
+# As per ISO 15622:2018 for all speeds
+ACCEL_MIN_ISO = -4.0  # m/s^2
+ACCEL_MAX_ISO = 2.0  # m/s^2
+
 
 def long_control_state_trans(CP, active, long_control_state, v_ego, v_target,
                              v_target_future, brake_pressed, cruise_standstill):
@@ -38,9 +42,8 @@ def long_control_state_trans(CP, active, long_control_state, v_ego, v_target,
   return long_control_state
 
 
-class LongControl:
+class LongControl():
   def __init__(self, CP):
-    self.CP = CP
     self.long_control_state = LongCtrlState.off  # initialized to off
     self.pid = PIDController((CP.longitudinalTuning.kpBP, CP.longitudinalTuning.kpV),
                              (CP.longitudinalTuning.kiBP, CP.longitudinalTuning.kiV),
@@ -49,13 +52,13 @@ class LongControl:
                              derivative_period=0.5, rate=1 / DT_CTRL)
     self.v_pid = 0.0
     self.last_output_accel = 0.0
-    
+
   def reset(self, v_pid):
     """Reset PID controller and change setpoint"""
     self.pid.reset()
     self.v_pid = v_pid
-    
-  def update(self, active, CS, long_plan, accel_limits, t_since_plan):
+
+  def update(self, active, CS, CP, long_plan, accel_limits, t_since_plan):
     """Update longitudinal control. This updates the state machine and runs a PID loop"""
     # Interp control trajectory
     speeds = long_plan.speeds
@@ -78,7 +81,7 @@ class LongControl:
 
     # TODO: This check is not complete and needs to be enforced by MPC
     a_target = clip(a_target, ACCEL_MIN_ISO, ACCEL_MAX_ISO)
-    
+
     self.pid.neg_limit = accel_limits[0]
     self.pid.pos_limit = accel_limits[1]
 
@@ -92,10 +95,12 @@ class LongControl:
       self.reset(CS.vEgo)
       output_accel = 0.
 
+    # tracking objects and driving
     elif self.long_control_state == LongCtrlState.pid:
       self.v_pid = v_target
 
       # Toyota starts braking more when it thinks you want to stop
+      # Freeze the integrator so we don't accelerate to compensate, and don't allow positive acceleration
       prevent_overshoot = not CP.stoppingControl and CS.vEgo < 1.5 and v_target_future < 0.7 and v_target_future < self.v_pid
       deadzone = interp(CS.vEgo, CP.longitudinalTuning.deadzoneBP, CP.longitudinalTuning.deadzoneV)
       freeze_integrator = prevent_overshoot
@@ -117,5 +122,5 @@ class LongControl:
 
     self.last_output_accel = output_accel
     final_accel = clip(output_accel, accel_limits[0], accel_limits[1])
-    
+
     return final_accel

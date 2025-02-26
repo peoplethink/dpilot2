@@ -9,7 +9,7 @@ from common.filter_simple import FirstOrderFilter
 from common.realtime import DT_MDL
 from selfdrive.modeld.constants import T_IDXS
 from selfdrive.controls.lib.longcontrol import LongCtrlState
-from selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import LongitudinalMpc, N, MIN_ACCEL, MAX_ACCEL
+from selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import LongitudinalMpc, N
 from selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import T_IDXS as T_IDXS_MPC
 from selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, CONTROL_N
 from selfdrive.swaglog import cloudlog
@@ -28,11 +28,12 @@ A_CRUISE_MIN_BP =   [0., 0.3, 0.35, 3., 6., 20.]
 _A_TOTAL_MAX_V = [1.7, 3.2]
 _A_TOTAL_MAX_BP = [20., 40.]
 
-def get_min_accel(v_ego):
-  return interp(v_ego, A_CRUISE_MIN_BP, A_CRUISE_MIN_VALS)
-  
+
 def get_max_accel(v_ego):
   return interp(v_ego, A_CRUISE_MAX_BP, A_CRUISE_MAX_VALS)
+
+def get_min_accel(v_ego):
+  return interp(v_ego, A_CRUISE_MIN_BP, A_CRUISE_MIN_VALS)
 
 def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
   """
@@ -53,6 +54,7 @@ class Planner:
   def __init__(self, CP, init_v=0.0, init_a=0.0, dt=DT_MDL):
     self.CP = CP
     params = Params()
+    # TODO read param in the loop for live toggling
     mode = 'blended' if params.get_bool('EndToEndLong') else 'acc'
     self.mpc = LongitudinalMpc(mode=mode, dt=dt)
     self.dt = dt
@@ -91,9 +93,10 @@ class Planner:
       a = np.zeros(len(T_IDXS_MPC))
       j = np.zeros(len(T_IDXS_MPC))
     return x, v, a, j
-    
+
   def update(self, sm):
     v_ego = sm['carState'].vEgo
+
     v_cruise_kph = sm['controlsState'].vCruise
     v_cruise_kph = min(v_cruise_kph, V_CRUISE_MAX)
     v_cruise = v_cruise_kph * CV.KPH_TO_MS
@@ -112,7 +115,7 @@ class Planner:
     reset_state = long_control_state == LongCtrlState.off
 
     # No change cost when user is controlling the speed, or when standstill
-    prev_accel_constraint = not sm['carState'].standstill
+    prev_accel_constraint = not (reset_state or sm['carState'].standstill)
 
     if reset_state:
       self.v_desired_filter.x = v_ego
@@ -120,10 +123,9 @@ class Planner:
 
     # Prevent divergence, smooth in current v_ego
     self.v_desired_filter.x = max(0.0, self.v_desired_filter.update(v_ego))
-    
+
     accel_limits = [get_min_accel(v_ego), get_max_accel(v_ego)]
     accel_limits_turns = limit_accel_in_turns(v_ego, sm['carState'].steeringAngleDeg, accel_limits, self.CP)
-    
     if force_slow_decel:
       # if required so, force a smooth deceleration
       accel_limits_turns[1] = min(accel_limits_turns[1], AWARENESS_DECEL)
@@ -144,7 +146,8 @@ class Planner:
     self.j_desired_trajectory = np.interp(T_IDXS[:CONTROL_N], T_IDXS_MPC[:-1], self.mpc.j_solution)
 
     # TODO counter is only needed because radar is glitchy, remove once radar is gone
-    self.fcw = self.mpc.mode == 'acc' and self.mpc.crash_cnt > 5  and not sm['carState'].standstill
+    # TODO write fcw in e2e_long mode
+    self.fcw = self.mpc.mode == 'acc' and self.mpc.crash_cnt > 5
     if self.fcw:
       cloudlog.info("FCW triggered")
 
