@@ -51,12 +51,16 @@ def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
 class Planner:
   def __init__(self, CP, init_v=0.0, init_a=0.0, dt=DT_MDL):
     self.CP = CP
-    self.mpc = LongitudinalMpc(dt=dt)
-    self.fcw = False
+    params = Params()
+    mode = 'blended' if params.get_bool('EndToEndLong') else 'acc'
+    self.mpc = LongitudinalMpc(mode=mode, dt=dt)
     self.dt = dt
+
+    self.fcw = False
 
     self.a_desired = init_a
     self.v_desired_filter = FirstOrderFilter(init_v, 2.0, self.dt)
+    self.t_uniform = np.arange(0.0, T_IDXS_MPC[-1] + 0.5, 0.5)
 
     self.x_desired_trajectory = np.zeros(CONTROL_N)
     self.v_desired_trajectory = np.zeros(CONTROL_N)
@@ -68,6 +72,24 @@ class Planner:
     self.cruise_source = 'cruise'
     self.vision_turn_controller = VisionTurnController(CP)
     self.events = Events()
+
+  def parse_model(self, model_msg):
+    if (len(model_msg.position.x) == 33 and
+       len(model_msg.velocity.x) == 33 and
+       len(model_msg.acceleration.x) == 33):
+      x = np.interp(T_IDXS_MPC, T_IDXS, model_msg.position.x)
+      v = np.interp(T_IDXS_MPC, T_IDXS, model_msg.velocity.x)
+      a = np.interp(T_IDXS_MPC, T_IDXS, model_msg.acceleration.x)
+      # Uniform interp so gradient is less noisy
+      a_sparse = np.interp(self.t_uniform, T_IDXS, model_msg.acceleration.x)
+      j_sparse = np.gradient(a_sparse, self.t_uniform)
+      j = np.interp(T_IDXS_MPC, self.t_uniform, j_sparse)
+    else:
+      x = np.zeros(len(T_IDXS_MPC))
+      v = np.zeros(len(T_IDXS_MPC))
+      a = np.zeros(len(T_IDXS_MPC))
+      j = np.zeros(len(T_IDXS_MPC))
+    return x, v, a, j
     
   def update(self, sm):
     v_ego = sm['carState'].vEgo
@@ -112,9 +134,11 @@ class Planner:
     accel_limits_turns[0] = min(accel_limits_turns[0], self.a_desired + 0.05, a_min_sol)
     accel_limits_turns[1] = max(accel_limits_turns[1], self.a_desired - 0.05)
 
+    self.mpc.set_weights(prev_accel_constraint)
     self.mpc.set_accel_limits(accel_limits_turns[0], accel_limits_turns[1])
     self.mpc.set_cur_state(self.v_desired_filter.x, self.a_desired)
-    self.mpc.update(sm['carState'], sm['radarState'], v_cruise_sol, prev_accel_constraint)
+    x, v, a, j = self.parse_model(sm['modelV2'])
+    self.mpc.update(sm['carState'], sm['radarState'], v_cruise, prev_accel_constraint, x, v, a, j)
 
     self.x_desired_trajectory = np.interp(T_IDXS[:CONTROL_N], T_IDXS_MPC, self.mpc.x_solution)
     self.v_desired_trajectory = np.interp(T_IDXS[:CONTROL_N], T_IDXS_MPC, self.mpc.v_solution)
@@ -122,7 +146,7 @@ class Planner:
     self.j_desired_trajectory = np.interp(T_IDXS[:CONTROL_N], T_IDXS_MPC[:-1], self.mpc.j_solution)
 
     # TODO counter is only needed because radar is glitchy, remove once radar is gone
-    self.fcw = self.mpc.crash_cnt > 5 and not sm['carState'].standstill
+    self.fcw = self.mpc.mode == 'acc' and self.mpc.crash_cnt > 5  and not sm['carState'].standstill
     if self.fcw:
       cloudlog.info("FCW triggered")
 
