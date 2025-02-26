@@ -52,6 +52,13 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       "mi/h 대신 km/h 단위로 속도를 표시합니다.",
       "../assets/offroad/icon_metric.png",
     },
+    // e2e long
+    {
+      "EndToEndLong",
+      "System: End-to-End ACC (Alpha)",
+      "Let the driving model control the gas and brakes, openpilot will drive as it thinks a human would. Super experimental.",
+      "../assets/offroad/icon_road.png",
+    },
     {
       "EndToEndToggle",
       "\U0001f96c AUTO LANE 활성화 \U0001f96c",
