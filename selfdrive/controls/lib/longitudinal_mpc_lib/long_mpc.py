@@ -59,6 +59,7 @@ T_DIFFS = np.diff(T_IDXS, prepend=[0.])
 MIN_ACCEL = -4.0
 MAX_ACCEL = 2.0
 T_FOLLOW = 1.25
+T_FOLLOW_E2E = 0.9
 COMFORT_BRAKE = 2.5
 STOP_DISTANCE = 6.0
 
@@ -287,11 +288,11 @@ class LongitudinalMpc:
     cost_mulitpliers = self.get_cost_multipliers(v_lead0, v_lead1)
     if self.mode == 'acc':
       a_change_cost = A_CHANGE_COST if prev_accel_constraint else 0
-      cost_weights = [X_EGO_OBSTACLE_COST, X_EGO_COST, V_EGO_COST, A_EGO_COST, a_change_cost * cost_mulitpliers[0], J_EGO_COST]
+      cost_weights = [X_EGO_OBSTACLE_COST, X_EGO_COST, V_EGO_COST, A_EGO_COST, a_change_cost * cost_mulitpliers[0] * cost_mulitpliers[1], J_EGO_COST * cost_mulitpliers[1]]
       constraint_cost_weights = [LIMIT_COST, LIMIT_COST, LIMIT_COST, DANGER_ZONE_COST]
     elif self.mode == 'blended':
       cost_weights = [0., 0.2, 0.25, 1.0, 0.0, 1.0]
-      constraint_cost_weights = [LIMIT_COST, LIMIT_COST, LIMIT_COST, 5.0]
+      constraint_cost_weights = [LIMIT_COST, LIMIT_COST, LIMIT_COST, 50.0]
     elif self.mode == 'e2e':
       cost_weights = [0., 0.2, 0.25, 1., 0.0, .1]
       constraint_cost_weights = [LIMIT_COST, LIMIT_COST, LIMIT_COST, 0.0]
@@ -363,7 +364,6 @@ class LongitudinalMpc:
     v_ego = self.x0[1]
     a_ego = self.x0[2]
     a_ego = carstate.aEgo
-      
     self.status = radarstate.leadOne.status or radarstate.leadTwo.status
 
     lead_xv_0 = self.process_lead(radarstate.leadOne)
@@ -383,6 +383,7 @@ class LongitudinalMpc:
     if self.mode == 'acc':
       self.params[:,0] = MIN_ACCEL if self.status else self.cruise_min_a
       self.params[:,1] = self.cruise_max_a
+      self.params[:,6] = LEAD_DANGER_FACTOR
 
       # Fake an obstacle for cruise, this ensures smooth acceleration to set speed
       # when the leads are no factor.
@@ -401,6 +402,7 @@ class LongitudinalMpc:
     elif self.mode == 'blended':
       self.params[:,0] = MIN_ACCEL
       self.params[:,1] = MAX_ACCEL
+      self.params[:,6] = 1.0
 
       x_obstacles = np.column_stack([lead_0_obstacle,
                                      lead_1_obstacle])
@@ -410,8 +412,8 @@ class LongitudinalMpc:
 
       x_and_cruise = np.column_stack([x, cruise_target])
       x = np.min(x_and_cruise, axis=1)
-      self.source = 'e2e'
-
+      self.source = 'e2e' if x_and_cruise[0,0] < x_and_cruise[0,1] else 'cruise'
+      
     else:
       raise NotImplementedError(f'Planner mode {self.mode} not recognized in planner update')
 
@@ -422,6 +424,7 @@ class LongitudinalMpc:
     for i in range(N):
       self.solver.set(i, "yref", self.yref[i])
     self.solver.set(N, "yref", self.yref[N][:COST_E_DIM])
+    
     self.params[:,2] = np.min(x_obstacles, axis=1)
     self.params[:,3] = np.copy(self.prev_a)
     self.params[:,4] = self.desired_TF
@@ -434,10 +437,21 @@ class LongitudinalMpc:
     else:
       self.crash_cnt = 0
 
+  # Check if it got within lead comfort range
+    # TODO This should be done cleaner
+    if self.mode == 'blended':
+      if any((lead_0_obstacle - get_safe_obstacle_distance(self.x_sol[:,1], T_FOLLOW_E2E))- self.x_sol[:,0] < 0.0):
+        self.source = 'lead0'
+      if any((lead_1_obstacle - get_safe_obstacle_distance(self.x_sol[:,1], T_FOLLOW_E2E))- self.x_sol[:,0] < 0.0) and \
+         (lead_1_obstacle[0] - lead_0_obstacle[0]):
+        self.source = 'lead1'
+           
   def update_with_xva(self, x, v, a):
     self.params[:,0] = -10.
     self.params[:,1] = 10.
     self.params[:,2] = 1e5
+    self.params[:,4] = T_FOLLOW_E2E
+    self.params[:,6] = LEAD_DANGER_FACTOR
     
     # v, and a are in local frame, but x is wrt the x[0] position
     # In >90degree turns, x goes to 0 (and may even be -ve)
