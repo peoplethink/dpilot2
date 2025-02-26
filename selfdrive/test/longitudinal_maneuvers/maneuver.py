@@ -16,7 +16,6 @@ class Maneuver():
 
     self.only_lead2 = kwargs.get("only_lead2", False)
     self.only_radar = kwargs.get("only_radar", False)
-    self.ensure_start = kwargs.get("ensure_start", False)
 
     self.duration = duration
     self.title = title
@@ -53,9 +52,6 @@ class Maneuver():
         print("Crashed!!!!")
         valid = False
         
-      if self.ensure_start and log['v_rel'] > 0 and log['speeds'][-1] <= 0.1:
-        print('Planner not starting!')
-        valid = False 
 
     print("maneuver end", valid)
     return valid, np.array(logs)
