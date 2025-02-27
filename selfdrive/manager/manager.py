@@ -71,7 +71,6 @@ def manager_init() -> None:
     ("SpeedLimitControl", "0"),
     ("SpeedLimitPercOffset", "0"),
     ("TurnSpeedControl", "0"),
-    ("TurnVisionControl", "1"),
     ("StopDistance", "650"),
     ("XEgoObstacleCost", "6"),
     ("JEgoCost", "5"),
