@@ -169,8 +169,8 @@ class Planner:
 
     longitudinalPlan.hasLead = sm['radarState'].leadOne.status
     longitudinalPlan.longitudinalPlanSource = self.mpc.source
-    longitudinalPlan.visionCurrentLatAcc = float(self.vision_turn_controller.current_lat_acc)
-    longitudinalPlan.visionMaxPredLatAcc = float(self.vision_turn_controller.max_pred_lat_acc)
+   # longitudinalPlan.visionCurrentLatAcc = float(self.vision_turn_controller.current_lat_acc)
+   # longitudinalPlan.visionMaxPredLatAcc = float(self.vision_turn_controller.max_pred_lat_acc)
     longitudinalPlan.eventsDEPRECATED = self.events.to_msg()
     
     longitudinalPlan.fcw = self.fcw
