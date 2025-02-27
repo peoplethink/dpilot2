@@ -298,12 +298,11 @@ class CarInterface(CarInterfaceBase):
     ret.steerControlType = car.CarParams.SteerControlType.torque
 
     # longitudinal
-    ret.longitudinalTuning.kpBP = [0., 5., 20., 30.]
-    ret.longitudinalTuning.kpV = [1.3, 1.0, 0.7, 0.1]
-    ret.longitudinalTuning.kiBP = [0.,   6.,  8.,  11., 30., 33., 40.]
-    ret.longitudinalTuning.kiV = [.001, .07,  .15, .2,  .2,  .01, .0001]
-    ret.longitudinalTuning.deadzoneBP = [0., 8.05]
-    ret.longitudinalTuning.deadzoneV = [.0, .14]
+    ret.longitudinalTuning.kpBP = [2.0, 7.0]
+    ret.longitudinalTuning.kpV = [0.4, 0.6]
+
+    ret.longitudinalTuning.kiBP = [2.0, 7.0]
+    ret.longitudinalTuning.kiV = [0.0, 0.15]
 
     ret.stoppingControl = True
     ret.startingState = False
@@ -311,9 +310,10 @@ class CarInterface(CarInterfaceBase):
     ret.vEgoStopping = 0.3 #ntune_scc_get('vEgoStopping')
     ret.stoppingDecelRate = 0.2 # ntune_scc_get('stoppingDecelRate')
     ret.startAccel = ntune_scc_get('startAccel')
-    ret.stopAccel = ntune_scc_get('stopAccel')  
-    ret.longitudinalActuatorDelayLowerBound = 0.5
-    ret.longitudinalActuatorDelayUpperBound = 0.5
+    ret.stopAccel = ntune_scc_get('stopAccel')
+	  
+    ret.longitudinalActuatorDelayLowerBound = 0.2
+    ret.longitudinalActuatorDelayUpperBound = 0.6
 	  
     ret.enableBsm = 0x58b in fingerprint[0]
     ret.enableAutoHold = 1151 in fingerprint[0]
