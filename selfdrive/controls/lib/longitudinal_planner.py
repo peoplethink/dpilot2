@@ -9,7 +9,7 @@ from common.filter_simple import FirstOrderFilter
 from common.realtime import DT_MDL
 from selfdrive.modeld.constants import T_IDXS
 from selfdrive.controls.lib.longcontrol import LongCtrlState
-from selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import LongitudinalMpc, N
+from selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import LongitudinalMpc, N, MIN_ACCEL, MAX_ACCEL
 from selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import T_IDXS as T_IDXS_MPC
 from selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, CONTROL_N
 from selfdrive.swaglog import cloudlog
@@ -52,11 +52,11 @@ def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
 class Planner:
   def __init__(self, CP, init_v=0.0, init_a=0.0, dt=DT_MDL):
     self.CP = CP
-    params = Params()
-    # TODO read param in the loop for live toggling
-    mode = 'blended' if params.get_bool('EndToEndLong') else 'acc'
-    self.mpc = LongitudinalMpc(mode=mode, dt=dt)
+    self.params = Params()
+    self.param_read_counter = 0
+    self.mpc = LongitudinalMpc(dt=dt)
     self.dt = dt
+    self.read_param()
 
     self.fcw = False
 
@@ -73,6 +73,9 @@ class Planner:
     self.use_cluster_speed = Params().get_bool('UseClusterSpeed')
     self.events = Events()
 
+  def read_param(self):
+    self.mpc.mode = 'blended' if self.params.get_bool('EndToEndLong') else 'acc'
+    
   def parse_model(self, model_msg):
     if (len(model_msg.position.x) == 33 and
        len(model_msg.velocity.x) == 33 and
@@ -91,7 +94,11 @@ class Planner:
       j = np.zeros(len(T_IDXS_MPC))
     return x, v, a, j
 
-  def update(self, sm):
+  def update(self, sm, read=True):
+    if self.param_read_counter % 50 == 0 and read:
+      self.read_param()
+    self.param_read_counter += 1
+
     v_ego = sm['carState'].vEgo
 
     v_cruise_kph = sm['controlsState'].vCruise
@@ -114,15 +121,20 @@ class Planner:
     # No change cost when user is controlling the speed, or when standstill
     prev_accel_constraint = not (reset_state or sm['carState'].standstill)
 
+    if self.mpc.mode == 'acc':
+      accel_limits = [get_min_accel(v_ego), get_max_accel(v_ego)]
+      accel_limits_turns = limit_accel_in_turns(v_ego, sm['carState'].steeringAngleDeg, accel_limits, self.CP)
+    else:
+      accel_limits_turns = [MIN_ACCEL, MAX_ACCEL]
+
     if reset_state:
       self.v_desired_filter.x = v_ego
-      self.a_desired = 0.0
+      # Clip aEgo to cruise limits to prevent large accelerations when becoming active
+      self.a_desired = clip(sm['carState'].aEgo, accel_limits[0], accel_limits[1])
 
     # Prevent divergence, smooth in current v_ego
     self.v_desired_filter.x = max(0.0, self.v_desired_filter.update(v_ego))
 
-    accel_limits = [get_min_accel(v_ego), get_max_accel(v_ego)]
-    accel_limits_turns = limit_accel_in_turns(v_ego, sm['carState'].steeringAngleDeg, accel_limits, self.CP)
     if force_slow_decel:
       # if required so, force a smooth deceleration
       accel_limits_turns[1] = min(accel_limits_turns[1], AWARENESS_DECEL)
