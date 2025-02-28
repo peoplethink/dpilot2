@@ -112,6 +112,7 @@ def manager_init() -> None:
     ("CruiseMaxVals4", "80"),
     ("CruiseMaxVals5", "70"),
     ("CruiseMaxVals6", "60"),
+    ("TurnVisionControl", "1"),
     ("DampingFactor", "25"),
     ("LateralTorqueKd", "800"),
     ("NNFF", "0"),
