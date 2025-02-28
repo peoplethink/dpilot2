@@ -97,7 +97,6 @@ class VisionTurnController:
 
   def _update_calculations(self, sm):
     curve_sensitivity = ntune_scc_get("sccCurveSensitivity")
-    turn_aggressiveness = ntune_scc_get("sccTurnAggressiveness")
     
     rate_plan = np.array(np.abs(sm['modelV2'].orientationRate.z)) * curve_sensitivity
     vel_plan = np.array(sm['modelV2'].velocity.x)
@@ -115,6 +114,7 @@ class VisionTurnController:
     max_curve = self.max_pred_lat_acc / (v_ego**2)
 
     # Set the target lateral acceleration
+    turn_aggressiveness = ntune_scc_get("sccTurnAggressiveness")
     adjusted_target_lat_a = TARGET_LAT_A * turn_aggressiveness
     
     # Get the target velocity for the maximum curve
