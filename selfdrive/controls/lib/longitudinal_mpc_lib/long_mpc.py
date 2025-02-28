@@ -292,7 +292,8 @@ class LongitudinalMpc:
       cost_weights = [X_EGO_OBSTACLE_COST, X_EGO_COST, V_EGO_COST, A_EGO_COST, a_change_cost * cost_mulitpliers[0] * cost_mulitpliers[1], J_EGO_COST * cost_mulitpliers[1]]
       constraint_cost_weights = [LIMIT_COST, LIMIT_COST, LIMIT_COST, DANGER_ZONE_COST]
     elif self.mode == 'blended':
-      cost_weights = [0., 0.2, 0.25, 1.0, 0.0, 1.0]
+      a_change_cost = 40.0 if prev_accel_constraint else 0
+      cost_weights = [0., 0.1, 0.2, 5.0, a_change_cost, 1.0]
       constraint_cost_weights = [LIMIT_COST, LIMIT_COST, LIMIT_COST, 50.0]
     else:
       raise NotImplementedError(f'Planner mode {self.mode} not recognized in planner cost set')
@@ -408,7 +409,7 @@ class LongitudinalMpc:
 
       x_and_cruise = np.column_stack([x, cruise_target])
       x = np.min(x_and_cruise, axis=1)
-      self.source = 'e2e' if x_and_cruise[0,0] < x_and_cruise[0,1] else 'cruise'
+      self.source = 'e2e' if x_and_cruise[0,0] < x_and_cruise[1,1] else 'cruise'
 
     else:
       raise NotImplementedError(f'Planner mode {self.mode} not recognized in planner update')
