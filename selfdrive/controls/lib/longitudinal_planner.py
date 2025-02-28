@@ -145,8 +145,8 @@ class Planner:
       v_cruise = 0.0
 
     # Get acceleration and active solutions for custom long mpc.
-    v_cruise_sol = self.cruise_solutions(not reset_state, self.v_desired_filter.x,
-                                         self.a_desired, v_cruise, sm)
+    v_cruise = self.cruise_solutions(not reset_state, self.v_desired_filter.x,
+                                     self.a_desired, v_cruise, sm)
     
     # clip limits, cannot init MPC outside of bounds
     accel_limits_turns[0] = min(accel_limits_turns[0], self.a_desired + 0.05)
@@ -210,6 +210,6 @@ class Planner:
     v_tsc_target = self.vision_turn_controller.v_target if self.vision_turn_controller.is_active else 255
 
     # Pick solution with the lowest velocity target.
-    v_solutions = min(v_tsc_target)
+    v_solutions = min(v_cruise, v_tsc_target)
 
     return v_solutions
