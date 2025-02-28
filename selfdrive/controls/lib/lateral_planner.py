@@ -32,6 +32,7 @@ class LateralPlanner:
     self.plan_curv_rate = np.zeros((TRAJECTORY_SIZE,))
     self.t_idxs = np.arange(TRAJECTORY_SIZE)
     self.y_pts = np.zeros(TRAJECTORY_SIZE)
+    self.d_path_w_lines_xyz = np.zeros((TRAJECTORY_SIZE, 3))
 
     self.lat_mpc = LateralMpc()
     self.reset_mpc(np.zeros(4))
@@ -89,11 +90,12 @@ class LateralPlanner:
     if self.DH.desire == log.LateralPlan.Desire.laneChangeRight or self.DH.desire == log.LateralPlan.Desire.laneChangeLeft:
       self.LP.lll_prob *= self.DH.lane_change_ll_prob
       self.LP.rll_prob *= self.DH.lane_change_ll_prob
+    self.d_path_w_lines_xyz = self.LP.get_d_path(v_ego, self.t_idxs, self.path_xyz) 
 
     # Calculate final driving path and set MPC costs
 
     if not self.get_dynamic_lane_profile():
-      d_path_xyz = self.LP.get_d_path(v_ego, self.t_idxs, self.path_xyz)
+      d_path_xyz = self.d_path_w_lines_xyz
       self.lat_mpc.set_weights(MPC_COST_LAT.PATH, MPC_COST_LAT.HEADING, MPC_COST_LAT.STEER_RATE)
       self.dynamic_lane_profile_status = False
       d_path_xyz = self.path_xyz
@@ -182,6 +184,9 @@ class LateralPlanner:
     
     lateralPlan.autoLaneChangeEnabled = self.DH.auto_lane_change_enabled
     lateralPlan.autoLaneChangeTimer = int(AUTO_LCA_START_TIME) - int(self.DH.auto_lane_change_timer)
+
+    plan_send.lateralPlan.dPathWLinesX = [float(x) for x in self.d_path_w_lines_xyz[:, 0]]
+    plan_send.lateralPlan.dPathWLinesY = [float(y) for y in self.d_path_w_lines_xyz[:, 1]]
     
     lateralPlan.dynamicLaneProfile = bool(self.dynamic_lane_profile_status)
     
