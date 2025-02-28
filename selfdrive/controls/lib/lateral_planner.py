@@ -40,7 +40,7 @@ class LateralPlanner:
     self.dynamic_lane_profile = int(Params().get("DynamicLaneProfile", encoding="utf8"))
     self.dynamic_lane_profile_status = False
     self.dynamic_lane_profile_status_buffer = False
-
+    self.vision_curve_laneless = Params().get_bool("VisionCurveLaneless")
     self.average_desired_curvature = CP.pfeiferjDesiredCurvatures
 
     self.param_read_counter = 0
@@ -49,6 +49,9 @@ class LateralPlanner:
   def read_param(self):
     self.use_lanelines = not Params().get_bool("EndToEndToggle")
     self.dynamic_lane_profile = int(Params().get("DynamicLaneProfile", encoding="utf8"))
+    if self.param_read_counter % 50 == 0:
+      self.vision_curve_laneless = Params().get_bool("VisionCurveLaneless")
+    self.param_read_counter += 1
     
   def reset_mpc(self, x0=np.zeros(4)):
     self.x0 = x0
@@ -94,7 +97,7 @@ class LateralPlanner:
 
     # Calculate final driving path and set MPC costs
 
-    if not self.get_dynamic_lane_profile():
+    if not self.get_dynamic_lane_profile((sm['longitudinalPlan']):
       d_path_xyz = self.d_path_w_lines_xyz
       self.lat_mpc.set_weights(MPC_COST_LAT.PATH, MPC_COST_LAT.HEADING, MPC_COST_LAT.STEER_RATE)
       self.dynamic_lane_profile_status = False
@@ -139,17 +142,25 @@ class LateralPlanner:
     else:
       self.solution_invalid_cnt = 0
       
-  def get_dynamic_lane_profile(self):
+  def get_dynamic_lane_profile(self, longitudinal_plan):
     if self.dynamic_lane_profile == 1:
       return True
     if self.dynamic_lane_profile == 0:
       return False
     elif self.dynamic_lane_profile == 2:
+      # laneless while lane change in progress
+      if self.DH.lane_change_state in (LaneChangeState.laneChangeStarting, LaneChangeState.laneChangeFinishing):
+        return True
       # only while lane change is off
-      if self.DH.lane_change_state == log.LateralPlan.LaneChangeState.off:
+      elif self.DH.lane_change_state == LaneChangeState.off:
         # laneline probability too low, we switch to laneless mode
-        if (self.LP.lll_prob + self.LP.rll_prob) / 2 < 0.3:
+        if (self.LP.lll_prob + self.LP.rll_prob) / 2 < 0.3 \
+          or ((longitudinal_plan.visionCurrentLatAcc > 1.0 or longitudinal_plan.visionMaxPredLatAcc > 1.4)
+           and self.vision_curve_laneless):
           self.dynamic_lane_profile_status_buffer = True
+        if (self.LP.lll_prob + self.LP.rll_prob) / 2 > 0.5 \
+          and ((longitudinal_plan.visionCurrentLatAcc < 0.6 and longitudinal_plan.visionMaxPredLatAcc < 0.7)
+           or not self.vision_curve_laneless):
         if (self.LP.lll_prob + self.LP.rll_prob) / 2 > 0.5:
           self.dynamic_lane_profile_status_buffer = False
         if self.dynamic_lane_profile_status_buffer: # in buffer mode, always laneless
