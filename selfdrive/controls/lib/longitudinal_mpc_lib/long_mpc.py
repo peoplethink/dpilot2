@@ -293,9 +293,6 @@ class LongitudinalMpc:
     elif self.mode == 'blended':
       cost_weights = [0., 0.2, 0.25, 1.0, 0.0, 1.0]
       constraint_cost_weights = [LIMIT_COST, LIMIT_COST, LIMIT_COST, 50.0]
-    elif self.mode == 'e2e':
-      cost_weights = [0., 0.2, 0.25, 1., 0.0, .1]
-      constraint_cost_weights = [LIMIT_COST, LIMIT_COST, LIMIT_COST, 0.0]
     else:
       raise NotImplementedError(f'Planner mode {self.mode} not recognized in planner cost set')
     self.set_cost_weights(cost_weights, constraint_cost_weights)
@@ -380,7 +377,7 @@ class LongitudinalMpc:
 
     # Update in ACC mode or ACC/e2e blend
     if self.mode == 'acc':
-      self.params[:,0] = MIN_ACCEL if self.status else self.cruise_min_a
+      self.params[:,0] = MIN_ACCEL
       self.params[:,1] = self.cruise_max_a
       self.params[:,6] = LEAD_DANGER_FACTOR
 
@@ -405,7 +402,7 @@ class LongitudinalMpc:
 
       x_obstacles = np.column_stack([lead_0_obstacle,
                                      lead_1_obstacle])
-      cruise_target = T_IDXS * v_cruise + x[0]
+      cruise_target = T_IDXS * np.clip(v_cruise, v_ego - 2.0, 1e3) + x[0]
       xforward = ((v[1:] + v[:-1]) / 2) * (T_IDXS[1:] - T_IDXS[:-1])
       x = np.cumsum(np.insert(xforward, 0, x[0]))
 
@@ -444,27 +441,6 @@ class LongitudinalMpc:
       if any((lead_1_obstacle - get_safe_obstacle_distance(self.x_sol[:,1], T_FOLLOW_E2E))- self.x_sol[:,0] < 0.0) and \
          (lead_1_obstacle[0] - lead_0_obstacle[0]):
         self.source = 'lead1'
-
-  def update_with_xva(self, x, v, a):
-    self.params[:,0] = -10.
-    self.params[:,1] = 10.
-    self.params[:,2] = 1e5
-    self.params[:,4] = T_FOLLOW_E2E
-    self.params[:,6] = LEAD_DANGER_FACTOR
-
-    # v, and a are in local frame, but x is wrt the x[0] position
-    # In >90degree turns, x goes to 0 (and may even be -ve)
-    # So, we use integral(v) + x[0] to obtain the forward-distance
-    xforward = ((v[1:] + v[:-1]) / 2) * (T_IDXS[1:] - T_IDXS[:-1])
-    x = np.cumsum(np.insert(xforward, 0, x[0]))
-    self.yref[:,1] = x
-    self.yref[:,2] = v
-    self.yref[:,3] = a
-    for i in range(N):
-      self.solver.cost_set(i, "yref", self.yref[i])
-    self.solver.cost_set(N, "yref", self.yref[N][:COST_E_DIM])
-    self.params[:,3] = np.copy(self.prev_a)
-    self.run()
 
   def run(self):
     # t0 = sec_since_boot()
