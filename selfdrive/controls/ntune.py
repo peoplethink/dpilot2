@@ -223,6 +223,12 @@ class nTune():
     if self.checkValue("longDisableRadar", 0., 1., 0.):
       updated = True
 
+    if self.checkValue("sccCurveSensitivity", -2.0, 2.0, 0.):
+      updated = True
+
+    if self.checkValue("sccTurnAggressiveness", -2.0, 2.0, 0.):
+      updated = True
+      
     if self.checkValue("sccGasFactor", 0.5, 1.5, 1.0):
       updated = True
 
