@@ -721,6 +721,12 @@ CommunityPanel::CommunityPanel(QWidget* parent) : QWidget(parent) {
                                             "../assets/offroad/icon_road.png",
                                             this));
 
+  toggles.append(new ParamControl("TurnVisionControl",
+                                            "비젼기반 커브감속",
+                                            "비젼커브 활성화시 우선순위 ",
+                                            "../assets/offroad/icon_road.png",
+                                            this));
+  
   toggles.append(new ParamControl("LaneChangeEnabled",
                                             "Enable Lane Change Assist",
                                             "Perform assisted lane changes with openpilowards your desired lane.",
