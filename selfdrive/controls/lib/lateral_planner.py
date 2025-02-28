@@ -97,7 +97,7 @@ class LateralPlanner:
 
     # Calculate final driving path and set MPC costs
 
-    if not self.get_dynamic_lane_profile((sm['longitudinalPlan']):
+    if not self.get_dynamic_lane_profile(sm['longitudinalPlan']):
       d_path_xyz = self.d_path_w_lines_xyz
       self.lat_mpc.set_weights(MPC_COST_LAT.PATH, MPC_COST_LAT.HEADING, MPC_COST_LAT.STEER_RATE)
       self.dynamic_lane_profile_status = False
