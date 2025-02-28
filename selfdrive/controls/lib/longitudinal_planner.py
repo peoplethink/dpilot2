@@ -14,6 +14,7 @@ from selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import LongitudinalMpc
 from selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import T_IDXS as T_IDXS_MPC
 from selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, CONTROL_N
 from selfdrive.swaglog import cloudlog
+from selfdrive.controls.lib.vision_turn_controller import VisionTurnController
 from common.params import Params
 from selfdrive.controls.lib.events import Events
 
@@ -71,6 +72,8 @@ class Planner:
     self.solverExecutionTime = 0.0
 
     self.use_cluster_speed = Params().get_bool('UseClusterSpeed')
+    self.cruise_source = 'cruise'
+    self.vision_turn_controller = VisionTurnController(CP)
     self.events = Events()
 
   def read_param(self):
@@ -128,6 +131,8 @@ class Planner:
       accel_limits = [ACCEL_MIN, ACCEL_MAX]
       accel_limits_turns = [ACCEL_MIN, ACCEL_MAX]
 
+    accel_limits = [get_min_accel(v_ego), get_max_accel(v_ego)]
+    accel_limits_turns = limit_accel_in_turns(v_ego, sm['carState'].steeringAngleDeg, accel_limits, self.CP)
     if reset_state:
       self.v_desired_filter.x = v_ego
       # Clip aEgo to cruise limits to prevent large accelerations when becoming active
@@ -138,15 +143,20 @@ class Planner:
 
     if force_slow_decel:
       v_cruise = 0.0
+
+    # Get acceleration and active solutions for custom long mpc.
+    self.cruise_source, a_min_sol, v_cruise_sol = self.cruise_solutions(not reset_state, self.v_desired_filter.x,
+                                                                        self.a_desired, v_cruise, sm)
+    
     # clip limits, cannot init MPC outside of bounds
-    accel_limits_turns[0] = min(accel_limits_turns[0], self.a_desired + 0.05)
+    accel_limits_turns[0] = min(accel_limits_turns[0], self.a_desired + 0.05, a_min_sol)
     accel_limits_turns[1] = max(accel_limits_turns[1], self.a_desired - 0.05)
 
     self.mpc.set_weights(prev_accel_constraint)
     self.mpc.set_accel_limits(accel_limits_turns[0], accel_limits_turns[1])
     self.mpc.set_cur_state(self.v_desired_filter.x, self.a_desired)
     x, v, a, j = self.parse_model(sm['modelV2'])
-    self.mpc.update(sm['carState'], sm['radarState'], v_cruise, prev_accel_constraint, x, v, a, j)
+    self.mpc.update(sm['carState'], sm['radarState'], v_cruise_sol, prev_accel_constraint, x, v, a, j)
 
     self.x_desired_trajectory = np.interp(T_IDXS[:CONTROL_N], T_IDXS_MPC, self.mpc.x_solution)
     self.v_desired_trajectory = np.interp(T_IDXS[:CONTROL_N], T_IDXS_MPC, self.mpc.v_solution)
@@ -178,13 +188,28 @@ class Planner:
     longitudinalPlan.jerks = self.j_desired_trajectory.tolist()
 
     longitudinalPlan.hasLead = sm['radarState'].leadOne.status
-    longitudinalPlan.longitudinalPlanSource = self.mpc.source
+    longitudinalPlan.longitudinalPlanSource = self.mpc.source if self.mpc.source != 'cruise' else self.cruise_source
+    longitudinalPlan.visionTurnControllerState = self.vision_turn_controller.state
+    longitudinalPlan.visionTurnSpeed = float(self.vision_turn_controller.v_target)
    # longitudinalPlan.visionCurrentLatAcc = float(self.vision_turn_controller.current_lat_acc)
    # longitudinalPlan.visionMaxPredLatAcc = float(self.vision_turn_controller.max_pred_lat_acc)
     longitudinalPlan.eventsDEPRECATED = self.events.to_msg()
+    
     
     longitudinalPlan.fcw = self.fcw
 
     longitudinalPlan.solverExecutionTime = self.mpc.solve_time
 
     pm.send('longitudinalPlan', plan_send)
+
+  def cruise_solutions(self, enabled, v_ego, a_ego, v_cruise, sm):
+    # Update controllers
+    self.vision_turn_controller.update(enabled, v_ego, v_cruise, sm)
+    self.events = Events()
+
+    v_tsc_target = self.vision_turn_controller.v_target if self.vision_turn_controller.is_active else 255
+
+    # Pick solution with the lowest velocity target.
+    v_solutions = min(v_cruise, v_tsc_target)
+
+    return v_solutions
