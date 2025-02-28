@@ -11,7 +11,7 @@ from cereal import log
 from common.realtime import sec_since_boot
 from common.conversions import Conversions as CV
 from common.params import Params
-from selfdrive.ntune import ntune_scc_get
+from selfdrive.controls.ntune import ntune_scc_get
 
 TARGET_LAT_A = 1.9  # m/s^2
 MIN_TARGET_V = 5  # m/s
