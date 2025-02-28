@@ -11,6 +11,7 @@ from cereal import log
 from common.realtime import sec_since_boot
 from common.conversions import Conversions as CV
 from common.params import Params
+from selfdrive.ntune import ntune_scc_get
 
 TARGET_LAT_A = 1.9  # m/s^2
 MIN_TARGET_V = 5  # m/s
@@ -95,7 +96,10 @@ class VisionTurnController:
       self._last_params_update = time
 
   def _update_calculations(self, sm):
-    rate_plan = np.array(np.abs(sm['modelV2'].orientationRate.z))
+    curve_sensitivity = ntune_scc_get("sccCurveSensitivity")
+    turn_aggressiveness = ntune_scc_get("sccTurnAggressiveness")
+    
+    rate_plan = np.array(np.abs(sm['modelV2'].orientationRate.z)) * curve_sensitivity
     vel_plan = np.array(sm['modelV2'].velocity.x)
 
     current_curvature = abs(
@@ -110,8 +114,11 @@ class VisionTurnController:
     v_ego = max(self._v_ego, 0.1)  # ensure a value greater than 0 for calculations
     max_curve = self.max_pred_lat_acc / (v_ego**2)
 
+    # Set the target lateral acceleration
+    adjusted_target_lat_a = TARGET_LAT_A * turn_aggressiveness
+    
     # Get the target velocity for the maximum curve
-    self._v_target = (TARGET_LAT_A / max_curve) ** 0.5
+    self._v_target = (adjusted_target_lat_a / max_curve) ** 0.5
     self._v_target = max(self._v_target, MIN_TARGET_V)
 
   def _state_transition(self):
