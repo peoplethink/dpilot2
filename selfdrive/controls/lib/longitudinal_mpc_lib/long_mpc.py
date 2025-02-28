@@ -6,6 +6,7 @@ from common.realtime import sec_since_boot
 from common.numpy_fast import clip, interp
 from selfdrive.swaglog import cloudlog
 from selfdrive.modeld.constants import index_function
+from selfdrive.car.interfaces import ACCEL_MIN
 from selfdrive.controls.radard import _LEAD_ACCEL_TAU
 from selfdrive.controls.ntune import ntune_scc_get
 from common.conversions import Conversions as CV
@@ -56,10 +57,7 @@ T_IDXS_LST = [index_function(idx, max_val=MAX_T, max_idx=N) for idx in range(N+1
 T_IDXS = np.array(T_IDXS_LST)
 FCW_IDXS = T_IDXS < 5.0
 T_DIFFS = np.diff(T_IDXS, prepend=[0.])
-MIN_ACCEL = -4.0
-MAX_ACCEL = 2.0
 T_FOLLOW = 1.25
-T_FOLLOW_E2E = 0.9
 COMFORT_BRAKE = 2.5
 STOP_DISTANCE = 6.0
 
@@ -377,7 +375,7 @@ class LongitudinalMpc:
     lead_0_obstacle = lead_xv_0[:,0] + get_stopped_equivalence_factor(lead_xv_0[:,1], self.x_sol[:,1], self.desired_TF)
     lead_1_obstacle = lead_xv_1[:,0] + get_stopped_equivalence_factor(lead_xv_1[:,1], self.x_sol[:,1], self.desired_TF)
 
-    self.params[:,0] = MIN_ACCEL
+    self.params[:,0] = ACCEL_MIN
     self.params[:,1] = self.max_a
     
     # Update in ACC mode or ACC/e2e blend
@@ -437,9 +435,9 @@ class LongitudinalMpc:
     # Check if it got within lead comfort range
     # TODO This should be done cleaner
     if self.mode == 'blended':
-      if any((lead_0_obstacle - get_safe_obstacle_distance(self.x_sol[:,1], T_FOLLOW_E2E))- self.x_sol[:,0] < 0.0):
+      if any((lead_0_obstacle - get_safe_obstacle_distance(self.x_sol[:,1], self.desired_TF))- self.x_sol[:,0] < 0.0):
         self.source = 'lead0'
-      if any((lead_1_obstacle - get_safe_obstacle_distance(self.x_sol[:,1], T_FOLLOW_E2E))- self.x_sol[:,0] < 0.0) and \
+      if any((lead_1_obstacle - get_safe_obstacle_distance(self.x_sol[:,1], self.desired_TF))- self.x_sol[:,0] < 0.0) and \
          (lead_1_obstacle[0] - lead_0_obstacle[0]):
         self.source = 'lead1'
 
