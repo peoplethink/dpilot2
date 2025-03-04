@@ -11,22 +11,21 @@ LongCtrlState = car.CarControl.Actuators.LongControlState
 
 
 def long_control_state_trans(CP, active, long_control_state, v_ego, v_target,
-                             v_target_1sec, brake_pressed, cruise_standstill):                       
+                             v_target_1sec, brake_pressed, cruise_standstill):
   accelerating = v_target_1sec > v_target
   planned_stop = (v_target < CP.vEgoStopping and
                   v_target_1sec < CP.vEgoStopping and
                   not accelerating)
   stay_stopped = (v_ego < CP.vEgoStopping and
-                 (brake_pressed or cruise_standstill))
+                  (brake_pressed or cruise_standstill))
   stopping_condition = planned_stop or stay_stopped
 
   starting_condition = (v_target_1sec > CP.vEgoStarting and
                         accelerating and
                         not cruise_standstill and
                         not brake_pressed)
+                               
   started_condition = v_ego > CP.vEgoStarting
-
-  starting_condition = v_target_future > CP.vEgoStarting and accelerating and not cruise_standstill
 
   if not active:
     long_control_state = LongCtrlState.off
@@ -34,10 +33,9 @@ def long_control_state_trans(CP, active, long_control_state, v_ego, v_target,
   else:
     if long_control_state in (LongCtrlState.off, LongCtrlState.pid):
       long_control_state = LongCtrlState.pid
-
       if stopping_condition:
         long_control_state = LongCtrlState.stopping
-        
+
     elif long_control_state == LongCtrlState.stopping:
       if starting_condition and CP.startingState:
         long_control_state = LongCtrlState.starting
@@ -48,13 +46,12 @@ def long_control_state_trans(CP, active, long_control_state, v_ego, v_target,
       if stopping_condition:
         long_control_state = LongCtrlState.stopping
       elif started_condition:
-        long_control_state = LongCtrlState.pid
+        long_control_state = LongCtrlState.pid  
 
-                               
   return long_control_state
 
 
-class LongControl():
+class LongControl:
   def __init__(self, CP):
     self.CP = CP
     self.long_control_state = LongCtrlState.off  # initialized to off
@@ -65,24 +62,28 @@ class LongControl():
                              derivative_period=0.5, rate=1 / DT_CTRL)
     self.v_pid = 0.0
     self.last_output_accel = 0.0
-
+    
   def reset(self, v_pid):
     """Reset PID controller and change setpoint"""
     self.pid.reset()
     self.v_pid = v_pid
-
+    
   def update(self, active, CS, long_plan, accel_limits, t_since_plan):
     """Update longitudinal control. This updates the state machine and runs a PID loop"""
     # Interp control trajectory
     speeds = long_plan.speeds
+    a_target_now = 0.0
     if len(speeds) == CONTROL_N:
       v_target_now = interp(t_since_plan, T_IDXS[:CONTROL_N], speeds)
       a_target_now = interp(t_since_plan, T_IDXS[:CONTROL_N], long_plan.accels)
 
-      v_target = interp(self.CP.longitudinalActuatorDelay + t_since_plan, T_IDXS[:CONTROL_N], speeds)
-      a_target = 2 * (v_target - v_target_now) / self.CP.longitudinalActuatorDelay - a_target_now
+      longitudinalActuatorDelay = ntune_scc_get('longitudinalActuatorDelay')
+      
+      v_target = interp(longitudinalActuatorDelay + t_since_plan, T_IDXS[:CONTROL_N], speeds)
+      a_target = 2 * (v_target - v_target_now) / longitudinalActuatorDelay - a_target_now
 
-      v_target_1sec = interp(self.CP.longitudinalActuatorDelay + t_since_plan + 1.0, T_IDXS[:CONTROL_N], speeds)
+      v_target_1sec = interp(longitudinalActuatorDelay + t_since_plan + 1.0, T_IDXS[:CONTROL_N], speeds)
+      
     else:
       v_target = 0.0
       v_target_now = 0.0
@@ -93,6 +94,7 @@ class LongControl():
     self.pid.pos_limit = accel_limits[1]
 
     output_accel = self.last_output_accel
+    
     self.long_control_state = long_control_state_trans(self.CP, active, self.long_control_state, CS.vEgo,
                                                        v_target, v_target_1sec, CS.brakePressed,
                                                        CS.cruiseState.standstill)
@@ -102,13 +104,13 @@ class LongControl():
       output_accel = 0.
 
     elif self.long_control_state == LongCtrlState.stopping:
-      if output_accel > self.CP.stopAccel:
+      if output_accel > ntune_scc_get('stopAccel'):
         output_accel = min(output_accel, 0.0)
-        output_accel -= self.CP.stoppingDecelRate * DT_CTRL
+        output_accel -= ntune_scc_get('stoppingDecelRate') * DT_CTRL
       self.reset(CS.vEgo)
 
     elif self.long_control_state == LongCtrlState.starting:
-      output_accel = self.CP.startAccel
+      output_accel = ntune_scc_get('startAccel')
       self.reset(CS.vEgo)
       
     elif self.long_control_state == LongCtrlState.pid:
@@ -116,17 +118,16 @@ class LongControl():
 
       # Toyota starts braking more when it thinks you want to stop
       # Freeze the integrator so we don't accelerate to compensate, and don't allow positive acceleration
-      # TODO too complex, needs to be simplified and tested on toyotas
       prevent_overshoot = not self.CP.stoppingControl and CS.vEgo < 1.5 and v_target_1sec < 0.7 and v_target_1sec < self.v_pid
-      deadzone = interp(CS.vEgo, CP.longitudinalTuning.deadzoneBP, CP.longitudinalTuning.deadzoneV)
+      deadzone = interp(CS.vEgo, self.CP.longitudinalTuning.deadzoneBP, self.CP.longitudinalTuning.deadzoneV)
       freeze_integrator = prevent_overshoot
 
       error = self.v_pid - CS.vEgo
       error_deadzone = apply_deadzone(error, deadzone)
       output_accel = self.pid.update(error_deadzone, speed=CS.vEgo,
-                                     feedforward=a_target,
+                                     feedforward=a_target * ntune_scc_get('aTargetFactor'),
                                      freeze_integrator=freeze_integrator)
 
     self.last_output_accel = clip(output_accel, accel_limits[0], accel_limits[1])
-
+    
     return self.last_output_accel
