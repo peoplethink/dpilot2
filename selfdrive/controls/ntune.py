@@ -214,6 +214,9 @@ class nTune():
     if self.checkValue("longStartingFactor", 0.7, 1.5, 1.0):
       updated = True
 
+    if self.checkValue("aTargetFactor", 0.7, 1.5, 1.0):
+      updated = True
+      
     if self.checkValue("longLeadSensitivity", 0.4, 1.2, 0.65):
       updated = True
 
@@ -235,6 +238,9 @@ class nTune():
     if self.checkValue("sccBrakeFactor", 0.5, 1.5, 1.0):
       updated = True
 
+    if self.checkValue("longitudinalTuningkf", 0.0, 2.0, 1.0):
+      updated = True
+      
     if self.checkValue("sccCurvatureFactor", 0.5, 1.5, 0.98):
       updated = True
 
