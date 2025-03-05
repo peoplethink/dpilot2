@@ -63,7 +63,7 @@ class Planner:
 
     self.a_desired = init_a
     self.v_desired_filter = FirstOrderFilter(init_v, 2.0, self.dt)
-	self.v_model_error = 0.0
+    self.v_model_error = 0.0
 
     self.x_desired_trajectory = np.zeros(CONTROL_N)
     self.v_desired_trajectory = np.zeros(CONTROL_N)
@@ -101,8 +101,7 @@ class Planner:
 
     v_ego = sm['carState'].vEgo
 
-    v_cruise_kph = sm['controlsState'].vCruise
-    v_cruise_kph = min(v_cruise_kph, V_CRUISE_MAX)
+    v_cruise_kph = min(sm['controlsState'].vCruise, V_CRUISE_MAX)
     v_cruise = v_cruise_kph * CV.KPH_TO_MS
 
     # neokii
@@ -130,10 +129,11 @@ class Planner:
 
     accel_limits = [get_min_accel(v_ego), get_max_accel(v_ego)]
     accel_limits_turns = limit_accel_in_turns(v_ego, sm['carState'].steeringAngleDeg, accel_limits, self.CP)
+	  
     if reset_state:
       self.v_desired_filter.x = v_ego
-      self.a_desired = clip(sm['carState'].aEgo, *accel_limits)
-      self.mpc.prev_a = np.full(N+1, self.a_desired)
+      # Clip aEgo to cruise limits to prevent large accelerations when becoming active
+      self.a_desired = clip(sm['carState'].aEgo, accel_limits[0], accel_limits[1])
 
     # Prevent divergence, smooth in current v_ego
     self.v_desired_filter.x = max(0.0, self.v_desired_filter.update(v_ego))
