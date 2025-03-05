@@ -63,7 +63,7 @@ class Planner:
 
     self.a_desired = init_a
     self.v_desired_filter = FirstOrderFilter(init_v, 2.0, self.dt)
-    self.t_uniform = np.arange(0.0, T_IDXS_MPC[-1] + 0.5, 0.5)
+	self.v_model_error = 0.0
 
     self.x_desired_trajectory = np.zeros(CONTROL_N)
     self.v_desired_trajectory = np.zeros(CONTROL_N)
@@ -79,17 +79,14 @@ class Planner:
   def read_param(self):
     self.mpc.mode = 'blended' if self.params.get_bool('EndToEndLong') else 'acc'
     
-  def parse_model(self, model_msg):
+  def parse_model(self, model_msg, model_error):
     if (len(model_msg.position.x) == 33 and
        len(model_msg.velocity.x) == 33 and
        len(model_msg.acceleration.x) == 33):
-      x = np.interp(T_IDXS_MPC, T_IDXS, model_msg.position.x)
-      v = np.interp(T_IDXS_MPC, T_IDXS, model_msg.velocity.x)
-      a = np.interp(T_IDXS_MPC, T_IDXS, model_msg.acceleration.x)
-      # Uniform interp so gradient is less noisy
-      a_sparse = np.interp(self.t_uniform, T_IDXS, model_msg.acceleration.x)
-      j_sparse = np.gradient(a_sparse, self.t_uniform)
-      j = np.interp(T_IDXS_MPC, self.t_uniform, j_sparse)
+      x = np.interp(T_IDXS_MPC, T_IDXS, model_msg.position.x) - model_error * T_IDXS_MPC
+      v = np.interp(T_IDXS_MPC, T_IDXS, model_msg.velocity.x) - model_error
+      a = np.interp(T_IDXS_MPC, T_IDXS, model_msg.acceleration.x) 
+      j = np.zeros(len(T_IDXS_MPC))
     else:
       x = np.zeros(len(T_IDXS_MPC))
       v = np.zeros(len(T_IDXS_MPC))
@@ -115,14 +112,14 @@ class Planner:
         v_cruise *= vCluRatio
         v_cruise = int(v_cruise * CV.MS_TO_KPH + 0.25) * CV.KPH_TO_MS
 
-    long_control_state = sm['controlsState'].longControlState
+    long_control_off = sm['controlsState'].longControlState == LongCtrlState.off
     force_slow_decel = sm['controlsState'].forceDecel
 
     # Reset current state when not engaged, or user is controlling the speed
-    reset_state = long_control_state == LongCtrlState.off
+    reset_state = long_control_off if self.CP.openpilotLongitudinalControl else not sm['controlsState'].enabled
 
     # No change cost when user is controlling the speed, or when standstill
-    prev_accel_constraint = not (reset_state or sm['carState'].standstill)
+    prev_accel_constraint = not sm['carState'].standstill
 
     if self.mpc.mode == 'acc':
       accel_limits = [get_min_accel(v_ego), get_max_accel(v_ego)]
@@ -135,8 +132,8 @@ class Planner:
     accel_limits_turns = limit_accel_in_turns(v_ego, sm['carState'].steeringAngleDeg, accel_limits, self.CP)
     if reset_state:
       self.v_desired_filter.x = v_ego
-      # Clip aEgo to cruise limits to prevent large accelerations when becoming active
-      self.a_desired = clip(sm['carState'].aEgo, accel_limits[0], accel_limits[1])
+      self.a_desired = clip(sm['carState'].aEgo, *accel_limits)
+      self.mpc.prev_a = np.full(N+1, self.a_desired)
 
     # Prevent divergence, smooth in current v_ego
     self.v_desired_filter.x = max(0.0, self.v_desired_filter.update(v_ego))
@@ -155,7 +152,7 @@ class Planner:
     self.mpc.set_weights(prev_accel_constraint)
     self.mpc.set_accel_limits(accel_limits_turns[0], accel_limits_turns[1])
     self.mpc.set_cur_state(self.v_desired_filter.x, self.a_desired)
-    x, v, a, j = self.parse_model(sm['modelV2'])
+    x, v, a, j = self.parse_model(sm['modelV2'], self.v_model_error)
     self.mpc.update(sm['carState'], sm['radarState'], v_cruise, prev_accel_constraint, x, v, a, j)
 
     self.x_desired_trajectory = np.interp(T_IDXS[:CONTROL_N], T_IDXS_MPC, self.mpc.x_solution)

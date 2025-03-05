@@ -22,3 +22,10 @@ void swagLogMessageHandler(QtMsgType type, const QMessageLogContext &context, co
 void initApp(int argc, char *argv[]);
 QWidget* topWidget (QWidget* widget);
 QPixmap loadPixmap(const QString &fileName, const QSize &size = {}, Qt::AspectRatioMode aspectRatioMode = Qt::KeepAspectRatio);
+
+struct InterFont : public QFont {
+  InterFont(int pixel_size, QFont::Weight weight = QFont::Normal) : QFont("Inter") {
+    setPixelSize(pixel_size);
+    setWeight(weight);
+  }
+};

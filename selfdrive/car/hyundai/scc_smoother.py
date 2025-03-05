@@ -94,21 +94,7 @@ class SccSmoother:
 
     self.curve_speed_ms = 0.
     self.stock_weight = 0.
-    
-    self.update_params_count = 0
-    
-    self.autoNaviSpeedCtrlStart = float(Params().get("AutoNaviSpeedCtrlStart"))
-    self.autoNaviSpeedCtrlEnd = float(Params().get("AutoNaviSpeedCtrlEnd"))
-  
-  def update_params(self, frame):
-    if frame % 20 == 0:
-      self.update_params_count += 1
-      self.update_params_count = self.update_params_count % 20
-      
-      if self.update_params_count == 0:
-        self.autoNaviSpeedCtrlStart = float(Params().get("AutoNaviSpeedCtrlStart"))
-        self.autoNaviSpeedCtrlEnd = float(Params().get("AutoNaviSpeedCtrlEnd"))
-        
+         
   def reset(self):
 
     self.wait_timer = 0
@@ -146,7 +132,7 @@ class SccSmoother:
 
     road_speed_limiter = get_road_speed_limiter()
     apply_limit_speed, road_limit_speed, left_dist, first_started, max_speed_log = \
-      road_speed_limiter.get_max_speed(clu11_speed, self.is_metric, self.autoNaviSpeedCtrlStart, self.autoNaviSpeedCtrlEnd)
+      road_speed_limiter.get_max_speed(clu11_speed, self.is_metric)
 
     curv_limit = 0
     self.cal_curve_speed(sm, CS.out.vEgo, frame)

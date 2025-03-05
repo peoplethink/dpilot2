@@ -422,16 +422,6 @@ void OnroadHud::paintEvent(QPaintEvent *event) {
   }
 }
 
-void NvgWindow::drawText(QPainter &p, int x, int y, const QString &text, int alpha) {
-  QFontMetrics fm(p.font());
-  QRect init_rect = fm.boundingRect(text);
-  QRect real_rect = fm.boundingRect(init_rect, 0, text);
-  real_rect.moveCenter({x, y - real_rect.height() / 2});
-
-  p.setPen(QColor(0xff, 0xff, 0xff, alpha));
-  p.drawText(real_rect.x(), real_rect.bottom(), text);
-}
-
 void OnroadHud::drawCenteredText(QPainter &p, int x, int y, const QString &text, QColor color) {
   QFontMetrics fm(p.font());
   QRect init_rect = fm.boundingRect(text);
@@ -553,7 +543,7 @@ void NvgWindow::initializeGL() {
   ic_radar_vision = QPixmap("../assets/images/radar_vision.png");
   ic_lane_change_left_img = QPixmap("../assets/images/lane_change_left.png");
   ic_lane_change_right_img = QPixmap("../assets/images/lane_change_right.png");
-	
+  ic_safety_speed_bump = QPixmap("../assets/images/safety_speed_bump.png");
 }
 
 void NvgWindow::updateFrameMat(int w, int h) {
@@ -1177,6 +1167,16 @@ void NvgWindow::drawText2(QPainter &p, int x, int y, int flags, const QString &t
   p.drawText(QRect(x, y, rect.width()+1, rect.height()), flags, text);
 }
 
+void NvgWindow::drawText(QPainter &p, int x, int y, const QString &text, int alpha) {
+  QFontMetrics fm(p.font());
+  QRect init_rect = fm.boundingRect(text);
+  QRect real_rect = fm.boundingRect(init_rect, 0, text);
+  real_rect.moveCenter({x, y - real_rect.height() / 2});
+
+  p.setPen(QColor(0xff, 0xff, 0xff, alpha));
+  p.drawText(real_rect.x(), real_rect.bottom(), text);
+}
+
 void NvgWindow::drawBottomIcons(QPainter &p) {
   UIState *s = uiState();	
   const SubMaster &sm = *(uiState()->sm);
@@ -1469,27 +1469,36 @@ void NvgWindow::drawMaxSpeed(QPainter &p) {
   //
   if(limit_speed > 0 && left_dist > 0) {
     QRect board_rect = QRect(x_start, y_start+board_height-board_width, board_width, board_width);
-    int padding = 14;
-    board_rect.adjust(padding, padding, -padding, -padding);
-    p.setBrush(QBrush(Qt::white));
-    p.drawEllipse(board_rect);
 
-    padding = 18;
-    board_rect.adjust(padding, padding, -padding, -padding);
-    p.setBrush(Qt::NoBrush);
-    p.setPen(QPen(Qt::red, 25));
-    p.drawEllipse(board_rect);
+    if(road_limit_speed.getCamType() == 22) {
+      int padding = 25;
+      board_rect.adjust(padding, padding, -padding, -padding);
+      p.drawPixmap(board_rect.x(), board_rect.y()-10, board_rect.width(), board_rect.height(), ic_safety_speed_bump);
+    }
+    else {
+      int padding = 14;
+      board_rect.adjust(padding, padding, -padding, -padding);
+      p.setBrush(QBrush(Qt::white));
+      p.drawEllipse(board_rect);
 
-    p.setPen(QPen(Qt::black, padding));
+      padding = 18;
+      board_rect.adjust(padding, padding, -padding, -padding);
 
-    str.sprintf("%d", limit_speed);
-    configFont(p, "Inter", 70, "Bold");
+      p.setBrush(Qt::NoBrush);
+      p.setPen(QPen(Qt::red, 25));
+      p.drawEllipse(board_rect);
 
-    QRect text_rect = getRect(p, Qt::AlignCenter, str);
-    QRect b_rect = board_rect;
-    text_rect.moveCenter({b_rect.center().x(), 0});
-    text_rect.moveTop(b_rect.top() + (b_rect.height() - text_rect.height()) / 2);
-    p.drawText(text_rect, Qt::AlignCenter, str);
+      p.setPen(QPen(Qt::black, padding));
+
+      str.sprintf("%d", limit_speed);
+      p.setFont(InterFont(70, QFont::Bold));
+
+      QRect text_rect = getRect(p, Qt::AlignCenter, str);
+      QRect b_rect = board_rect;
+      text_rect.moveCenter({b_rect.center().x(), 0});
+      text_rect.moveTop(b_rect.top() + (b_rect.height() - text_rect.height()) / 2);
+      p.drawText(text_rect, Qt::AlignCenter, str);
+    }
 	  
     // left dist
     QRect rcLeftDist;
@@ -1507,7 +1516,7 @@ void NvgWindow::drawMaxSpeed(QPainter &p) {
     QFontMetrics fm(font);
     int width = fm.width(strLeftDist);
 
-    padding = 10;
+    int padding = 10;
 
     int center_x = x_start + board_width / 2;
     rcLeftDist.setRect(center_x - width / 2, y_start+board_height+15, width, font.pixelSize()+10);

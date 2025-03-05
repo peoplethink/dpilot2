@@ -144,6 +144,7 @@ protected:
   QPixmap ic_lane_change_left_img;
   QPixmap ic_lane_change_right_img;
   
+  QPixmap ic_safety_speed_bump;
   QMap<QString, QPixmap> ic_oil_com;
   
   void drawText(QPainter &p, int x, int y, const QString &text, int alpha = 255);

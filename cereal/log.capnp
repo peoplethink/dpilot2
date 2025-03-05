@@ -446,6 +446,7 @@ struct PandaState @0xa7649e2575e4591e {
     uno @5;
     dos @6;
     redPanda @7;
+    tres @8;
   }
 
   enum HarnessStatus {
@@ -773,7 +774,8 @@ struct ModelDataV2 {
   leadsV3 @18 :List(LeadDataV3);
 
   meta @12 :MetaData;
-
+  temporalPose @21 :Pose;
+  
   # All SI units and in device frame
   struct XYZTData {
     x @0 :List(Float32);
@@ -826,6 +828,13 @@ struct ModelDataV2 {
     brakeDisengageProbDEPRECATED @2 :Float32;
     gasDisengageProbDEPRECATED @3 :Float32;
     steerOverrideProbDEPRECATED @4 :Float32;
+  }
+
+  struct Pose {
+    trans @0 :List(Float32); # m/s in device frame
+    rot @1 :List(Float32); # rad/s in device frame
+    transStd @2 :List(Float32); # std m/s in device frame
+    rotStd @3 :List(Float32); # std rad/s in device frame
   }
 
   struct DisengagePredictions {
