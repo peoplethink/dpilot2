@@ -131,7 +131,7 @@ class SccSmoother:
     # kph
 
     road_speed_limiter = get_road_speed_limiter()
-    apply_limit_speed, road_limit_speed, left_dist, first_started, max_speed_log = \
+    apply_limit_speed, road_limit_speed, left_dist, first_started, cam_type, max_speed_log = \
       road_speed_limiter.get_max_speed(clu11_speed, self.is_metric)
 
     curv_limit = 0
