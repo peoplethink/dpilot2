@@ -353,7 +353,7 @@ class LongitudinalMpc:
       self.desired_stop_distance = STOP_DISTANCE
     elif cruise_gap == 4:
       x_vel = [0,    11,   13,   15,   25,   40]
-      y_dist = [0.9, 1.0, 1.1, 1.12, 1.22, 1.22]
+      y_dist = [1.0, 1.1, 1.2, 1.3, 1.35, 1.4]
       self.desired_TF= np.interp(carstate.vEgo, x_vel, y_dist)
       self.desired_stop_distance = STOP_DISTANCE
       
