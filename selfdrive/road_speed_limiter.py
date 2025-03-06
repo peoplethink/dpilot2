@@ -270,6 +270,7 @@ class RoadSpeedLimiter:
   def __init__(self):
     self.slowing_down = False
     self.started_dist = 0
+    self.last_limit_speed_left_dist = 0
 
     self.sock = messaging.sub_sock("roadLimitSpeed")
     self.roadLimitSpeed = None
@@ -341,6 +342,9 @@ class RoadSpeedLimiter:
           safe_dist = v_ego * 7.
           starting_dist = v_ego * 30.
 
+        if self.slowing_down and self.last_limit_speed_left_dist - cam_limit_speed_left_dist < -(v_ego * 5):
+            self.slowing_down = False
+          
         if MIN_LIMIT <= cam_limit_speed <= MAX_LIMIT and (self.slowing_down or cam_limit_speed_left_dist < starting_dist):
           if not self.slowing_down:
             self.started_dist = cam_limit_speed_left_dist
@@ -357,6 +361,8 @@ class RoadSpeedLimiter:
           else:
             pp = 0
 
+          self.last_limit_speed_left_dist = cam_limit_speed_left_dist
+        
           return cam_limit_speed * camSpeedFactor + int(pp * diff_speed), \
                  cam_limit_speed, cam_limit_speed_left_dist, first_started, cam_type, log
 
