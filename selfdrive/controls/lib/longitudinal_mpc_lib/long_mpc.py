@@ -40,7 +40,7 @@ X_EGO_COST = 0.
 V_EGO_COST = 0.
 A_EGO_COST = 0.
 J_EGO_COST = 5.0
-A_CHANGE_COST = 200.
+A_CHANGE_COST = 100.
 DANGER_ZONE_COST = 100.
 CRASH_DISTANCE = .25
 LEAD_DANGER_FACTOR = 0.75
@@ -380,7 +380,13 @@ class LongitudinalMpc:
     
     # Update in ACC mode or ACC/e2e blend
     if self.mode == 'acc':
-      self.params[:,6] = LEAD_DANGER_FACTOR
+
+      if radarstate.leadOne.status:
+        lead_danger_factor = interp(radarstate.leadOne.dRel, [STOP_DISTANCE, 10.], [0.85, LEAD_DANGER_FACTOR])
+      else:
+        lead_danger_factor = LEAD_DANGER_FACTOR
+
+      self.params[:,6] = lead_danger_factor
 
       # Fake an obstacle for cruise, this ensures smooth acceleration to set speed
       # when the leads are no factor.
@@ -396,6 +402,13 @@ class LongitudinalMpc:
       # These are not used in ACC mode
       x[:], v[:], a[:], j[:] = 0.0, 0.0, 0.0, 0.0
 
+      cruise_target = T_IDXS * np.clip(v_cruise, v_ego - 2.0, 1e3) + x[0]
+      xforward = ((v[1:] + v[:-1]) / 2) * (T_IDXS[1:] - T_IDXS[:-1])
+      x = np.cumsum(np.insert(xforward, 0, x[0]))
+
+      x_and_cruise = np.column_stack([x, cruise_target])
+      x = np.min(x_and_cruise, axis=1)
+
     elif self.mode == 'blended':
       self.params[:,6] = 1.0
 
@@ -407,7 +420,8 @@ class LongitudinalMpc:
 
       x_and_cruise = np.column_stack([x, cruise_target])
       x = np.min(x_and_cruise, axis=1)
-      self.source = 'e2e' if x_and_cruise[0,0] < x_and_cruise[1,1] else 'cruise'
+      
+      self.source = 'e2e' if x_and_cruise[1,0] < x_and_cruise[1,1] else 'cruise'
 
     else:
       raise NotImplementedError(f'Planner mode {self.mode} not recognized in planner update')
