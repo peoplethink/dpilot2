@@ -11,7 +11,7 @@ from selfdrive.controls.ntune import ntune_common_get
 #          model predictions above this speed can be unpredictable
 # kph
 V_CRUISE_MAX = 180
-V_CRUISE_MIN = 8  # kph
+V_CRUISE_MIN = 10  # kph
 V_CRUISE_DELTA_MI = 5 * CV.MPH_TO_KPH
 V_CRUISE_DELTA_KM = 10
 V_CRUISE_ENABLE_MIN = 30
