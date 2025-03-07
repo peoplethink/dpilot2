@@ -13,7 +13,7 @@ QList<QString> nTuneMainWidget::mainTitles = {
 QList<QList<TuneItemInfo>> nTuneMainWidget::mainItems = {
 {
     TuneItemInfo("common.json", "cameraOffset", "우측이동 - , 좌측이동 +",
-                 0.6f, -1.0f, 1.0f, 0.1f, 1),
+                 0.6f, -2.0f, 2.0f, 0.05f, 2),
     TuneItemInfo("common.json", "autoLaneChangeSpeed", "해당속도이상에서 자동차선변경",
                  30.0f, 10.0f, 60.0f, 5.0f, 1, "km"),
     TuneItemInfo("common.json", "steerActuatorDelay", "값이크면 조향을 좀더 미리함",
@@ -31,7 +31,7 @@ QList<QList<TuneItemInfo>> nTuneMainWidget::mainItems = {
     TuneItemInfo("scc_v3.json", "longitudinalTuningkf", tr("값이 클수록 응답성이 좋아짐 "),
                  1.0f, 0.0f, 2.0f, 0.05f, 2),
     TuneItemInfo("scc_v2.json", "stopAccel", tr(""),
-                 2.0f, 0.0f, 5.0f, 0.05f, 2),
+                 -2.0f, -5.0f, 5.0f, 0.05f, 2),
     TuneItemInfo("scc_v2.json", "startAccel", tr(""),
                  1.5f, 0.0f, 5.0f, 0.05f, 2),
     TuneItemInfo("scc_v2.json", "stoppingDecelRate", tr(""),
