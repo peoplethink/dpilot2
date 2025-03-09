@@ -380,12 +380,6 @@ class LongitudinalMpc:
     
     # Update in ACC mode or ACC/e2e blend
     if self.mode == 'acc':
-
-      if radarstate.leadOne.status:
-        lead_danger_factor = interp(radarstate.leadOne.dRel, [STOP_DISTANCE, 10.], [0.85, LEAD_DANGER_FACTOR])
-      else:
-        lead_danger_factor = LEAD_DANGER_FACTOR
-
       self.params[:,6] = lead_danger_factor
 
       # Fake an obstacle for cruise, this ensures smooth acceleration to set speed
