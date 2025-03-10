@@ -81,11 +81,9 @@ class Planner:
     
   def parse_model(self, model_msg, model_error):
     if (len(model_msg.position.x) == 33 and
-       len(model_msg.position.z) == 33 and
        len(model_msg.velocity.x) == 33 and
        len(model_msg.acceleration.x) == 33):
       x = np.interp(T_IDXS_MPC, T_IDXS, model_msg.position.x) - model_error * T_IDXS_MPC
-      z = np.interp(T_IDXS_MPC, T_IDXS, model_msg.position.z)
       v = np.interp(T_IDXS_MPC, T_IDXS, model_msg.velocity.x) - model_error
       a = np.interp(T_IDXS_MPC, T_IDXS, model_msg.acceleration.x) 
       j = np.zeros(len(T_IDXS_MPC))
@@ -93,9 +91,8 @@ class Planner:
       x = np.zeros(len(T_IDXS_MPC))
       v = np.zeros(len(T_IDXS_MPC))
       a = np.zeros(len(T_IDXS_MPC))
-      j = np.zeros(len(T_IDXS_MPC))
-      z = np.zeros(len(T_IDXS_MPC))    
-    return x, v, a, j, z
+      j = np.zeros(len(T_IDXS_MPC)) 
+    return x, v, a, j
 
   def update(self, sm, read=True):
     if self.param_read_counter % 50 == 0 and read:
@@ -155,14 +152,12 @@ class Planner:
     self.mpc.set_weights(prev_accel_constraint)
     self.mpc.set_accel_limits(accel_limits_turns[0], accel_limits_turns[1])
     self.mpc.set_cur_state(self.v_desired_filter.x, self.a_desired)
-    x, v, a, j, z = self.parse_model(sm['modelV2'], self.v_model_error)
-    self.mpc.update(sm['carState'], sm['radarState'], sm['modelV2'], v_cruise, prev_accel_constraint, x, v, a, j)
+    x, v, a, j = self.parse_model(sm['modelV2'], self.v_model_error)
+    self.mpc.update(sm['carState'], sm['radarState'], sm['modelV2'], v_cruise, x, v, a, j)
 
-    self.x_desired_trajectory = np.interp(T_IDXS[:CONTROL_N], T_IDXS_MPC, self.mpc.x_solution)
     self.v_desired_trajectory = np.interp(T_IDXS[:CONTROL_N], T_IDXS_MPC, self.mpc.v_solution)
     self.a_desired_trajectory = np.interp(T_IDXS[:CONTROL_N], T_IDXS_MPC, self.mpc.a_solution)
     self.j_desired_trajectory = np.interp(T_IDXS[:CONTROL_N], T_IDXS_MPC[:-1], self.mpc.j_solution)
-    self.z_model = np.interp(T_IDXS[:CONTROL_N], T_IDXS_MPC, z)
 
     # TODO counter is only needed because radar is glitchy, remove once radar is gone
     self.fcw = self.mpc.crash_cnt > 2 and not sm['carState'].standstill
