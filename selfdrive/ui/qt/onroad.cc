@@ -1086,13 +1086,11 @@ void NvgWindow::drawCommunity(QPainter &p) {
   const auto device_state = sm["deviceState"].getDeviceState();
   const auto live_torque_params = sm["liveTorqueParameters"].getLiveTorqueParameters();
   const auto torque_state = controls_state.getLateralControlState().getTorqueState();
-  const auto lo = sm["longitudinalPlan"].getLongitudinalPlan();
   float distance_traveled = sm["controlsState"].getControlsState().getDistanceTraveled() / 1000;
   	
   	
   int lateralControlState = controls_state.getLateralControlSelect();
   const char* lateral_state[] = {"PID", "INDI", "LQR", "TORQUE" };
-  const char* xstate[] = {"LEAD", "STOP", "CRUISE"};
 	
   auto cpuList = device_state.getCpuTempC();
   float cpuTemp = 0;
@@ -1110,7 +1108,7 @@ void NvgWindow::drawCommunity(QPainter &p) {
   int scc_bus = car_params.getSccBus();
 
   QString infoText;
-  infoText.sprintf("TP(%.2f/%.2f)LTP(%.2f/%.2f/%.0f)SR(%.2f)SAD(%.2f)온도(%.0f°C)[ %s ]주행(%.1f km)SCC(%d)",
+  infoText.sprintf("TP(%.2f/%.2f)LTP(%.2f/%.2f/%.0f)SR(%.2f)SAD(%.2f)온도(%.0f°C)주행(%.1f km)SCC(%d)",
 	              torque_state.getLatAccelFactor(),
                       torque_state.getFriction(),
 
@@ -1120,7 +1118,6 @@ void NvgWindow::drawCommunity(QPainter &p) {
                       controls_state.getSteerRatio(),
                       controls_state.getSteerActuatorDelay(),
 		      cpuTemp,
-	              xstate[x_state],
 		      controls_state.getDistanceTraveled() / 1000,
                       scc_bus
                       );
