@@ -41,6 +41,7 @@ class OnroadHud : public QWidget {
   Q_PROPERTY(bool showVTC MEMBER showVTC);
   Q_PROPERTY(QString vtcSpeed MEMBER vtcSpeed);
   Q_PROPERTY(QColor vtcColor MEMBER vtcColor);
+  Q_PROPERTY(int x_state MEMBER x_state);
   Q_PROPERTY(int traffic_state MEMBER traffic_state);
 
 public:
