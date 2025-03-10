@@ -367,6 +367,7 @@ class LongitudinalMpc:
     v_ego = self.x0[1]
     a_ego = self.x0[2]
     a_ego = carstate.aEgo
+    self.debugLong = 0
     self.status = radarstate.leadOne.status or radarstate.leadTwo.status
 
     lead_xv_0 = self.process_lead(radarstate.leadOne)
@@ -415,7 +416,6 @@ class LongitudinalMpc:
         else:
           self.xstate = "E2E_STOP"
           self.onStopping = True
-          self.comfort_brake = 1.2
           if self.gasPressed:
             self.xstate = "E2E_START"
             self.onStopping = False
@@ -429,11 +429,6 @@ class LongitudinalMpc:
         self.xstate = "E2E_STOPPING"
       else:
         self.xstate = "E2E_CRUISE"
-        if v_ego*CV.MS_TO_KPH < 80.0:
-          if probe > 0.1:
-            self.comfort_brake = 1.5
-          else:
-            self.comfort_brake = 2.3
         if v_ego*CV.MS_TO_KPH > 20.0:
           self.gasPressed = False
         self.brakePressed = False
@@ -451,20 +446,10 @@ class LongitudinalMpc:
                                  v_upper)
       cruise_obstacle = np.cumsum(T_DIFFS * v_cruise_clipped) + get_safe_obstacle_distance(v_cruise_clipped, self.t_follow, self.stop_dist, self.comfort_brake)
  
-      if self.xstate == "LEAD":
-        x_obstacles = np.column_stack([lead_0_obstacle, lead_1_obstacle, cruise_obstacle])
-      elif self.xstate == "E2E_START":
-        x_obstacles = np.column_stack([lead_0_obstacle, lead_1_obstacle, cruise_obstacle])
-      elif self.xstate == "E2E_STOP":
-        if cruise_obstacle[0] < min_x:
-          x_obstacles = np.column_stack([lead_0_obstacle, lead_1_obstacle, cruise_obstacle])
-        else:
-          x_obstacles = np.column_stack([lead_0_obstacle, lead_1_obstacle, stopline])
-      elif self.xstate == "E2E_CRUISE":
-        if cruise_obstacle[0] < min_x:
-          x_obstacles = np.column_stack([lead_0_obstacle, lead_1_obstacle, cruise_obstacle])
-        else:
-          x_obstacles = np.column_stack([lead_0_obstacle, lead_1_obstacle, x2])
+      if self.xstate == "E2E_STOP" and cruise_obstacle[0] > min_x:
+        x_obstacles = np.column_stack([lead_0_obstacle, lead_1_obstacle, stopline])
+      elif self.xstate == "E2E_CRUISE" and cruise_obstacle[0] > min_x:
+        x_obstacles = np.column_stack([lead_0_obstacle, lead_1_obstacle, x2])
       else:
         x_obstacles = np.column_stack([lead_0_obstacle, lead_1_obstacle, cruise_obstacle])
  
