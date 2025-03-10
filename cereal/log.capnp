@@ -947,6 +947,7 @@ struct LongitudinalPlan @0xe00b5b3eba12876c {
   visionCurrentLatAcc @56 :Float32;
   visionMaxPredLatAcc @57 :Float32;
   debugLong @58 : Int32;
+  xState @59 : Int32;
 
   enum LongitudinalPlanSource {
     cruise @0;
