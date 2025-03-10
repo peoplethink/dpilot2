@@ -374,7 +374,8 @@ void OnroadHud::updateState(const UIState &s) {
 	
   setProperty("status", s.status);
   setProperty("ang_str", s.scene.angleSteers);
-  setProperty("traffic_status", lo.getDebugLong() > 0);
+  setProperty("x_state", lo.getXState());
+  setProperty("traffic_state", lo.getTrafficState());
 	
   // update engageability and DM icons at 2Hz
   if (sm.frame % (UI_FREQ / 2) == 0) {
@@ -425,14 +426,14 @@ void OnroadHud::paintEvent(QPaintEvent *event) {
                 compass_outer_img, blackColor(180), 5.0, bearingDeg);
   }
 
-  if (traffic_status > 0) {
+  if (traffic_state > 0) {
     int w = 100;
     int h = 50;
     int x = (width() + (bdr_s * 2)) / 2 + w * 2;
     int y = 30 - bdr_s;
-    if (traffic_status == 1) {
+    if (traffic_state == 1) {
       p.drawPixmap(x, y, w, h, traffic_red_img);
-    } else if (traffic_status == 2) {
+    } else if (traffic_state == 2) {
       p.drawPixmap(x, y, w, h, traffic_green_img);
     }
   }
@@ -1090,6 +1091,7 @@ void NvgWindow::drawCommunity(QPainter &p) {
   	
   int lateralControlState = controls_state.getLateralControlSelect();
   const char* lateral_state[] = {"PID", "INDI", "LQR", "TORQUE" };
+  const char* xstate[] = {"LEAD", "STOP", "CRUISE"};
 	
   auto cpuList = device_state.getCpuTempC();
   float cpuTemp = 0;
@@ -1107,7 +1109,7 @@ void NvgWindow::drawCommunity(QPainter &p) {
   int scc_bus = car_params.getSccBus();
 
   QString infoText;
-  infoText.sprintf("TP(%.2f/%.2f)LTP(%.2f/%.2f/%.0f)SR(%.2f)SAD(%.2f)온도(%.0f°C)load(%d%%)주행거리(%.1f km)SCC(%d)",
+  infoText.sprintf("TP(%.2f/%.2f)LTP(%.2f/%.2f/%.0f)SR(%.2f)SAD(%.2f)온도(%.0f°C)[ %s ]주행(%.1f km)SCC(%d)",
 	              torque_state.getLatAccelFactor(),
                       torque_state.getFriction(),
 
@@ -1117,7 +1119,7 @@ void NvgWindow::drawCommunity(QPainter &p) {
                       controls_state.getSteerRatio(),
                       controls_state.getSteerActuatorDelay(),
 		      cpuTemp,
-	              cpu_usage,
+	              xstate[x_state],
 		      controls_state.getDistanceTraveled() / 1000,
                       scc_bus
                       );
