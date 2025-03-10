@@ -351,7 +351,7 @@ class LongitudinalMpc:
       self.params[:,5] = LEAD_DANGER_FACTOR
 
       # add stopline by ajouatom
-      stopline_x = (model.stopLine.x + 5.0)
+      stopline_x = model.stopLine.x
       model_x = x[N]
       probe = model.stopLine.prob if abs(carstate.steeringAngleDeg) < 20 else 0.0
       stopSign = (probe > 0.3) and ((v[-1] < 3.0) or (v[-1] < v_ego * 0.95))
