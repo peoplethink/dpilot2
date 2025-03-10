@@ -190,7 +190,8 @@ class Planner:
     longitudinalPlan.visionCurrentLatAcc = float(self.vision_turn_controller.current_lat_acc)
     longitudinalPlan.visionMaxPredLatAcc = float(self.vision_turn_controller.max_pred_lat_acc)
     longitudinalPlan.eventsDEPRECATED = self.events.to_msg()
-    longitudinalPlan.debugLong = self.mpc.debugLong
+    longitudinalPlan.xState = self.mpc.xState
+    longitudinalPlan.trafficState = self.mpc.trafficState
     
     longitudinalPlan.fcw = self.fcw
 
