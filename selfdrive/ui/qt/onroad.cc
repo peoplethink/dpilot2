@@ -362,15 +362,19 @@ OnroadHud::OnroadHud(QWidget *parent) : QWidget(parent) {
   //dm_img = QPixmap("../assets/img_driver_face.png").scaled(img_size, img_size, Qt::KeepAspectRatio, Qt::SmoothTransformation);
   compass_inner_img = QPixmap("../assets/images/compass_inner.png").scaled(img_size, img_size, Qt::KeepAspectRatio, Qt::SmoothTransformation);
   compass_outer_img = QPixmap("../assets/images/compass_outer.png").scaled(img_size, img_size, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+  traffic_green_img = loadPixmap("../assets/img_traffic_green.png");
+  traffic_red_img = loadPixmap("../assets/img_traffic_red.png");
   connect(this, &OnroadHud::valueChanged, [=] { update(); });
 }
 
 void OnroadHud::updateState(const UIState &s) {	
   const SubMaster &sm = *(s.sm);
   const auto cs = sm["controlsState"].getControlsState();
+  const auto lo = sm["longitudinalPlan"].getLongitudinalPlan();
 	
   setProperty("status", s.status);
   setProperty("ang_str", s.scene.angleSteers);
+  setProperty("traffic_status", lo.getDebugLong() > 0);
 	
   // update engageability and DM icons at 2Hz
   if (sm.frame % (UI_FREQ / 2) == 0) {
@@ -419,6 +423,18 @@ void OnroadHud::paintEvent(QPaintEvent *event) {
   if (compass && bearingAccuracyDeg != 180.00) {
     drawCompass(p, rect().right() - radius / 2 - bdr_s * 2, radius / 2 + bdr_s + 530,
                 compass_outer_img, blackColor(180), 5.0, bearingDeg);
+  }
+
+  if (traffic_status > 0) {
+    int w = 100;
+    int h = 50;
+    int x = (width() + (bdr_s * 2)) / 2 + w * 2;
+    int y = 30 - bdr_s;
+    if (traffic_status == 1) {
+      p.drawPixmap(x, y, w, h, traffic_red_img);
+    } else if (traffic_status == 2) {
+      p.drawPixmap(x, y, w, h, traffic_green_img);
+    }
   }
 }
 
@@ -949,6 +965,17 @@ void NvgWindow::drawLockon(QPainter &painter, const cereal::ModelDataV2::LeadDat
   painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
 }
 
+void NvgWindow::drawStopLine(QPainter &painter, const UIState *s, const cereal::ModelDataV2::StopLineData::Reader &stop_line_data, const QPolygonF &vd) {
+    painter.save();
+ 
+    float prob = stop_line_data.getProb();
+    if (prob < 0.6) prob = 0.6;
+    painter.setBrush(QColor::fromRgbF(1.0, 0.0, 0.0, std::clamp<float>(prob, 0.0, 1.0)));
+    painter.drawPolygon(vd);
+ 
+    painter.restore();
+}
+
 void NvgWindow::paintGL() {
   CameraViewWidget::paintGL();
 
@@ -1020,6 +1047,12 @@ void NvgWindow::drawCommunity(QPainter &p) {
    if (lead_two.getStatus() && (std::abs(lead_one.getDRel() - lead_two.getDRel()) > 3.0)) {
      drawLead(p, lead_two, s->scene.lead_vertices[1], 1);
    }
+   auto stop_line = model.getStopLine();
+   if (stop_line.getX() > 3.0) {
+       if (stop_line.getProb() > .1) {
+           drawStopLine(painter, s, stop_line, s->scene.stop_line_vertices);
+       }
+   }  
   }
 	
   drawMaxSpeed(p);
