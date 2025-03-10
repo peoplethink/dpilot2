@@ -47,6 +47,13 @@ LEAD_DANGER_FACTOR = 0.75
 LIMIT_COST = 1e6
 ACADOS_SOLVER_TYPE = 'SQP_RTI'
 
+CRUISE_GAP_BP = [1., 2., 3., 4.]
+CRUISE_GAP_V = [1.1, 1.3, 1.6, 1.8]
+ 
+AUTO_TR_BP = [0., 30.*CV.KPH_TO_MS, 70.*CV.KPH_TO_MS, 110.*CV.KPH_TO_MS]
+AUTO_TR_V = [1.1, 1.2, 1.3, 1.4]
+
+AUTO_TR_CRUISE_GAP = 4
 
 # Fewer timestamps don't hurt performance and lead to
 # much better convergence of the MPC with low iterations
@@ -61,22 +68,14 @@ T_FOLLOW = 1.25
 COMFORT_BRAKE = 2.5
 STOP_DISTANCE = 6.0
 
-def get_stopped_equivalence_factor(v_lead, v_ego, t_follow=T_FOLLOW):
-  # KRKeegan this offset rapidly decreases the following distance when the lead pulls
-  # away, resulting in an early demand for acceleration.
-  v_diff_offset = 0
-  if np.all(v_lead - v_ego > 0):
-    v_diff_offset = ((v_lead - v_ego) * 1.)
-    v_diff_offset = np.clip(v_diff_offset, 0, STOP_DISTANCE / 2)
-    v_diff_offset = np.maximum(v_diff_offset * ((10 - v_ego)/10), 0)
-  distance = (v_lead**2) / (2 * COMFORT_BRAKE) + v_diff_offset
-  return distance
-
+def get_stopped_equivalence_factor(v_lead):
+  return (v_lead**2) / (2 * COMFORT_BRAKE)
+  
 def get_safe_obstacle_distance(v_ego, t_follow=T_FOLLOW):
   return (v_ego**2) / (2 * COMFORT_BRAKE) + t_follow * v_ego + STOP_DISTANCE
 
 def desired_follow_distance(v_ego, v_lead):
-  return get_safe_obstacle_distance(v_ego) - get_stopped_equivalence_factor(v_lead, v_ego)
+  return get_safe_obstacle_distance(v_ego) - get_stopped_equivalence_factor(v_lead)
 
 
 def gen_long_model():
@@ -212,9 +211,6 @@ class LongitudinalMpc:
   def __init__(self, mode='acc', dt=DT_MDL):
     self.dt = dt
     self.mode = mode
-    self.onStopping = False
-    self.e2ePaused = False
-    self.debugLong = 0
     self.solver = AcadosOcpSolverCython(MODEL_NAME, ACADOS_SOLVER_TYPE, N)
     self.reset()
     self.source = SOURCES[2]
@@ -236,7 +232,8 @@ class LongitudinalMpc:
     self.u_sol = np.zeros((N,1))
     self.params = np.zeros((N+1, PARAM_DIM))
     self.t_follow = T_FOLLOW
-    self.xstate = "CRUISE"
+    self.xState = 0
+    self.trafficState = 0
     for i in range(N+1):
       self.solver.set(i, 'x', np.zeros(X_DIM))
     self.last_cloudlog_t = 0
@@ -323,91 +320,54 @@ class LongitudinalMpc:
     self.cruise_min_a = min_a
     self.max_a = max_a
 
-  def update_TF(self, carstate, v_ego, a_ego):
-    cruise_gap = int(clip(carstate.cruiseGap, 1., 4.))
-    if cruise_gap == 1:
-      self.t_follow = T_FOLLOW - 0.35
-    elif cruise_gap == 2:
-      self.t_follow = T_FOLLOW
-    elif cruise_gap == 3:
-      self.t_follow = T_FOLLOW + 0.35
-    elif cruise_gap == 4:
-      x_vel = [0,    11,   13,   15,   25,   40]
-      y_dist = [1.0, 1.1, 1.2, 1.3, 1.35, 1.4]
-      self.t_follow= np.interp(carstate.vEgo, x_vel, y_dist)
-      
   def update(self, carstate, radarstate, model, v_cruise, x, v, a, j):
     v_ego = self.x0[1]
-    a_ego = self.x0[2]
-    a_ego = carstate.aEgo
-    self.debugLong = 0
+    self.trafficState = 0
     self.status = radarstate.leadOne.status or radarstate.leadTwo.status
 
     lead_xv_0 = self.process_lead(radarstate.leadOne)
     lead_xv_1 = self.process_lead(radarstate.leadTwo)
 
-    self.update_TF(carstate, v_ego, a_ego)
+    # neokii
+    cruise_gap = int(clip(carstate.cruiseGap, 1., 4.)) if carstate.cruiseGap > 0 else AUTO_TR_CRUISE_GAP
+    if cruise_gap == AUTO_TR_CRUISE_GAP:
+      tr = interp(carstate.vEgo, AUTO_TR_BP, AUTO_TR_V) if self.mode == 'acc' else T_FOLLOW
+    else:
+      tr = interp(float(cruise_gap), CRUISE_GAP_BP, CRUISE_GAP_V) if self.mode == 'acc' else T_FOLLOW
+ 
+    self.t_follow = tr
 
     # To estimate a safe distance from a moving lead, we calculate how much stopping
     # distance that lead needs as a minimum. We can add that to the current distance
     # and then treat that as a stopped car/obstacle at this new distance.
-    lead_0_obstacle = lead_xv_0[:,0] + get_stopped_equivalence_factor(lead_xv_0[:,1], self.x_sol[:,1])
-    lead_1_obstacle = lead_xv_1[:,0] + get_stopped_equivalence_factor(lead_xv_1[:,1], self.x_sol[:,1])
+    lead_0_obstacle = lead_xv_0[:,0] + get_stopped_equivalence_factor(lead_xv_0[:,1])
+    lead_1_obstacle = lead_xv_1[:,0] + get_stopped_equivalence_factor(lead_xv_1[:,1])
 
     self.params[:,0] = ACCEL_MIN
     self.params[:,1] = self.max_a
     
     # Update in ACC mode or ACC/e2e blend
     if self.mode == 'acc':
-      self.params[:,6] = LEAD_DANGER_FACTOR
+      self.params[:,5] = LEAD_DANGER_FACTOR
 
       # add stopline by ajouatom
-      stopline_x = model.stopLine.x
+      stopline_x = (model.stopLine.x + 5.0)
       model_x = x[N]
       probe = model.stopLine.prob if abs(carstate.steeringAngleDeg) < 20 else 0.0
-      startSign = v[-1] > 5.0 # and v_ego*CV.MS_TO_KPH < 20.0
-      stopSign = (probe > 0.3) and ((v[-1] < 3.0) or (v[-1] < v_ego*0.95))
-      self.debugLong = 1 if stopSign else 2 if startSign else 0
-
-      if self.xstate == "E2E_STOP" and not self.e2ePaused:
-        if radarstate.leadOne.status and (radarstate.leadOne.dRel - model_x) < 2.0:
-          self.xstate = "LEAD"
-        elif startSign:
-          self.xstate = "E2E_CRUISE"
-        if carstate.brakePressed and v_ego * CV.MS_TO_KPH < 5.0:
-          self.xstate = "E2E_STOP2"
-          self.e2ePaused = True
-        if carstate.gasPressed:
-          self.xstate = "E2E_CRUISE"
-          self.e2ePaused = True
-       elif self.xstate == "E2E_STOP2":
-         if False:
-          self.xstate = "E2E_STOP"
-          self.e2ePaused = False
-        elif carstate.gasPressed:
-          self.xstate = "E2E_CRUISE"
-      else:
-        if self.status:
-          self.xstate = "LEAD"
-        elif stopSign:
-          self.xstate = "E2E_STOP"
-        else:
-          self.xstate = "E2E_CRUISE"
+      stopSign = (probe > 0.3) and ((v[-1] < 3.0) or (v[-1] < v_ego * 0.95))
+      startSign = v[-1] > 5.0
  
-      if v_ego * CV.MS_TO_KPH > 20.0:
-        self.e2ePaused = False
-      if self.xstate in ["LEAD", "CRUISE"]:
-        self.e2ePaused = False
-        model_x = 400.0
-      elif self.xstate == "E2E_CRUISE":
-        if probe < 0.1:
-          model_x = 400.0
-      elif self.xstate == "E2E_STOP2":
-        model_x = stopline_x
-      elif self.e2ePaused:
-        model_x = 400.0
+      if radarstate.leadOne.status and (radarstate.leadOne.dRel - model_x) < 2.0:
+        self.xState = 0 # "LEAD"
+        self.trafficState = 0 # "OFF"
+      elif stopSign:
+        self.xState = 1 # "E2E_STOP"
+        self.trafficState = 1 # "RED"
+      elif startSign:
+        self.xState = 2 # "E2E_CRUISE"
+        self.trafficState = 2 # "GREEN"
  
-      x2 = model_x * np.ones(N+1)
+      x2 = stopline_x * np.ones(N+1) if (self.xState == 1) else 400.0 * np.ones(N+1)
       
       # Fake an obstacle for cruise, this ensures smooth acceleration to set speed
       # when the leads are no factor.
