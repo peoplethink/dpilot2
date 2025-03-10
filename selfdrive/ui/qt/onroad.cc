@@ -1086,6 +1086,7 @@ void NvgWindow::drawCommunity(QPainter &p) {
   const auto device_state = sm["deviceState"].getDeviceState();
   const auto live_torque_params = sm["liveTorqueParameters"].getLiveTorqueParameters();
   const auto torque_state = controls_state.getLateralControlState().getTorqueState();
+  const auto lo = sm["longitudinalPlan"].getLongitudinalPlan();
   float distance_traveled = sm["controlsState"].getControlsState().getDistanceTraveled() / 1000;
   	
   	
