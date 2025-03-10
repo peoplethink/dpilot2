@@ -41,6 +41,7 @@ class OnroadHud : public QWidget {
   Q_PROPERTY(bool showVTC MEMBER showVTC);
   Q_PROPERTY(QString vtcSpeed MEMBER vtcSpeed);
   Q_PROPERTY(QColor vtcColor MEMBER vtcColor);
+  Q_PROPERTY(int traffic_status MEMBER traffic_status);
 
 public:
   explicit OnroadHud(QWidget *parent);
@@ -70,7 +71,10 @@ private:
   bool showVTC = false;
   QString vtcSpeed;
   QColor vtcColor;
-
+  QPixmap traffic_green_img;
+  QPixmap traffic_red_img;
+  int traffic_status = 0;
+  
 protected:
   inline QColor blackColor(int alpha = 200) { return QColor(0, 0, 0, alpha); }
   
@@ -112,9 +116,11 @@ protected:
   void updateFrameMat(int w, int h) override;
   void drawLaneLines(QPainter &painter, const UIState *s);
   void drawLead(QPainter &painter, const cereal::RadarState::LeadData::Reader &lead_data, const QPointF &vd, int num);
+  void drawStopLine(QPainter &painter, const UIState *s, const cereal::ModelDataV2::StopLineData::Reader &stop_line_data, const QPolygonF &vd);
   // Ichiro Stuff
   void drawLockon(QPainter &painter, const cereal::ModelDataV2::LeadDataV3::Reader &lead_data, const QPointF &vd , int num);
   void drawIcon(QPainter &p, int x, int y, QPixmap &img, QBrush bg, float opacity);
+  
   inline QColor redColor(int alpha = 200) { return QColor(201, 34, 49, alpha); }
   inline QColor blackColor(int alpha = 200) { return QColor(0, 0, 0, alpha); }
   inline QColor greenColor(int alpha = 200) { return QColor(49, 201, 34, alpha); }
