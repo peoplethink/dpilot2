@@ -68,8 +68,21 @@ T_FOLLOW = 1.25
 COMFORT_BRAKE = 2.5
 STOP_DISTANCE = 6.0
 
-def get_stopped_equivalence_factor(v_lead):
-  return (v_lead**2) / (2 * COMFORT_BRAKE)
+def get_stopped_equivalence_factor(v_lead, v_ego):
+  v_diff_offset = 0
+  v_diff_offset_max = 12
+  speed_to_reach_max_v_diff_offset = 26 * CV.KPH_TO_MS  # in m/s
+  delta_speed = v_lead - v_ego
+  if np.any(delta_speed > 0):
+    # Scale v_diff_offset with a hybrid approach: linear with a smooth transition
+    v_diff_offset = np.clip(delta_speed * 1.5, 0, v_diff_offset_max)
+    scaling_factor = np.clip((speed_to_reach_max_v_diff_offset - v_ego) / speed_to_reach_max_v_diff_offset, 0, 1)
+    # Apply a stronger decay at higher speeds to avoid pulling too close
+    smooth_scaling = scaling_factor ** 3 * (10 - 9 * scaling_factor)
+    v_diff_offset *= smooth_scaling
+ 
+  stopping_distance = (v_lead ** 2) / (2 * COMFORT_BRAKE) + v_diff_offset
+  return stopping_distance
   
 def get_safe_obstacle_distance(v_ego, t_follow=T_FOLLOW):
   return (v_ego**2) / (2 * COMFORT_BRAKE) + t_follow * v_ego + STOP_DISTANCE
@@ -340,8 +353,8 @@ class LongitudinalMpc:
     # To estimate a safe distance from a moving lead, we calculate how much stopping
     # distance that lead needs as a minimum. We can add that to the current distance
     # and then treat that as a stopped car/obstacle at this new distance.
-    lead_0_obstacle = lead_xv_0[:,0] + get_stopped_equivalence_factor(lead_xv_0[:,1])
-    lead_1_obstacle = lead_xv_1[:,0] + get_stopped_equivalence_factor(lead_xv_1[:,1])
+    lead_0_obstacle = lead_xv_0[:,0] + get_stopped_equivalence_factor(lead_xv_0[:,1], v_ego)
+    lead_1_obstacle = lead_xv_1[:,0] + get_stopped_equivalence_factor(lead_xv_1[:,1], v_ego)
 
     self.params[:,0] = ACCEL_MIN
     self.params[:,1] = self.max_a
