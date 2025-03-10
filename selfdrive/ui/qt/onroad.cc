@@ -1050,7 +1050,7 @@ void NvgWindow::drawCommunity(QPainter &p) {
    auto stop_line = model.getStopLine();
    if (stop_line.getX() > 3.0) {
        if (stop_line.getProb() > .1) {
-           drawStopLine(painter, s, stop_line, s->scene.stop_line_vertices);
+           drawStopLine(p, s, stop_line, s->scene.stop_line_vertices);
        }
    }  
   }
