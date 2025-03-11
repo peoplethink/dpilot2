@@ -41,6 +41,7 @@ class OnroadHud : public QWidget {
   Q_PROPERTY(bool showVTC MEMBER showVTC);
   Q_PROPERTY(QString vtcSpeed MEMBER vtcSpeed);
   Q_PROPERTY(QColor vtcColor MEMBER vtcColor);
+  Q_PROPERTY(int traffic_state MEMBER traffic_state);
 
 public:
   explicit OnroadHud(QWidget *parent);
@@ -59,6 +60,11 @@ private:
   QPixmap engage_img;
   QPixmap compass_inner_img;
   QPixmap compass_outer_img;
+  QString vtcSpeed;
+  QColor vtcColor;
+  QPixmap traffic_green_img;
+  QPixmap traffic_red_img;
+
   const int radius = 192;
   const int img_size = (radius / 2) * 1.5;
   bool engageable = false;
@@ -68,10 +74,7 @@ private:
   float bearingDeg = 0;
   float bearingAccuracyDeg;
   bool showVTC = false;
-  QString vtcSpeed;
-  QColor vtcColor;
-  QPixmap traffic_green_img;
-  QPixmap traffic_red_img;
+  int traffic_state = 0;
   
 protected:
   inline QColor blackColor(int alpha = 200) { return QColor(0, 0, 0, alpha); }
