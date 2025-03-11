@@ -14,7 +14,7 @@ QList<QList<TuneItemInfo>> nTuneMainWidget::mainItems = {
 {
     TuneItemInfo("common.json", "cameraOffset", "우측이동 - , 좌측이동 +",
                  0.6f, -2.0f, 2.0f, 0.05f, 2),
-    TuneItemInfo("common.json", "dampilngfactor", "",
+    TuneItemInfo("common.json", "dampingFactor", "",
                  0.0f, -10.0f, 10.0f, 0.05f, 2),
     TuneItemInfo("common.json", "autoLaneChangeSpeed", "해당속도이상에서 자동차선변경",
                  30.0f, 10.0f, 60.0f, 5.0f, 1, "km"),
