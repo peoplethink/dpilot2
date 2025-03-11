@@ -163,7 +163,7 @@ class nTune():
   def checkValidCommon(self):
     updated = False
 
-    if self.checkValue("dampingFactor", -10.0, 10.0, 1.):
+    if self.checkValue("dampingFactor", -10.0, 10.0, 0.):
       updated = True
       
     if self.checkValue("useLiveSteerRatio", 0., 1., 1.):
