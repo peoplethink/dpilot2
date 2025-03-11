@@ -501,10 +501,11 @@ class LongitudinalMpc:
     v_ego_kph = v_ego * CV.MS_TO_KPH
     model_v = self.vFilter.process(v[-1])
     startSign = model_v > 5.0 or model_v > (v[0]+2)
+   
     if v_ego_kph < 1.0:
       stopSign = model_x < 20.0 and model_v < 10.0
     elif v_ego_kph < 80.0:
-      stopSign = model_x < 110.0 and ((model_v < 3.0) or (model_v < v[0] * 0.6)) and abs(y[-1]) < 5.0
+      stopSign = model_x < 120.0 and ((model_v < 3.0) or (model_v < v[0] * 0.7)) and abs(y[-1]) < 5.0
     else:
       stopSign = False
  
@@ -543,7 +544,7 @@ class LongitudinalMpc:
     else:
       self.xState = XState.e2eCruise
  
-    if self.trafficState == 2:
+    if self.trafficState in [0, 2]:
       stop_x = 1000.0
      
     self.stopDist -= (v_ego * DT_MDL)
@@ -552,7 +553,7 @@ class LongitudinalMpc:
     elif stop_x == 1000.0:
       self.stopDist = 0.0
     elif self.stopDist > 0:
-      stop_dist = v_ego * v_ego / (2.8 * 2)  # 2.8m/s^2 으로 감속할경우 필요한 거리.
+      stop_dist = v_ego ** 2 / (1.8 * 2) # 2.0m/s^2 으로 감속할경우 필요한 거리.
       self.stopDist = self.stopDist if self.stopDist > stop_dist else stop_dist
       stop_x = 0.0
     return v_cruise, stop_x + self.stopDist
