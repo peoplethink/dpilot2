@@ -228,8 +228,8 @@ class LongitudinalMpc:
     self.mode = mode
 
     self.trafficState = 0
-    self.xStopFilter = StreamingMovingAverage(3)
-    self.xStopFilter2 = StreamingMovingAverage(15)
+    self.xStopFilter = StreamingMovingAverage(4)
+    self.xStopFilter2 = StreamingMovingAverage(10)
     self.vFilter = StreamingMovingAverage(4)
     self.t_follow = T_FOLLOW
     self.stop_distance = STOP_DISTANCE
@@ -315,7 +315,7 @@ class LongitudinalMpc:
     self.x0[1] = v
     self.x0[2] = a
     if abs(v_prev - v) > 2.:  # probably only helps if v < v_prev
-      for i in range(0, N+1):
+      for i in range(N+1):
         self.solver.set(i, 'x', self.x0)
 
   @staticmethod
@@ -553,7 +553,7 @@ class LongitudinalMpc:
     elif stop_x == 1000.0:
       self.stopDist = 0.0
     elif self.stopDist > 0:
-      stop_dist = v_ego ** 2 / (1.8 * 2) # 2.0m/s^2 으로 감속할경우 필요한 거리.
+      stop_dist = v_ego ** 2 / (2.5 * 2) # 2.0m/s^2 으로 감속할경우 필요한 거리.
       self.stopDist = self.stopDist if self.stopDist > stop_dist else stop_dist
       stop_x = 0.0
     return v_cruise, stop_x + self.stopDist
