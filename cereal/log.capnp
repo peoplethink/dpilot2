@@ -913,14 +913,21 @@ struct LongitudinalPlan @0xe00b5b3eba12876c {
   stopLine @47 :List(Float64) = [0.];
   stoplineProb @48 :Float32;
   trafficState @49 : Int32;
-  e2eX @50 :List(Float64) = [0.];
+  xState @50 :List(Float64) = [0.];
   lead0Obstacle @51 :List(Float64) = [0.];
   lead1Obstacle @52 :List(Float64) = [0.];
   cruiseTarget @53 :List(Float64) = [0.];
-  onStop @54 : Bool;
+  xStop @54 : Bool;
   visionCurrentLatAcc @56 :Float32;
   visionMaxPredLatAcc @57 :Float32;
 
+  enum XState {
+    lead @0;
+    cruise @1;
+    e2eCruise @2;
+    e2eStop @3;
+  }
+ 
   enum LongitudinalPlanSource {
     cruise @0;
     lead0 @1;
