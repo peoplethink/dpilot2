@@ -425,11 +425,11 @@ void OnroadHud::paintEvent(QPaintEvent *event) {
                 compass_outer_img, blackColor(180), 5.0, bearingDeg);
   }
 
-  if (traffic_state > 0) {
-    int w = 100;
-    int h = 50;
-    int x = (width() + (bdr_s * 2)) / 2 + w * 2;
-    int y = 30 - bdr_s;
+  if (traffic_state >= 0) {
+    int w = 200;
+    int h = 100;
+    int x = (width() + (bdr_s * 2)) / 2 + 100;
+    int y = 30 - bdr_s * 3;
     if (traffic_state == 1) {
       p.drawPixmap(x, y, w, h, traffic_red_img);
     } else if (traffic_state == 2) {
