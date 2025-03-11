@@ -913,7 +913,7 @@ struct LongitudinalPlan @0xe00b5b3eba12876c {
   stopLine @47 :List(Float64) = [0.];
   stoplineProb @48 :Float32;
   trafficState @49 : Int32;
-  xState @50 : int32;
+  xState @50 : Int32;
   lead0Obstacle @51 :List(Float64) = [0.];
   lead1Obstacle @52 :List(Float64) = [0.];
   cruiseTarget @53 :List(Float64) = [0.];
