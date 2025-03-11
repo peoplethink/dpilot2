@@ -380,12 +380,13 @@ class LongitudinalMpc:
 
     self.params[:,0] = ACCEL_MIN
     self.params[:,1] = self.max_a
-    
+
+    v_cruise, stop_x = self.update_apilot(carstate, radarstate, model, v_cruise)
+
     # Update in ACC mode or ACC/e2e blend
     if self.mode == 'acc':
       self.params[:,5] = LEAD_DANGER_FACTOR
 
-      v_cruise, stop_x = self.update_apilot(carstate, radarstate, model, v_cruise)
       x2 = stop_x * np.ones(N+1) if (self.xState == XState.e2eStop) else 400.0 * np.ones(N+1)
       
       # Fake an obstacle for cruise, this ensures smooth acceleration to set speed
