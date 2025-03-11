@@ -128,7 +128,7 @@ class Track():
     if float(lead_msg.prob) > 0.5 and abs(float(self.aLeadK)) < abs(float(lead_msg.a[0])):
       useVisionMix = True
  
-    aLeadK = float(lead_msg.a[0]) if useVisionMix else float(self.aLeadK
+    aLeadK = float(lead_msg.a[0]) if useVisionMix else float(self.aLeadK)
     return {
       "dRel": float(self.dRel),
       "yRel": float(self.yRel),
