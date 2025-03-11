@@ -40,7 +40,7 @@ COST_E_DIM = 5
 COST_DIM = COST_E_DIM + 1
 CONSTR_DIM = 4
 
-X_EGO_OBSTACLE_COST = 6.
+X_EGO_OBSTACLE_COST = 5.
 X_EGO_COST = 0.
 V_EGO_COST = 0.
 A_EGO_COST = 0.
@@ -53,10 +53,10 @@ LIMIT_COST = 1e6
 ACADOS_SOLVER_TYPE = 'SQP_RTI'
 
 CRUISE_GAP_BP = [1., 2., 3., 4.]
-CRUISE_GAP_V = [1.1, 1.3, 1.6, 1.8]
+CRUISE_GAP_V = [0.9, 1.1, 1.6, 1.8]
  
 AUTO_TR_BP = [0., 30.*CV.KPH_TO_MS, 70.*CV.KPH_TO_MS, 110.*CV.KPH_TO_MS]
-AUTO_TR_V = [1.1, 1.2, 1.3, 1.4]
+AUTO_TR_V = [1.0, 1.1, 1.3, 1.4]
 
 AUTO_TR_CRUISE_GAP = 4
 
@@ -553,7 +553,7 @@ class LongitudinalMpc:
     elif stop_x == 1000.0:
       self.stopDist = 0.0
     elif self.stopDist > 0:
-      stop_dist = v_ego ** 2 / (2.5 * 2) # 2.0m/s^2 으로 감속할경우 필요한 거리.
+      stop_dist = v_ego ** 2 / (2.3 * 2) # 2.0m/s^2 으로 감속할경우 필요한 거리.
       self.stopDist = self.stopDist if self.stopDist > stop_dist else stop_dist
       stop_x = 0.0
     return v_cruise, stop_x + self.stopDist
