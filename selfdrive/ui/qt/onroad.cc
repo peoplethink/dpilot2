@@ -965,17 +965,6 @@ void NvgWindow::drawLockon(QPainter &painter, const cereal::ModelDataV2::LeadDat
   painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
 }
 
-void NvgWindow::drawStopLine(QPainter &painter, const UIState *s, const cereal::ModelDataV2::StopLineData::Reader &stop_line_data, const QPolygonF &vd) {
-    painter.save();
- 
-    float prob = stop_line_data.getProb();
-    if (prob < 0.6) prob = 0.6;
-    painter.setBrush(QColor::fromRgbF(1.0, 0.0, 0.0, std::clamp<float>(prob, 0.0, 1.0)));
-    painter.drawPolygon(vd);
- 
-    painter.restore();
-}
-
 void NvgWindow::paintGL() {
   CameraViewWidget::paintGL();
 
@@ -1046,12 +1035,6 @@ void NvgWindow::drawCommunity(QPainter &p) {
    }
    if (lead_two.getStatus() && (std::abs(lead_one.getDRel() - lead_two.getDRel()) > 3.0)) {
      drawLead(p, lead_two, s->scene.lead_vertices[1], 1);
-   }
-   auto stop_line = model.getStopLine();
-   if (stop_line.getX() > 3.0) {
-       if (stop_line.getProb() > .1) {
-           drawStopLine(p, s, stop_line, s->scene.stop_line_vertices);
-       }
    }  
   }
 	
