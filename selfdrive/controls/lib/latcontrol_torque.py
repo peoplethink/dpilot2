@@ -12,6 +12,7 @@ from selfdrive.controls.lib.pid import PIDController
 from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
 from selfdrive.modeld.constants import T_IDXS
 from common.params import Params
+from selfdrive.controls.ntune import ntune_common_get
 from selfdrive.controls.ntune import nTune
 
 # At higher speeds (25+mph) we can assume:
@@ -135,12 +136,6 @@ class LatControlTorque(LatControl):
         
   
   def update(self, active, CS, VM, params, last_actuators, steer_limited, desired_curvature, desired_curvature_rate, llk, model_data=None):
-    self.frame += 1
-    if self.frame % 10 == 0:
-      self.dampingFactor = Params().get_bool("DampingFactor") * 0.01
-      lateralTorqueKd = Params().get_bool("LateralTorqueKd")*0.01
-      self.pid._k_d = [[0], [lateralTorqueKd]]
-      
     self.tune.updateTorque() 
     pid_log = log.ControlsState.LateralTorqueState.new_message()
     steeringRate = math.radians(CS.steeringRateDeg)
@@ -264,7 +259,8 @@ class LatControlTorque(LatControl):
                                       speed=CS.vEgo,
                                       freeze_integrator=freeze_integrator)
 
-      damping_torque = - self.dampingFactor * steeringRate
+      damping_factor = ntune_common_get('dampingFactor') 
+      damping_torque = - damping_factor * steeringRate
       
       output_torque += damping_torque
       self.error_last = pid_log.error
