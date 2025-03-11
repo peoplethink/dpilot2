@@ -13,15 +13,11 @@ from selfdrive.swaglog import cloudlog
 from selfdrive.hardware import TICI
 
 from common.simple_kalman import KF1D
-from common.filter_simple import StreamingMovingAverage
 from common.params import Params
 import numpy as np
 
 # Default lead acceleration decay set to 50% at 1s
 _LEAD_ACCEL_TAU = 1.5
-
-# Hack to maintain vision lead state
- _vision_lead_aTau = {0: _LEAD_ACCEL_TAU, 1: _LEAD_ACCEL_TAU}
 
 # radar tracks
 SPEED, ACCEL = 0, 1   # Kalman filter states enum
@@ -62,7 +58,6 @@ class Track():
     self.K_C = kalman_params.C
     self.K_K = kalman_params.K
     self.kf = KF1D([[v_lead], [0.0]], self.K_A, self.K_C, self.K_K)
-    self.aLeadKFilter = StreamingMovingAverage(3)
 
   def update(self, d_rel: float, y_rel: float, v_rel: float, v_lead: float, measured: float):
     # relative values, copy
@@ -113,12 +108,12 @@ class Track():
       "aLeadTau": float(self.aLeadTau)
     }
 
-  def get_RadarState2(self, model_prob, lead_msg, lead_index):
+  def get_RadarState2(self, model_prob, lead_msg):
     useVisionMix = False
     if float(lead_msg.prob) > 0.5 and abs(float(self.aLeadK)) < abs(float(lead_msg.a[0])):
       useVisionMix = True
 
-    aLeadK = self.aLeadKFilter.process(float(lead_msg.a[0]) if useVisionMix else float(self.aLeadK))
+    aLeadK = float(lead_msg.a[0]) if useVisionMix else float(self.aLeadK)
     return {
       "dRel": float(self.dRel),
       "yRel": float(self.yRel),
@@ -126,7 +121,7 @@ class Track():
       "vLead": float(self.vLead),
       "vLeadK": float(self.vLeadK),
       "aLeadK": aLeadK,
-      "aLeadTau": _vision_lead_aTau[lead_index] if useVisionMix else float(self.aLeadTau)
+      "aLeadTau": 0.3 if useVisionMix else float(self.aLeadTau)
       "status": True,
       "fcw": self.is_potential_fcw(model_prob),
       "modelProb": model_prob,
@@ -174,22 +169,17 @@ def match_vision_to_track(v_ego: float, lead: capnp._DynamicStructReader, tracks
 
 global_vision_aLeadTau = 1.5
 
-def get_RadarState_from_vision(lead_msg: capnp._DynamicStructReader, lead_index, v_ego: float, model_v_ego: float):
+def get_RadarState_from_vision(lead_msg: capnp._DynamicStructReader, v_ego: float, model_v_ego: float):
   lead_v_rel_pred = lead_msg.v[0] - model_v_ego
-  # Learn if constant acceleration
-  if abs(float(lead_msg.a[0])) < 0.5:
-     vision_lead_aTau[lead_index] = _LEAD_ACCEL_TAU
-  else:
-     vision_lead_aTau[lead_index] *= 0.9
-    
+ 
   return {
     "dRel": float(lead_msg.x[0] - RADAR_TO_CAMERA),
     "yRel": float(-lead_msg.y[0]),
     "vRel": float(lead_v_rel_pred),
     "vLead": float(v_ego + lead_v_rel_pred),
     "vLeadK": float(v_ego + lead_v_rel_pred),
-    "aLeadK": float(lead_msg.a[0]), #0.0,
-    "aLeadTau": _vision_lead_aTau[lead_index],
+    "aLeadK": 0.0,
+    "aLeadTau": 0.3,
     "fcw": False,
     "modelProb": float(lead_msg.prob),
     "radar": False,
@@ -197,7 +187,7 @@ def get_RadarState_from_vision(lead_msg: capnp._DynamicStructReader, lead_index,
   }
 
 
-def get_lead(v_ego: float, ready: bool, tracks: Dict[int, Track], lead_msg: capnp._DynamicStructReader, lead_index, model_v_ego: float, low_speed_override: bool = True) -> Dict[str, Any]:
+def get_lead(v_ego: float, ready: bool, tracks: Dict[int, Track], lead_msg: capnp._DynamicStructReader, model_v_ego: float, low_speed_override: bool = True) -> Dict[str, Any]:
   # Determine leads, this is where the essential logic happens
   if len(tracks) > 0 and ready and lead_msg.prob > .5:
     track = match_vision_to_track(v_ego, lead_msg, tracks)
@@ -206,9 +196,9 @@ def get_lead(v_ego: float, ready: bool, tracks: Dict[int, Track], lead_msg: capn
 
   lead_dict = {'status': False}
   if track is not None:
-    lead_dict = track.get_RadarState2(lead_msg.prob, lead_msg, lead_index)
+    lead_dict = track.get_RadarState2(lead_msg.prob, lead_msg)
   elif (track is None) and ready and (lead_msg.prob > .5):
-    lead_dict = get_RadarState_from_vision(lead_msg, lead_index, v_ego, model_v_ego)
+    lead_dict = get_RadarState_from_vision(lead_msg, v_ego, model_v_ego)
 
   if low_speed_override:
     low_speed_tracks = [c for c in tracks.values() if c.potential_low_speed_lead(v_ego)]
