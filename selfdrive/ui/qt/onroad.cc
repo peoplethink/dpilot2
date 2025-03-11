@@ -427,9 +427,9 @@ void OnroadHud::paintEvent(QPaintEvent *event) {
 
   if (traffic_state >= 0) {
     int w = 200;
-    int h = 90;
-    int x = (width() + (bdr_s * 2)) / 2 - 350;
-    int y = 30 - bdr_s * 3 + 25;
+    int h = 80;
+    int x = (width() + (bdr_s * 2)) / 2 - 400;
+    int y = 30 - bdr_s * 3 + 40;
     if (traffic_state == 1) {
       p.drawPixmap(x, y, w, h, traffic_red_img);
     } else if (traffic_state == 2) {
