@@ -362,15 +362,19 @@ OnroadHud::OnroadHud(QWidget *parent) : QWidget(parent) {
   //dm_img = QPixmap("../assets/img_driver_face.png").scaled(img_size, img_size, Qt::KeepAspectRatio, Qt::SmoothTransformation);
   compass_inner_img = QPixmap("../assets/images/compass_inner.png").scaled(img_size, img_size, Qt::KeepAspectRatio, Qt::SmoothTransformation);
   compass_outer_img = QPixmap("../assets/images/compass_outer.png").scaled(img_size, img_size, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+  traffic_green_img = QPixmap("../assets/img_traffic_green.png");
+  traffic_red_img = QPixmap("../assets/img_traffic_red.png");
   connect(this, &OnroadHud::valueChanged, [=] { update(); });
 }
 
 void OnroadHud::updateState(const UIState &s) {	
   const SubMaster &sm = *(s.sm);
   const auto cs = sm["controlsState"].getControlsState();
+  const auto lo = sm["longitudinalPlan"].getLongitudinalPlan();
 	
   setProperty("status", s.status);
   setProperty("ang_str", s.scene.angleSteers);
+  setProperty("traffic_state", lo.getTrafficState());
 	
   // update engageability and DM icons at 2Hz
   if (sm.frame % (UI_FREQ / 2) == 0) {
