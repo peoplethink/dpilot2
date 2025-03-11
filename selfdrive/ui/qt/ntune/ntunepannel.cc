@@ -20,6 +20,8 @@ QList<QList<TuneItemInfo>> nTuneMainWidget::mainItems = {
                  0.3f, 0.0f, 0.8f, 0.05f, 2),
 },
 {
+    TuneItemInfo("scc_v2.json", "jerkFactor", tr("값이 작을수록 aggressive, 클수록 relaxed"),
+                 1.0f, 0.0f, 2.0f, 0.1f, 1),
     TuneItemInfo("scc_v2.json", "sccCurveSensitivity", tr("값이 클수록 일찍 반응, 작을수록 부드럽지만 늦게 반응."),
                  0.0f, -2.0f, 2.0f, 0.05f, 2),
     TuneItemInfo("scc_v2.json", "sccTurnAggressiveness", tr("값이 클수록 빨리 turn "),
