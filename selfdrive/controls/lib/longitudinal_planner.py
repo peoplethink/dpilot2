@@ -194,7 +194,6 @@ class Planner:
     longitudinalPlan.eventsDEPRECATED = self.events.to_msg()
     longitudinalPlan.trafficState = self.mpc.trafficState
     longitudinalPlan.xState = self.mpc.xState
-    longitudinalPlan.xStop = float(self.mpc.stopDist)  
     
     longitudinalPlan.fcw = self.fcw
 
