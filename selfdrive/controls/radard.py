@@ -134,7 +134,7 @@ class Track():
       "vLead": float(self.vLead),
       "vLeadK": float(self.vLeadK),
       "aLeadK": self.aLeadK,
-      "aLeadTau": float(self.aLeadTau)
+      "aLeadTau": float(self.aLeadTau),
       "status": True,
       "aRel": float(self.aRel),
       "vLat": float(self.vLat),
