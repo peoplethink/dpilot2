@@ -28,8 +28,8 @@ class CarInterface(CarInterfaceBase):
 
     v_current_kph = current_speed * CV.MS_TO_KPH
 
-    gas_max_bp = [0., 10., 30., 70., 130., 150.]
-    gas_max_v = [1.2, 1.0, 0.8, 0.4, 0.15, 0.1]
+    gas_max_bp = [10., 20., 50., 70., 130., 150.]
+    gas_max_v = [1.35, 1.05, 0.5, 0.32, 0.17, 0.1]
 
     return CarControllerParams.ACCEL_MIN, interp(v_current_kph, gas_max_bp, gas_max_v)
 	  
@@ -307,7 +307,7 @@ class CarInterface(CarInterfaceBase):
     ret.startingState = False
     ret.vEgoStarting = 0.3 #ntune_scc_get('vEgoStarting')
     ret.vEgoStopping = 0.3 #ntune_scc_get('vEgoStopping')
-    ret.stoppingDecelRate = 0.2 # ntune_scc_get('stoppingDecelRate')
+    ret.stoppingDecelRate = ntune_scc_get('stoppingDecelRate')
     ret.startAccel = ntune_scc_get('startAccel')
     ret.stopAccel = ntune_scc_get('stopAccel')
 	  
