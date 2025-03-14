@@ -19,11 +19,10 @@ from common.params import Params
 from selfdrive.controls.lib.events import Events
 
 LON_MPC_STEP = 0.2  # first step is 0.2s
-A_CRUISE_MAX_VALS = [2.0, 1.5, 0.8, 0.6]
-A_CRUISE_MAX_BP = [0., 15., 25., 40.]
-A_CRUISE_MIN_VALS = [-0.5, -0.5, -0.2, -0.3, -0.4, -1.2] # mimick stock, slightly release brakes when stopping
-A_CRUISE_MIN_BP =   [0., 0.3, 0.35, 3., 6., 20.]
 
+A_CRUISE_MIN = -1.2
+A_CRUISE_MAX_VALS = [1.6, 1.2, 0.8, 0.6]
+A_CRUISE_MAX_BP = [0., 10.0, 25., 40.]
 # Lookup table for turns
 _A_TOTAL_MAX_V = [1.7, 3.2]
 _A_TOTAL_MAX_BP = [20., 40.]
@@ -31,9 +30,6 @@ _A_TOTAL_MAX_BP = [20., 40.]
 
 def get_max_accel(v_ego):
   return interp(v_ego, A_CRUISE_MAX_BP, A_CRUISE_MAX_VALS)
-
-def get_min_accel(v_ego):
-  return interp(v_ego, A_CRUISE_MIN_BP, A_CRUISE_MIN_VALS)
 
 def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
   """
@@ -87,14 +83,12 @@ class Planner:
       v = np.interp(T_IDXS_MPC, T_IDXS, model_msg.velocity.x) - model_error
       a = np.interp(T_IDXS_MPC, T_IDXS, model_msg.acceleration.x) 
       j = np.zeros(len(T_IDXS_MPC))
-      y = np.interp(T_IDXS_MPC, T_IDXS, model_msg.position.y)
     else:
       x = np.zeros(len(T_IDXS_MPC))
       v = np.zeros(len(T_IDXS_MPC))
       a = np.zeros(len(T_IDXS_MPC))
-      j = np.zeros(len(T_IDXS_MPC)) 
-      y = np.zeros(len(T_IDXS_MPC))
-    return x, v, a, j, y
+      j = np.zeros(len(T_IDXS_MPC))
+    return x, v, a, j
 
   def update(self, sm, read=True):
     if self.param_read_counter % 50 == 0 and read:
@@ -123,7 +117,7 @@ class Planner:
     prev_accel_constraint = not sm['carState'].standstill
 
     if self.mpc.mode == 'acc':
-      accel_limits = [get_min_accel(v_ego), get_max_accel(v_ego)]
+      accel_limits = [A_CRUISE_MIN, get_max_accel(v_ego)]
       accel_limits_turns = limit_accel_in_turns(v_ego, sm['carState'].steeringAngleDeg, accel_limits, self.CP)
     else:
       accel_limits = [ACCEL_MIN, ACCEL_MAX]
@@ -154,8 +148,8 @@ class Planner:
     self.mpc.set_weights(prev_accel_constraint)
     self.mpc.set_accel_limits(accel_limits_turns[0], accel_limits_turns[1])
     self.mpc.set_cur_state(self.v_desired_filter.x, self.a_desired)
-    x, v, a, j, y = self.parse_model(sm['modelV2'], self.v_model_error)
-    self.mpc.update(sm['carState'], sm['radarState'], sm['modelV2'], sm['controlsState'],  v_cruise, x, v, a, j, y)
+    x, v, a, j = self.parse_model(sm['modelV2'], self.v_model_error)
+    self.mpc.update(sm['carState'], sm['radarState'], v_cruise, x, v, a, j)
 
     self.v_desired_trajectory = np.interp(T_IDXS[:CONTROL_N], T_IDXS_MPC, self.mpc.v_solution)
     self.a_desired_trajectory = np.interp(T_IDXS[:CONTROL_N], T_IDXS_MPC, self.mpc.a_solution)
@@ -192,9 +186,6 @@ class Planner:
     longitudinalPlan.visionCurrentLatAcc = float(self.vision_turn_controller.current_lat_acc)
     longitudinalPlan.visionMaxPredLatAcc = float(self.vision_turn_controller.max_pred_lat_acc)
     longitudinalPlan.eventsDEPRECATED = self.events.to_msg()
-    longitudinalPlan.trafficState = self.mpc.trafficState
-    longitudinalPlan.xState = self.mpc.xState
-    longitudinalPlan.xStop = float(self.mpc.stopDist)
     longitudinalPlan.fcw = self.fcw
 
     longitudinalPlan.solverExecutionTime = self.mpc.solve_time
