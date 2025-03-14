@@ -239,10 +239,6 @@ class LongitudinalMpc:
     self.u_sol = np.zeros((N,1))
     self.params = np.zeros((N+1, PARAM_DIM))
     self.t_follow = T_FOLLOW
-    self.xState = XState.cruise
-    self.startSignCount = 0
-    self.stopSignCount = 0
-    self.trafficState = 0
     
     for i in range(N+1):
       self.solver.set(i, 'x', np.zeros(X_DIM))
