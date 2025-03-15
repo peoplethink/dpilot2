@@ -216,6 +216,9 @@ class nTune():
 
     if self.checkValue("jerkFactor", 0.0, 2.0, 1.0):
        updated = True
+
+    if self.checkValue("comfortBrake", 2.3, 2.7, 2.6):
+      updated = True
       
     if self.checkValue("longStartingFactor", 0.7, 1.5, 1.0):
       updated = True
