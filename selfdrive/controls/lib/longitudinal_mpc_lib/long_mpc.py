@@ -343,7 +343,7 @@ class LongitudinalMpc:
  
     self.t_follow = tr
     stop_distance = ntune_scc_get('stopDistance')
-    comfort_brake = ntune_scc_get('comportBrake')
+    comfort_brake = ntune_scc_get('comfortBrake')
     self.params[:,6] = comfort_brake
     self.params[:,7] = stop_distance
 
