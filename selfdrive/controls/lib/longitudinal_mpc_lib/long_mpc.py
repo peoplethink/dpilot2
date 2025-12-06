@@ -259,6 +259,9 @@ class LongitudinalMpc:
     self.t_follow = T_FOLLOW
     self.lo_timer = 0
 
+    # gap 저장 (가속/감속/코스트 튜닝용)
+    self.cruise_gap = AUTO_TR_CRUISE_GAP
+
     self.reset()
     self.source = SOURCES[2]
 
@@ -311,7 +314,7 @@ class LongitudinalMpc:
     for i in range(N):
       self.solver.cost_set(i, 'Zl', Zl)
 
-  # === KRKeegan: t_follow & v_ego에 따른 cost multiplier ===
+  # === KRKeegan: t_follow & v_ego & gap 에 따른 cost multiplier ===
   def get_cost_multipliers(self, v_lead0, v_lead1):
     v_ego = self.x0[1]
     v_ego_bps = [0.0, 10.0]
@@ -329,9 +332,21 @@ class LongitudinalMpc:
       j_ego_v_ego = interp(v_ego, v_ego_bps, [.05, 1.])
       a_change_v_ego = interp(v_ego, v_ego_bps, [.05, 1.])
 
-    j_ego = min(j_ego_tf, j_ego_v_ego)
-    a_change = min(a_change_tf, a_change_v_ego)
-    return (a_change, j_ego, d_zone_tf)
+    # gap 에 따른 cost scaling
+    gap = float(getattr(self, "cruise_gap", AUTO_TR_CRUISE_GAP))
+    gap_bps = [1., 2., 3., 4.]
+
+    # gap 1: 더 민감(코스트 작게)  / gap 4: 더 둔하게(코스트 크게)
+    a_gap_mul = interp(gap, gap_bps, [0.8, 0.9, 1.0, 1.1])
+    j_gap_mul = interp(gap, gap_bps, [0.8, 0.9, 1.0, 1.1])
+    # gap 작을수록 danger zone cost 좀 더 키움
+    d_gap_mul = interp(gap, gap_bps, [1.1, 1.05, 1.0, 0.95])
+
+    j_ego = min(j_ego_tf, j_ego_v_ego) * j_gap_mul
+    a_change = min(a_change_tf, a_change_v_ego) * a_gap_mul
+    d_zone = d_zone_tf * d_gap_mul
+
+    return (a_change, j_ego, d_zone)
 
   def set_weights(self, prev_accel_constraint=True, v_lead0=0.0, v_lead1=0.0):
     jerk_factor = ntune_scc_get('jerkFactor')
@@ -422,12 +437,13 @@ class LongitudinalMpc:
     self.cruise_min_a = min_a
     self.max_a = max_a
 
-  # KRKeegan 동적 cost용 파라미터 로딩 (ApplyLongDynamicCost)
+  # KRKeegan 동적 cost용 파라미터 로딩 (ApplyLongDynamicCost 상수 고정: True)
   def update_params(self):
     self.lo_timer += 1
     if self.lo_timer > 200:
       self.lo_timer = 0
     elif self.lo_timer == 60:
+      # 파람 사용 안하고 상수로 고정
       self.applyLongDynamicCost = True
 
   def update(self, carstate, radarstate, v_cruise, x, v, a, j):
@@ -442,33 +458,45 @@ class LongitudinalMpc:
 
     # --- CruiseGap + AutoTR (KRKeegan 방식 호환) ---
     cruise_gap = int(clip(carstate.cruiseGap, 1., 4.)) if carstate.cruiseGap > 0 else AUTO_TR_CRUISE_GAP
+    self.cruise_gap = cruise_gap  # gap 저장 (가속/감속/코스트용)
 
     if self.mode == 'acc':
-
       if cruise_gap == AUTO_TR_CRUISE_GAP:
         t_follow = interp(carstate.vEgo, AUTO_TR_BP, AUTO_TR_V)
       else:
         t_follow = interp(float(cruise_gap), CRUISE_GAP_BP, CRUISE_GAP_V)
-
     else:
-     t_follow = T_FOLLOW
+      t_follow = T_FOLLOW
 
     t_follow = np.clip(t_follow, 0.6, 2.5)
 
+    # 속도에 따라 TR 조금 더 늘려주기
     speed_ratio = interp(carstate.vEgo,
-                     [0., 100.*CV.KPH_TO_MS],
-                     [1.0, 1.3])
-
+                         [0., 100.*CV.KPH_TO_MS],
+                         [1.0, 1.3])
     t_follow *= speed_ratio
 
     self.t_follow = t_follow
-
     self.params[:, 4] = self.t_follow
 
     stop_distance = ntune_scc_get('stopDistance')
     comfort_brake = ntune_scc_get('comfortBrake')
     self.params[:, 6] = comfort_brake
     self.params[:, 7] = stop_distance
+
+    # === gap 에 따른 가속/감속 한계 조정 ===
+    # gap 1: 가속/제동 더 강하게, gap 4: 더 부드럽게
+    gap_bps = [1., 4.]
+
+    if self.mode == 'acc':
+      accel_gain = interp(float(cruise_gap), gap_bps, [1.2, 0.8])   # max_a 스케일
+      brake_gain = interp(float(cruise_gap), gap_bps, [1.2, 0.8])   # ACCEL_MIN 스케일(더 음수)
+    else:
+      accel_gain = 1.0
+      brake_gain = 1.0
+
+    max_a_eff = self.max_a * accel_gain
+    a_min_eff = ACCEL_MIN * brake_gain
 
     # === KRKeegan: lead를 “정지 장애물 등가”로 바꾸는 부분 ===
     # self.x_sol[:,1] 는 이전 horizon의 ego 속도 솔루션 (원본 krkeegan도 동일하게 사용)
@@ -490,8 +518,9 @@ class LongitudinalMpc:
       krkeegan=self.applyLongDynamicCost
     )
 
-    self.params[:, 0] = ACCEL_MIN
-    self.params[:, 1] = self.max_a
+    # gap 반영된 가감속 한계를 MPC 파라미터에 입력
+    self.params[:, 0] = a_min_eff
+    self.params[:, 1] = max_a_eff
 
     # KRKeegan 동적 cost: lead 속도를 기반으로 set_weights 업데이트
     self.set_weights(prev_accel_constraint=True,
@@ -512,8 +541,8 @@ class LongitudinalMpc:
 
       # Fake an obstacle for cruise, this ensures smooth acceleration to set speed
       # when the leads are no factor.
-      v_lower = v_ego + (T_IDXS * self.cruise_min_a * 1.05)
-      v_upper = v_ego + (T_IDXS * self.max_a * 1.05)
+      v_lower = v_ego + (T_IDXS * a_min_eff * 1.05)
+      v_upper = v_ego + (T_IDXS * max_a_eff * 1.05)
       v_cruise_clipped = np.clip(v_cruise * np.ones(N+1),
                                  v_lower,
                                  v_upper)
