@@ -175,7 +175,7 @@ class nTune():
     if self.checkValue("steerActuatorDelay", 0., 0.8, 0.3):
       updated = True
 
-    if self.checkValue("cameraOffset", -2.0, 2.0, 0.6):
+    if self.checkValue("cameraOffset", -2.0, 2.0, 0.06):
       updated = True
 
     if self.checkValue("autoLaneChangeSpeed", 10.0, 60.0, 30.0):
@@ -202,9 +202,9 @@ class nTune():
 
     if self.checkValue("useSteeringAngle", 0., 1., 1.):
       updated = True
-    if self.checkValue("latAccelFactor", 0.5, 4.5, 2.7):
+    if self.checkValue("latAccelFactor", 0.5, 4.5, 2.5):
       updated = True
-    if self.checkValue("friction", 0.0, 0.2, 0.08):
+    if self.checkValue("friction", 0.0, 0.2, 0.06):
       updated = True
     if self.checkValue("angle_deadzone_v2", 0.0, 2.0, 0.0):
       updated = True
