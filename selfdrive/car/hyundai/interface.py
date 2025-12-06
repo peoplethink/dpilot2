@@ -299,17 +299,31 @@ class CarInterface(CarInterfaceBase):
 
     # longitudinal
     ret.longitudinalTuning.kpBP = [0.]
-    ret.longitudinalTuning.kpV = [0.9]
+    ret.longitudinalTuning.kpV = [0.8]  # 0.9 → 약간 부드럽게
 
+    # 기본적으로 정지/출발 상태 머신 사용
     ret.stoppingControl = True
     ret.startingState = True
-    ret.vEgoStarting = 0.1 #ntune_scc_get('vEgoStarting')
-    ret.vEgoStopping = 0.1 #ntune_scc_get('vEgoStopping')
-    ret.stoppingDecelRate = ntune_scc_get('stoppingDecelRate')
-    ret.startAccel = 1.0 #ntune_scc_get('startAccel')
-    ret.stopAccel = ntune_scc_get('stopAccel')
-	  
-    ret.longitudinalActuatorDelay = ntune_scc_get('longitudinalActuatorDelay')
+
+    # 정지/출발 속도 문턱 (m/s)
+    ret.vEgoStarting = 0.5   # 너무 작으면 출발 판정이 늦어질 수 있어 약간 여유
+    ret.vEgoStopping = 0.1
+
+    # 정지로 들어갈 때 감속 램프 속도 (m/s^2 / s)
+    # 값이 클수록 브레이크를 더 빨리 세게 잡음 → 툭 치는 느낌 나면 줄이기
+    ret.stoppingDecelRate = 0.4
+
+    # 출발할 때 가속도 (m/s^2)
+    # 1.0은 초반에 너무 튈 수 있어서 약간 낮게 시작
+    ret.startAccel = 0.6
+
+    # stopping 단계에서 허용하는 최대 제동 가속도 (음수)
+    # -1.2 근처면 비교적 편한 제동, 더 세게 브레이크 쓰고 싶으면 -1.5 ~ -2.0 쪽으로
+    ret.stopAccel = -1.2
+
+    # 롱액추에이터 딜레이 (s)
+    # 이 값이 너무 크면 타겟이 갑자기 떨어질 때 브레이크가 세게 들어갈 수 있음
+    ret.longitudinalActuatorDelay = 0.3
 	  
     ret.enableBsm = 0x58b in fingerprint[0]
     ret.enableAutoHold = 1151 in fingerprint[0]
