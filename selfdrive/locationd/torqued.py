@@ -40,12 +40,14 @@ def slope2rot(slope):
   cos = np.sqrt(1 / (slope**2 + 1))
   return np.array([[cos, -sin], [sin, cos]])
 
-class TorqueBuckets(PointBuckets):    
+
+class TorqueBuckets(PointBuckets):
   def add_point(self, x, y):
     for bound_min, bound_max in self.x_bounds:
       if (x >= bound_min) and (x < bound_max):
         self.buckets[(bound_min, bound_max)].append([x, 1.0, y])
         break
+
 
 class TorqueEstimator(ParameterEstimator):
 
@@ -54,7 +56,7 @@ class TorqueEstimator(ParameterEstimator):
 
   def get_lat_accel_factor(self):
     return ntune_torque_get('latAccelFactor')
-    
+
   def __init__(self, CP, decimated=False):
     self.hist_len = int(HISTORY / DT_MDL)
     self.lag = ntune_common_get('steerActuatorDelay') + .2   # from controlsd
@@ -62,7 +64,7 @@ class TorqueEstimator(ParameterEstimator):
       self.min_bucket_points = MIN_BUCKET_POINTS / 10
       self.min_points_total = MIN_POINTS_TOTAL_QLOG
       self.fit_points = FIT_POINTS_TOTAL_QLOG
-      
+
     else:
       self.min_bucket_points = MIN_BUCKET_POINTS
       self.min_points_total = MIN_POINTS_TOTAL
@@ -72,7 +74,7 @@ class TorqueEstimator(ParameterEstimator):
     self.offline_latAccelFactor = 0.0
     self.resets = 0.0
     self.use_params = False
-    #self.use_params = CP.carName in ALLOWED_CARS and CP.lateralTuning.which() == 'torque'
+    # self.use_params = CP.carName in ALLOWED_CARS and CP.lateralTuning.which() == 'torque'
 
     if CP.lateralTuning.which() == 'torque':
       self.offline_friction = self.get_friction()
@@ -98,22 +100,30 @@ class TorqueEstimator(ParameterEstimator):
     torque_cache = params.get("LiveTorqueParameters")
     if params_cache is not None and torque_cache is not None:
       try:
-        cache_ltp = log.Event.from_bytes(torque_cache).liveTorqueParameters
-        cache_CP = car.CarParams.from_bytes(params_cache)
-        if self.get_restore_key(cache_CP, cache_ltp.version) == self.get_restore_key(CP, VERSION):
-          if cache_ltp.liveValid:
-            initial_params = {
-              'latAccelFactor': cache_ltp.latAccelFactorFiltered,
-              'latAccelOffset': cache_ltp.latAccelOffsetFiltered,
-              'frictionCoefficient': cache_ltp.frictionCoefficientFiltered
-            }
-          initial_params['points'] = cache_ltp.points
-          self.decay = cache_ltp.decay
-          self.filtered_points.load_points(initial_params['points'])
-          cloudlog.info("restored torque params from cache")
+        ev = log.Event.from_bytes(torque_cache)
+
+        # Event union 이 liveTorqueParameters 인 경우에만 접근
+        if ev.which() == 'liveTorqueParameters':
+          cache_ltp = ev.liveTorqueParameters
+          cache_CP = car.CarParams.from_bytes(params_cache)
+          if self.get_restore_key(cache_CP, cache_ltp.version) == self.get_restore_key(CP, VERSION):
+            if cache_ltp.liveValid:
+              initial_params = {
+                'latAccelFactor': cache_ltp.latAccelFactorFiltered,
+                'latAccelOffset': cache_ltp.latAccelOffsetFiltered,
+                'frictionCoefficient': cache_ltp.frictionCoefficientFiltered
+              }
+            initial_params['points'] = cache_ltp.points
+            self.decay = cache_ltp.decay
+            self.filtered_points.load_points(initial_params['points'])
+            cloudlog.info("restored torque params from cache")
+        else:
+          cloudlog.info("torqued: cached Event has no liveTorqueParameters, deleting cache")
+          params.delete("LiveTorqueParameters")
+
       except Exception:
         cloudlog.exception("failed to restore cached torque params")
-        params.remove("LiveTorqueParameters")
+        params.delete("LiveTorqueParameters")
 
     self.filtered_params = {}
     for param in initial_params:
@@ -208,7 +218,7 @@ class TorqueEstimator(ParameterEstimator):
 
     except:
       pass
-      
+
     if with_points:
       liveTorqueParameters.points = self.filtered_points.get_points()[:, [0, 2]].tolist()
 
@@ -226,7 +236,8 @@ class TorqueEstimator(ParameterEstimator):
       self.reset()
       self.offline_friction = self.get_friction()
       self.offline_latAccelFactor = self.get_lat_accel_factor()
-              
+
+
 def main(sm=None, pm=None):
   config_realtime_process(5 if TICI else 2, Priority.CTRL_LOW)
 
@@ -256,6 +267,7 @@ def main(sm=None, pm=None):
     if sm.frame % 240 == 0:
       msg = estimator.get_msg(valid=sm.all_checks(), with_points=True)
       put_nonblocking("LiveTorqueParameters", msg.to_bytes())
+
 
 if __name__ == "__main__":
   main()
