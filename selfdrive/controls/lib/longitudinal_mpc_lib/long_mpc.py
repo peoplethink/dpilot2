@@ -440,14 +440,31 @@ class LongitudinalMpc:
     lead_xv_0 = self.process_lead(radarstate.leadOne)
     lead_xv_1 = self.process_lead(radarstate.leadTwo)
 
-    # neokii gap logic
+    # --- CruiseGap + AutoTR (KRKeegan 방식 호환) ---
     cruise_gap = int(clip(carstate.cruiseGap, 1., 4.)) if carstate.cruiseGap > 0 else AUTO_TR_CRUISE_GAP
-    if cruise_gap == AUTO_TR_CRUISE_GAP:
-      tr = interp(carstate.vEgo, AUTO_TR_BP, AUTO_TR_V) if self.mode == 'acc' else T_FOLLOW
-    else:
-      tr = interp(float(cruise_gap), CRUISE_GAP_BP, CRUISE_GAP_V) if self.mode == 'acc' else T_FOLLOW
 
-    self.t_follow = tr
+    if self.mode == 'acc':
+
+      if cruise_gap == AUTO_TR_CRUISE_GAP:
+        t_follow = interp(carstate.vEgo, AUTO_TR_BP, AUTO_TR_V)
+      else:
+        t_follow = interp(float(cruise_gap), CRUISE_GAP_BP, CRUISE_GAP_V)
+
+    else:
+     t_follow = T_FOLLOW
+
+    t_follow = np.clip(t_follow, 0.6, 2.5)
+
+    speed_ratio = interp(carstate.vEgo,
+                     [0., 100.*CV.KPH_TO_MS],
+                     [1.0, 1.3])
+
+    t_follow *= speed_ratio
+
+    self.t_follow = t_follow
+
+    self.params[:, 4] = self.t_follow
+
     stop_distance = ntune_scc_get('stopDistance')
     comfort_brake = ntune_scc_get('comfortBrake')
     self.params[:, 6] = comfort_brake
