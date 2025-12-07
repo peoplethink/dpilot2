@@ -29,7 +29,7 @@ class CarInterface(CarInterfaceBase):
     v_current_kph = current_speed * CV.MS_TO_KPH
 
     gas_max_bp = [10., 20., 50., 70., 130., 150.]
-    gas_max_v = [1.35, 1.05, 0.5, 0.32, 0.17, 0.1]
+    gas_max_v = [1.45, 1.15, 0.5, 0.32, 0.17, 0.1]
 
     return CarControllerParams.ACCEL_MIN, interp(v_current_kph, gas_max_bp, gas_max_v)
 	  
@@ -315,7 +315,7 @@ class CarInterface(CarInterfaceBase):
 
     # 출발할 때 가속도 (m/s^2)
     # 1.0은 초반에 너무 튈 수 있어서 약간 낮게 시작
-    ret.startAccel = 0.6
+    ret.startAccel = 1.5
 
     # stopping 단계에서 허용하는 최대 제동 가속도 (음수)
     # -1.2 근처면 비교적 편한 제동, 더 세게 브레이크 쓰고 싶으면 -1.5 ~ -2.0 쪽으로
