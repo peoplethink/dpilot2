@@ -298,8 +298,10 @@ class CarInterface(CarInterfaceBase):
     ret.steerControlType = car.CarParams.SteerControlType.torque
 
     # longitudinal
-    ret.longitudinalTuning.kpBP = [0.]
-    ret.longitudinalTuning.kpV = [0.8]  # 0.9 → 약간 부드럽게
+    ret.longitudinalTuning.kpBP = [0., 5.*CV.KPH_TO_MS, 10.*CV.KPH_TO_MS, 30.*CV.KPH_TO_MS, 130.*CV.KPH_TO_MS]
+    ret.longitudinalTuning.kpV = [1.2, 1.05, 1.0, 0.92, 0.55]
+    ret.longitudinalTuning.kiBP = [0., 130. * CV.KPH_TO_MS]
+    ret.longitudinalTuning.kiV = [0.1, 0.05]
 
     # 기본적으로 정지/출발 상태 머신 사용
     ret.stoppingControl = True
@@ -311,7 +313,7 @@ class CarInterface(CarInterfaceBase):
 
     # 정지로 들어갈 때 감속 램프 속도 (m/s^2 / s)
     # 값이 클수록 브레이크를 더 빨리 세게 잡음 → 툭 치는 느낌 나면 줄이기
-    ret.stoppingDecelRate = 0.4
+    ret.stoppingDecelRate = 0.2
 
     # 출발할 때 가속도 (m/s^2)
     # 1.0은 초반에 너무 튈 수 있어서 약간 낮게 시작
