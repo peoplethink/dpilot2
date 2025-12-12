@@ -28,6 +28,7 @@ def long_control_state_trans(CP, active, long_control_state, v_ego, v_target,
 
   if not active:
     long_control_state = LongCtrlState.off
+    
   else:
     if long_control_state in (LongCtrlState.off, LongCtrlState.pid):
       long_control_state = LongCtrlState.pid
@@ -72,26 +73,23 @@ class LongControl:
     # Interp control trajectory
     speeds = long_plan.speeds
     a_target_now = 0.0
-    a_target = 0.0
-    v_target = 0.0
-    v_target_now = 0.0
-    v_target_1sec = 0.0
-
     if len(speeds) == CONTROL_N:
       v_target_now = interp(t_since_plan, T_IDXS[:CONTROL_N], speeds)
       a_target_now = interp(t_since_plan, T_IDXS[:CONTROL_N], long_plan.accels)
 
-      # 액추에이터 딜레이는 CP에서 세팅한 값 사용 (기본값 기준)
       longitudinalActuatorDelay = max(0.1, float(self.CP.longitudinalActuatorDelay))
 
-      v_target = interp(longitudinalActuatorDelay + t_since_plan,
-                        T_IDXS[:CONTROL_N], speeds)
-      # 딜레이를 고려한 목표 가속도 재계산
+      v_target = interp(longitudinalActuatorDelay + t_since_plan, T_IDXS[:CONTROL_N], speeds)
       a_target = 2.0 * (v_target - v_target_now) / longitudinalActuatorDelay - a_target_now
 
-      v_target_1sec = interp(longitudinalActuatorDelay + t_since_plan + 1.0,
-                             T_IDXS[:CONTROL_N], speeds)
+      v_target_1sec = interp(longitudinalActuatorDelay + t_since_plan + 1.0, T_IDXS[:CONTROL_N], speeds)
 
+    else:
+      v_target = 0.0
+      v_target_now = 0.0
+      v_target_1sec = 0.0
+      a_target = 0.0
+      
     self.pid.neg_limit = accel_limits[0]
     self.pid.pos_limit = accel_limits[1]
 
@@ -108,21 +106,18 @@ class LongControl:
       output_accel = 0.0
 
     elif self.long_control_state == LongCtrlState.stopping:
-      # 정지 단계: 너무 세게 브레이크 잡지 않도록 CP.stopAccel과 CP.stoppingDecelRate 사용
       if output_accel > self.CP.stopAccel:
         output_accel = min(output_accel, 0.0)
         output_accel -= self.CP.stoppingDecelRate * DT_CTRL
       self.reset(CS.vEgo)
 
     elif self.long_control_state == LongCtrlState.starting:
-      # 출발 단계: CP.startAccel 사용
       output_accel = self.CP.startAccel
       self.reset(CS.vEgo)
 
     elif self.long_control_state == LongCtrlState.pid:
       self.v_pid = v_target_now
 
-      # 정지 직전 오버슈트 방지 로직 (기존 openpilot 패턴 유지)
       prevent_overshoot = (not self.CP.stoppingControl and
                            CS.vEgo < 1.5 and
                            v_target_1sec < 0.7 and
@@ -135,14 +130,9 @@ class LongControl:
 
       error = self.v_pid - CS.vEgo
       error_deadzone = apply_deadzone(error, deadzone)
-
-      # 타겟 가속 feedforward가 너무 커지면 브레이크를 툭 치는 현상 생길 수 있어서
-      # 승용차 기준 편한 범위로 클립 (-2.0 ~ 2.0 m/s^2)
-      a_ff = clip(a_target, -2.0, 2.0)
-
       output_accel = self.pid.update(error_deadzone,
                                      speed=CS.vEgo,
-                                     feedforward=a_ff,
+                                     feedforward=a_target,
                                      freeze_integrator=freeze_integrator)
 
     # 최종 출력 클립
