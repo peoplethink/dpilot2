@@ -503,7 +503,7 @@ struct CarParams {
   startingState @78 :Bool; # Does this car make use of special starting state
   steerActuatorDelay @36 :Float32; # Steering wheel actuator delay in seconds
   longitudinalActuatorDelayUpperBound @58 :Float32; # Gas/Brake actuator delay in seconds, upper bound
-  longitudinalActuatorDelayLowerBound @80 :Float32;
+  longitudinalActuatorDelayLowerBound @61 :Float32;
   openpilotLongitudinalControl @37 :Bool; # is openpilot doing the longitudinal control?
   carVin @38 :Text; # VIN number queried during fingerprinting
   dashcamOnly @41: Bool;
