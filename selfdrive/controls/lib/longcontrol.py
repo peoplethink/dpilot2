@@ -63,6 +63,8 @@ class LongControl:
     self.v_pid = 0.0
     self.last_output_accel = 0.0
     self.readParamCount = 0
+    self.startAccelApply = 0.0
+    self.stopAccelApply = 0.0
     self.longitudinalActuatorDelayLowerBound = float(int(Params().get("LongitudinalActuatorDelayLowerBound", encoding="utf8"))) * 0.01
     self.longitudinalActuatorDelayUpperBound = float(int(Params().get("LongitudinalActuatorDelayUpperBound", encoding="utf8"))) * 0.01
 
