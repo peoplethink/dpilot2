@@ -166,4 +166,4 @@ class LongControl:
     self.last_output_accel = clip(output_accel, accel_limits[0], accel_limits[1])
 
     # ✅ 2번째 리턴은 jerk로 쓰는 자리라 accel 재사용하지 않도록 정리(권장)
-    return self.last_output_accel, (-0.5 if planned_stop else 0.0)
+    return float(self.last_output_accel)
