@@ -5,13 +5,15 @@ from selfdrive.controls.lib.drive_helpers import CONTROL_N, apply_deadzone
 from selfdrive.controls.lib.pid import PIDController
 from selfdrive.modeld.constants import T_IDXS
 from common.conversions import Conversions as CV
+from common.params import Params
 
 LongCtrlState = car.CarControl.Actuators.LongControlState
 
 
 def long_control_state_trans(CP, active, long_control_state, v_ego, v_target,
-                             v_target_1sec, brake_pressed, cruise_standstill):
-  accelerating = v_target_1sec > v_target
+                             v_target_1sec, brake_pressed, cruise_standstill, softHold, a_target_now):
+  cruise_standstill = cruise_standstill and not CP.enableGasInterceptor                            
+  accelerating = v_target_1sec > (v_target + 0.01)
   planned_stop = (v_target < CP.vEgoStopping and
                   v_target_1sec < CP.vEgoStopping and
                   not accelerating)
@@ -23,7 +25,6 @@ def long_control_state_trans(CP, active, long_control_state, v_ego, v_target,
                         accelerating and
                         not cruise_standstill and
                         not brake_pressed)
-
   started_condition = v_ego > CP.vEgoStarting
 
   if not active:
@@ -32,7 +33,7 @@ def long_control_state_trans(CP, active, long_control_state, v_ego, v_target,
   else:
     if long_control_state in (LongCtrlState.off, LongCtrlState.pid):
       long_control_state = LongCtrlState.pid
-      if stopping_condition:
+      if stopping_condition and a_target_now > -1.0:
         long_control_state = LongCtrlState.stopping
 
     elif long_control_state == LongCtrlState.stopping:
@@ -47,7 +48,7 @@ def long_control_state_trans(CP, active, long_control_state, v_ego, v_target,
       elif started_condition:
         long_control_state = LongCtrlState.pid
 
-  return long_control_state
+  return long_control_state, planned_stop
 
 
 class LongControl:
@@ -61,6 +62,10 @@ class LongControl:
                              derivative_period=0.5, rate=1 / DT_CTRL)
     self.v_pid = 0.0
     self.last_output_accel = 0.0
+    self.readParamCount = 0
+    self.longitudinalActuatorDelayLowerBound = float(int(Params().get("LongitudinalActuatorDelayLowerBound", encoding="utf8"))) * 0.01
+    self.longitudinalActuatorDelayUpperBound = float(int(Params().get("LongitudinalActuatorDelayUpperBound", encoding="utf8"))) * 0.01
+
 
   def reset(self, v_pid):
     """Reset PID controller and change setpoint"""
@@ -68,6 +73,16 @@ class LongControl:
     self.v_pid = v_pid
 
   def update(self, active, CS, long_plan, accel_limits, t_since_plan):
+    self.readParamCount += 1
+    if self.readParamCount >= 100:
+      self.readParamCount = 0
+    elif self.readParamCount == 10:
+      self.longitudinalActuatorDelayLowerBound = float(int(Params().get("LongitudinalActuatorDelayLowerBound", encoding="utf8"))) * 0.01
+      self.longitudinalActuatorDelayUpperBound = float(int(Params().get("LongitudinalActuatorDelayUpperBound", encoding="utf8"))) * 0.01
+    elif self.readParamCount == 30:
+      self.startAccelApply = float(int(Params().get("StartAccelApply", encoding="utf8"))) * 0.01
+      self.stopAccelApply = float(int(Params().get("StopAccelApply", encoding="utf8"))) * 0.01
+      
     """Update longitudinal control. This updates the state machine and runs a PID loop"""
 
     # Interp control trajectory
@@ -77,29 +92,39 @@ class LongControl:
       v_target_now = interp(t_since_plan, T_IDXS[:CONTROL_N], speeds)
       a_target_now = interp(t_since_plan, T_IDXS[:CONTROL_N], long_plan.accels)
 
-      longitudinalActuatorDelay = max(0.1, float(self.CP.longitudinalActuatorDelay))
+      v_target_lower = interp(self.longitudinalActuatorDelayLowerBound + t_since_plan, T_IDXS[:CONTROL_N], speeds)
+      a_target_lower = 2 * (v_target_lower - v_target_now) / self.longitudinalActuatorDelayLowerBound - a_target_now
 
-      v_target = interp(longitudinalActuatorDelay + t_since_plan, T_IDXS[:CONTROL_N], speeds)
-      a_target = 2.0 * (v_target - v_target_now) / longitudinalActuatorDelay - a_target_now
+      v_target_upper = interp(self.longitudinalActuatorDelayUpperBound + t_since_plan, T_IDXS[:CONTROL_N], speeds)
+      a_target_upper = 2 * (v_target_upper - v_target_now) / self.longitudinalActuatorDelayUpperBound - a_target_now
 
-      v_target_1sec = interp(longitudinalActuatorDelay + t_since_plan + 1.0, T_IDXS[:CONTROL_N], speeds)
+      v_target = min(v_target_lower, v_target_upper)
+      a_target = min(a_target_lower, a_target_upper)
+
+
+      #v_target_1sec = interp(self.CP.longitudinalActuatorDelayUpperBound + t_since_plan + 1.0, T_IDXS[:CONTROL_N], speeds)
+      #v_target_1sec = interp(self.longitudinalActuatorDelayUpperBound + t_since_plan + 1.0, T_IDXS[:CONTROL_N], speeds)
+      v_target_1sec = interp(self.longitudinalActuatorDelayLowerBound + t_since_plan + 1.0, T_IDXS[:CONTROL_N], speeds)
 
     else:
       v_target = 0.0
       v_target_now = 0.0
       v_target_1sec = 0.0
       a_target = 0.0
+      a_target_lower = a_target_upper = 0.0
       
     self.pid.neg_limit = accel_limits[0]
     self.pid.pos_limit = accel_limits[1]
 
+    self.CP.startingState = True if self.startAccelApply > 0.0 else False
+    self.CP.startAccel = 2.0 * self.startAccelApply
+    self.CP.stopAccel = -2.0 * self.stopAccelApply
+    
     output_accel = self.last_output_accel
 
-    # 상태 머신 업데이트
-    self.long_control_state = long_control_state_trans(
-      self.CP, active, self.long_control_state, CS.vEgo,
-      v_target, v_target_1sec, CS.brakePressed,
-      CS.cruiseState.standstill)
+    self.long_control_state, planned_stop = long_control_state_trans(self.CP, active, self.long_control_state, CS.vEgo,
+                                                                     v_target, v_target_1sec, CS.brakePressed,
+                                                                     CS.cruiseState.standstill, a_target_now)
 
     if self.long_control_state == LongCtrlState.off:
       self.reset(CS.vEgo)
@@ -137,4 +162,4 @@ class LongControl:
 
     # 최종 출력 클립
     self.last_output_accel = clip(output_accel, accel_limits[0], accel_limits[1])
-    return self.last_output_accel
+    return self.last_output_accel, -0.5 if planned_stop
