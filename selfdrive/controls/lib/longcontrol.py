@@ -162,4 +162,5 @@ class LongControl:
 
     # 최종 출력 클립
     self.last_output_accel = clip(output_accel, accel_limits[0], accel_limits[1])
-    return self.last_output_accel, -0.5 if planned_stop
+    
+    return self.last_output_accel, (-0.5 if planned_stop else self.last_output_accel)
