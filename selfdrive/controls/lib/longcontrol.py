@@ -10,9 +10,10 @@ from common.params import Params
 LongCtrlState = car.CarControl.Actuators.LongControlState
 
 
+# softHold 제거된 시그니처
 def long_control_state_trans(CP, active, long_control_state, v_ego, v_target,
-                             v_target_1sec, brake_pressed, cruise_standstill, softHold, a_target_now):
-  cruise_standstill = cruise_standstill and not CP.enableGasInterceptor                            
+                             v_target_1sec, brake_pressed, cruise_standstill, a_target_now):
+  cruise_standstill = cruise_standstill and not CP.enableGasInterceptor
   accelerating = v_target_1sec > (v_target + 0.01)
   planned_stop = (v_target < CP.vEgoStopping and
                   v_target_1sec < CP.vEgoStopping and
@@ -29,7 +30,7 @@ def long_control_state_trans(CP, active, long_control_state, v_ego, v_target,
 
   if not active:
     long_control_state = LongCtrlState.off
-    
+
   else:
     if long_control_state in (LongCtrlState.off, LongCtrlState.pid):
       long_control_state = LongCtrlState.pid
@@ -68,7 +69,6 @@ class LongControl:
     self.longitudinalActuatorDelayLowerBound = float(int(Params().get("LongitudinalActuatorDelayLowerBound", encoding="utf8"))) * 0.01
     self.longitudinalActuatorDelayUpperBound = float(int(Params().get("LongitudinalActuatorDelayUpperBound", encoding="utf8"))) * 0.01
 
-
   def reset(self, v_pid):
     """Reset PID controller and change setpoint"""
     self.pid.reset()
@@ -84,7 +84,7 @@ class LongControl:
     elif self.readParamCount == 30:
       self.startAccelApply = float(int(Params().get("StartAccelApply", encoding="utf8"))) * 0.01
       self.stopAccelApply = float(int(Params().get("StopAccelApply", encoding="utf8"))) * 0.01
-      
+
     """Update longitudinal control. This updates the state machine and runs a PID loop"""
 
     # Interp control trajectory
@@ -103,9 +103,6 @@ class LongControl:
       v_target = min(v_target_lower, v_target_upper)
       a_target = min(a_target_lower, a_target_upper)
 
-
-      #v_target_1sec = interp(self.CP.longitudinalActuatorDelayUpperBound + t_since_plan + 1.0, T_IDXS[:CONTROL_N], speeds)
-      #v_target_1sec = interp(self.longitudinalActuatorDelayUpperBound + t_since_plan + 1.0, T_IDXS[:CONTROL_N], speeds)
       v_target_1sec = interp(self.longitudinalActuatorDelayLowerBound + t_since_plan + 1.0, T_IDXS[:CONTROL_N], speeds)
 
     else:
@@ -114,19 +111,22 @@ class LongControl:
       v_target_1sec = 0.0
       a_target = 0.0
       a_target_lower = a_target_upper = 0.0
-      
+
     self.pid.neg_limit = accel_limits[0]
     self.pid.pos_limit = accel_limits[1]
 
     self.CP.startingState = True if self.startAccelApply > 0.0 else False
     self.CP.startAccel = 2.0 * self.startAccelApply
     self.CP.stopAccel = -2.0 * self.stopAccelApply
-    
+
     output_accel = self.last_output_accel
 
-    self.long_control_state, planned_stop = long_control_state_trans(self.CP, active, self.long_control_state, CS.vEgo,
-                                                                     v_target, v_target_1sec, CS.brakePressed,
-                                                                     CS.cruiseState.standstill, a_target_now)
+    # ✅ softHold 없이 호출 인자 맞춤 (에러 수정 포인트)
+    self.long_control_state, planned_stop = long_control_state_trans(
+      self.CP, active, self.long_control_state, CS.vEgo,
+      v_target, v_target_1sec, CS.brakePressed,
+      CS.cruiseState.standstill, a_target_now
+    )
 
     if self.long_control_state == LongCtrlState.off:
       self.reset(CS.vEgo)
@@ -164,5 +164,6 @@ class LongControl:
 
     # 최종 출력 클립
     self.last_output_accel = clip(output_accel, accel_limits[0], accel_limits[1])
-    
-    return self.last_output_accel, (-0.5 if planned_stop else self.last_output_accel)
+
+    # ✅ 2번째 리턴은 jerk로 쓰는 자리라 accel 재사용하지 않도록 정리(권장)
+    return self.last_output_accel, (-0.5 if planned_stop else 0.0)
