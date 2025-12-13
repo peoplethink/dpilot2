@@ -1,6 +1,7 @@
 import copy
 
 import crcmod
+from common.numpy_fast import clip
 from selfdrive.car.hyundai.values import CAR, CHECKSUM, FEATURES, EV_HYBRID_CAR
 
 hyundai_checksum = crcmod.mkCrcFun(0x11D, initCrc=0xFD, rev=False, xorOut=0xdf)
@@ -13,35 +14,21 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
   values = copy.copy(lkas11)
   values["CF_Lkas_LdwsSysState"] = sys_state
   values["CF_Lkas_SysWarning"] = 3 if sys_warning else 0
-  values["CF_Lkas_LdwsLHWarning"] = left_lane_depart or lkas11["CF_Lkas_LdwsLHWarning"] 
+  values["CF_Lkas_LdwsLHWarning"] = left_lane_depart or lkas11["CF_Lkas_LdwsLHWarning"]
   values["CF_Lkas_LdwsRHWarning"] = right_lane_depart or lkas11["CF_Lkas_LdwsLHWarning"]
   values["CR_Lkas_StrToqReq"] = apply_steer
   values["CF_Lkas_ActToi"] = steer_req
-  values["CF_Lkas_ToiFlt"] = torque_fault  # seems to allow actuation on CR_Lkas_StrToqReq
+  values["CF_Lkas_ToiFlt"] = torque_fault
   values["CF_Lkas_MsgCount"] = frame % 0x10
   values["CF_Lkas_Chksum"] = 0
 
   if car_fingerprint in FEATURES["send_lfa_mfa"]:
     values["CF_Lkas_LdwsActivemode"] = int(left_lane) + (int(right_lane) << 1)
     values["CF_Lkas_LdwsOpt_USM"] = 2
-
-    # FcwOpt_USM 5 = Orange blinking car + lanes
-    # FcwOpt_USM 4 = Orange car + lanes
-    # FcwOpt_USM 3 = Green blinking car + lanes
-    # FcwOpt_USM 2 = Green car + lanes
-    # FcwOpt_USM 1 = White car + lanes
-    # FcwOpt_USM 0 = No car + lanes
     values["CF_Lkas_FcwOpt_USM"] = 2 if enabled else 1
-
-    # SysWarning 4 = keep hands on wheel
-    # SysWarning 5 = keep hands on wheel (red)
-    # SysWarning 6 = keep hands on wheel (red) + beep
-    # Note: the warning is hidden while the blinkers are on
     values["CF_Lkas_SysWarning"] = 4 if sys_warning else 0
 
   elif car_fingerprint == CAR.HYUNDAI_GENESIS:
-    # This field is actually LdwsActivemode
-    # Genesis and Optima fault when forwarding while engaged
     values["CF_Lkas_LdwsActivemode"] = 2
     values["CF_Lkas_SysWarning"] = lkas11["CF_Lkas_SysWarning"]
 
@@ -56,19 +43,16 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
   dat = packer.make_can_msg("LKAS11", 0, values)[2]
 
   if car_fingerprint in CHECKSUM["crc8"]:
-    # CRC Checksum as seen on 2019 Hyundai Santa Fe
     dat = dat[:6] + dat[7:8]
     checksum = hyundai_checksum(dat)
   elif car_fingerprint in CHECKSUM["6B"]:
-    # Checksum of first 6 Bytes, as seen on 2018 Kia Sorento
     checksum = sum(dat[:6]) % 256
   else:
-    # Checksum of first 6 Bytes and last Byte as seen on 2018 Kia Stinger
     checksum = (sum(dat[:6]) + dat[7]) % 256
 
   values["CF_Lkas_Chksum"] = checksum
-
   return packer.make_can_msg("LKAS11", bus, values)
+
 
 def create_clu11(packer, bus, clu11, button, speed):
   values = copy.copy(clu11)
@@ -77,20 +61,15 @@ def create_clu11(packer, bus, clu11, button, speed):
   values["CF_Clu_AliveCnt1"] = (values["CF_Clu_AliveCnt1"] + 1) % 0x10
   return packer.make_can_msg("CLU11", bus, values)
 
+
 def create_lfahda_mfc(packer, enabled, active):
   values = {
     "LFA_Icon_State": 2 if enabled else 0,
     "HDA_Active": 1 if active > 0 else 0,
     "HDA_Icon_State": 2 if active > 0 else 0,
-    # "HDA_VSetReq": 0,
   }
-
-  # VAL_ 1157 LFA_Icon_State 0 "no_wheel" 1 "white_wheel" 2 "green_wheel" 3 "green_wheel_blink";
-  # VAL_ 1157 LFA_SysWarning 0 "no_message" 1 "switching_to_hda" 2 "switching_to_scc" 3 "lfa_error" 4 "check_hda" 5 "keep_hands_on_wheel_orange" 6 "keep_hands_on_wheel_red";
-  # VAL_ 1157 HDA_Icon_State 0 "no_hda" 1 "white_hda" 2 "green_hda";
-  # VAL_ 1157 HDA_SysWarning 0 "no_message" 1 "driving_convenience_systems_cancelled" 2 "highway_drive_assist_system_cancelled";
-
   return packer.make_can_msg("LFAHDA_MFC", 0, values)
+
 
 def create_hda_mfc(packer, active, CS, left_lane, right_lane):
   values = copy.copy(CS.lfahda_mfc)
@@ -110,6 +89,7 @@ def create_hda_mfc(packer, active, CS, left_lane, right_lane):
 
   return packer.make_can_msg("LFAHDA_MFC", 0, values)
 
+
 def create_mdps12(packer, frame, mdps12):
   values = copy.copy(mdps12)
   values["CF_Mdps_ToiActive"] = 0
@@ -122,6 +102,7 @@ def create_mdps12(packer, frame, mdps12):
   values["CF_Mdps_Chksum2"] = checksum
 
   return packer.make_can_msg("MDPS12", 2, values)
+
 
 def create_scc11(packer, frame, enabled, set_speed, lead_visible, scc_live, scc11, active_cam, stock_cam):
   values = copy.copy(scc11)
@@ -136,16 +117,15 @@ def create_scc11(packer, frame, enabled, set_speed, lead_visible, scc_live, scc1
     values["VSetDis"] = set_speed
     values["ObjValid"] = 1 if enabled else 0
     values["DriverAlertDisplay"] = 0
-    #values["ACC_ObjStatus"] = 0
 
   return packer.make_can_msg("SCC11", 0, values)
+
 
 def create_scc12(packer, apply_accel, enabled, cnt, scc_live, scc12, long_override, brakepressed,
                  standstill, car_fingerprint):
   values = copy.copy(scc12)
 
   if car_fingerprint in EV_HYBRID_CAR:
-    # from xps-genesis
     if enabled and not brakepressed:
       values["ACCMode"] = 2 if long_override and (apply_accel > -0.2) else 1
       if apply_accel < 0.0 and standstill:
@@ -161,11 +141,11 @@ def create_scc12(packer, apply_accel, enabled, cnt, scc_live, scc12, long_overri
       values["CR_VSM_Alive"] = cnt
 
   else:
-    values["aReqRaw"] = apply_accel if enabled else 0  # aReqMax
-    values["aReqValue"] = apply_accel if enabled else 0  # aReqMin
+    values["aReqRaw"] = apply_accel if enabled else 0
+    values["aReqValue"] = apply_accel if enabled else 0
     values["CR_VSM_Alive"] = cnt
     if not scc_live:
-      values["ACCMode"] = 1 if enabled else 0  # 2 if gas padel pressed
+      values["ACCMode"] = 1 if enabled else 0
 
   values["CR_VSM_ChkSum"] = 0
   dat = packer.make_can_msg("SCC12", 0, values)[2]
@@ -173,35 +153,35 @@ def create_scc12(packer, apply_accel, enabled, cnt, scc_live, scc12, long_overri
 
   return packer.make_can_msg("SCC12", 0, values)
 
+
 def create_scc13(packer, scc13):
   values = copy.copy(scc13)
   return packer.make_can_msg("SCC13", 0, values)
 
-def create_scc14(packer, enabled, e_vgo, standstill, accel, upper_jerk, lower_jerk, long_override, objgap, scc14):
+
+# ✅ 시그니처 변경: cb_upper/cb_lower + objgap2 추가
+def create_scc14(packer, enabled, e_vgo, standstill, accel,
+                 upper_jerk, lower_jerk,
+                 cb_upper, cb_lower,
+                 long_override, objgap, objgap2, scc14):
   values = copy.copy(scc14)
 
-  # from xps-genesis
   if enabled:
     values["ACCMode"] = 2 if long_override and (accel > -0.2) else 1
     values["ObjGap"] = objgap
-    values["ObjGap2"] = 1 if objgap else 0
+    values["ObjGap2"] = objgap2
 
-    values["JerkUpperLimit"] = min(3.0, upper_jerk)
-    values["JerkLowerLimit"] = max(0.05, lower_jerk)
-    values["ComfortBandUpper"] = 0.0
-    values["ComfortBandLower"] = 0.0
+    # Controller에서 계산된 jerk를 그대로 반영 (여기선 clamp만)
+    values["JerkUpperLimit"] = clip(upper_jerk, 0.5, 5.0)
+    values["JerkLowerLimit"] = clip(lower_jerk, 0.5, 5.0)
+
+    # ajouatom comfort band 반영
+    values["ComfortBandUpper"] = cb_upper
+    values["ComfortBandLower"] = cb_lower
 
   return packer.make_can_msg("SCC14", 0, values)
 
+
 def create_EpsDtc(packer, Eps_Dtc):
-  values = copy.copy(mdps12)
-  values["CF_Mdps_ToiActive"] = 0
-  values["CF_Mdps_ToiUnavail"] = 1
-  values["CF_Mdps_MsgCount2"] = frame % 0x40
-  values["CF_Mdps_Chksum2"] = 0
-
-  dat = packer.make_can_msg("MDPS12", 2, values)[2]
-  checksum = sum(dat) % 256
-  values["CF_Mdps_Chksum2"] = checksum
-
-  return packer.make_can_msg("MDPS12", 2, values)
+  values = copy.copy(Eps_Dtc)
+  return packer.make_can_msg("EpsDtc", 0, values)
