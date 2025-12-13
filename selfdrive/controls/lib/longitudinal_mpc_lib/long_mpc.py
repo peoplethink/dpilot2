@@ -13,7 +13,6 @@ from selfdrive.controls.ntune import ntune_scc_get
 from common.conversions import Conversions as CV
 from common.params import Params
 from common.realtime import DT_MDL
-from common.filter_simple import FirstOrderFilter
 from common.filter_simple import StreamingMovingAverage
 from cereal import log
 
@@ -50,14 +49,6 @@ LEAD_DANGER_FACTOR = 0.75
 LIMIT_COST = 1e6
 ACADOS_SOLVER_TYPE = 'SQP_RTI'
 
-CRUISE_GAP_BP = [1., 2., 3., 4.]
-CRUISE_GAP_V = [0.9, 1.1, 1.6, 1.8]
-
-AUTO_TR_BP = [0., 30.*CV.KPH_TO_MS, 70.*CV.KPH_TO_MS, 110.*CV.KPH_TO_MS]
-AUTO_TR_V = [1.0, 1.1, 1.3, 1.4]
-
-AUTO_TR_CRUISE_GAP = 4
-
 # Fewer timestamps don't hurt performance and lead to
 # much better convergence of the MPC with low iterations
 N = 12
@@ -67,6 +58,7 @@ T_IDXS_LST = [index_function(idx, max_val=MAX_T, max_idx=N) for idx in range(N+1
 T_IDXS = np.array(T_IDXS_LST)
 FCW_IDXS = T_IDXS < 5.0
 T_DIFFS = np.diff(T_IDXS, prepend=[0.])
+
 T_FOLLOW = 1.25
 COMFORT_BRAKE = 2.5
 STOP_DISTANCE = 5.0
@@ -79,22 +71,18 @@ def get_stopped_equivalence_factor(v_lead, v_ego, t_follow=T_FOLLOW,
                                    krkeegan=False):
   """
   v_lead, v_ego : numpy array 또는 float
-  krkeegan=False 이면 기존 방식 그대로,
-  krkeegan=True 이면 lead 가 ego 보다 빠르게 멀어질 때
-  고의적으로 여유거리를 크게 만들어 가속을 더 빨리 하도록 함.
+  krkeegan=False 이면 기존 방식,
+  krkeegan=True 이면 lead가 ego보다 빠르게 멀어질 때 offset을 추가해 가속을 빠르게 유도
   """
-  # 기본 (기존) 방식
   if not krkeegan:
     return (v_lead**2) / (2 * comfort_brake)
 
-  # KRKeegan 방식
   v_lead = np.array(v_lead)
   v_ego = np.array(v_ego)
 
   v_diff = v_lead - v_ego
   v_diff_offset = 0.0
 
-  # 상대차량이 항상 ego 보다 빠를 때만 offset 적용
   if np.all(v_diff > 0):
     v_diff_offset = v_diff * 1.0
     v_diff_offset = np.clip(v_diff_offset, 0.0, stop_distance / 2.0)
@@ -111,7 +99,6 @@ def get_safe_obstacle_distance(v_ego, t_follow, comfort_brake, stop_distance):
 def desired_follow_distance(v_ego, v_lead, t_follow,
                             stop_distance=STOP_DISTANCE,
                             comfort_brake=COMFORT_BRAKE):
-  # 인자 순서 오류 있었던 부분 수정 + KRKeegan 시그니처에 맞게 보정
   return (get_safe_obstacle_distance(v_ego, t_follow, comfort_brake, stop_distance)
           - get_stopped_equivalence_factor(v_lead, v_ego, t_follow,
                                            stop_distance, comfort_brake,
@@ -122,23 +109,19 @@ def gen_long_model():
   model = AcadosModel()
   model.name = MODEL_NAME
 
-  # set up states & controls
   x_ego = SX.sym('x_ego')
   v_ego = SX.sym('v_ego')
   a_ego = SX.sym('a_ego')
   model.x = vertcat(x_ego, v_ego, a_ego)
 
-  # controls
   j_ego = SX.sym('j_ego')
   model.u = vertcat(j_ego)
 
-  # xdot
   x_ego_dot = SX.sym('x_ego_dot')
   v_ego_dot = SX.sym('v_ego_dot')
   a_ego_dot = SX.sym('a_ego_dot')
   model.xdot = vertcat(x_ego_dot, v_ego_dot, a_ego_dot)
 
-  # live parameters
   a_min = SX.sym('a_min')
   a_max = SX.sym('a_max')
   x_obstacle = SX.sym('x_obstacle')
@@ -151,7 +134,6 @@ def gen_long_model():
                     lead_t_follow, lead_danger_factor,
                     comfort_brake, stop_distance)
 
-  # dynamics model
   f_expl = vertcat(v_ego, a_ego, j_ego)
   model.f_impl_expr = model.xdot - f_expl
   model.f_expl_expr = f_expl
@@ -163,11 +145,8 @@ def gen_long_ocp():
   ocp.model = gen_long_model()
 
   Tf = T_IDXS[-1]
-
-  # set dimensions
   ocp.dims.N = N
 
-  # set cost module
   ocp.cost.cost_type = 'NONLINEAR_LS'
   ocp.cost.cost_type_e = 'NONLINEAR_LS'
 
@@ -194,8 +173,6 @@ def gen_long_ocp():
   desired_dist_comfort = get_safe_obstacle_distance(v_ego, lead_t_follow,
                                                     comfort_brake, stop_distance)
 
-  # The main cost in normal operation is how close you are to the "desired" distance
-  # from an obstacle at every timestep.
   costs = [((x_obstacle - x_ego) - (desired_dist_comfort)) / (v_ego + 10.),
            x_ego,
            v_ego,
@@ -205,7 +182,6 @@ def gen_long_ocp():
   ocp.model.cost_y_expr = vertcat(*costs)
   ocp.model.cost_y_expr_e = vertcat(*costs[:-1])
 
-  # Constraints
   constraints = vertcat(v_ego,
                         (a_ego - a_min),
                         (a_max - a_ego),
@@ -219,7 +195,6 @@ def gen_long_ocp():
                                    T_FOLLOW, LEAD_DANGER_FACTOR,
                                    COMFORT_BRAKE, STOP_DISTANCE])
 
-  # We put all constraint cost weights to 0 and only set them at runtime
   cost_weights = np.zeros(CONSTR_DIM)
   ocp.cost.zl = cost_weights
   ocp.cost.Zl = cost_weights
@@ -230,7 +205,6 @@ def gen_long_ocp():
   ocp.constraints.uh = 1e4*np.ones(CONSTR_DIM)
   ocp.constraints.idxsh = np.arange(CONSTR_DIM)
 
-  # Solver options
   ocp.solver_options.qp_solver = 'PARTIAL_CONDENSING_HPIPM'
   ocp.solver_options.hessian_approx = 'GAUSS_NEWTON'
   ocp.solver_options.integrator_type = 'ERK'
@@ -240,7 +214,6 @@ def gen_long_ocp():
   ocp.solver_options.qp_solver_iter_max = 10
   ocp.solver_options.qp_tol = 1e-3
 
-  # set prediction horizon
   ocp.solver_options.tf = Tf
   ocp.solver_options.shooting_nodes = T_IDXS
 
@@ -254,117 +227,98 @@ class LongitudinalMpc:
     self.mode = mode
     self.solver = AcadosOcpSolverCython(MODEL_NAME, ACADOS_SOLVER_TYPE, N)
 
-    # KRKeegan / dynamic cost 관련
+    # ---- (1) 첫 코드 gap 방식 파라미터/상태 ----
+    self.openpilotLongitudinalControl = False  # 첫 코드 구조 유지 (필요 시 True로)
+    self.mySafeModeFactor = 1.0
+    self.applyCruiseGap = 1
+    self.tFollowSpeedRatio = 1.2
+    self.tFollowGap1 = 1.1
+    self.tFollowGap2 = 1.2
+    self.tFollowGap3 = 1.4
+    self.tFollowGap4 = 1.6
+    self.v_ego_kph_prev = 0.0
+
+    # KRKeegan / dynamic cost
     self.applyLongDynamicCost = False
     self.t_follow = T_FOLLOW
     self.lo_timer = 0
-
-    # gap 저장 (가속/감속/코스트 튜닝용)
-    self.cruise_gap = AUTO_TR_CRUISE_GAP
 
     self.reset()
     self.source = SOURCES[2]
 
   def reset(self):
-    # self.solver = AcadosOcpSolverCython(MODEL_NAME, ACADOS_SOLVER_TYPE, N)
     self.solver.reset()
-    # self.solver.options_set('print_level', 2)
-    self.x_solution = np.zeros(N+1)
+
     self.v_solution = np.zeros(N+1)
     self.a_solution = np.zeros(N+1)
     self.prev_a = np.array(self.a_solution)
     self.j_solution = np.zeros(N)
+
     self.yref = np.zeros((N+1, COST_DIM))
     for i in range(N):
       self.solver.cost_set(i, "yref", self.yref[i])
     self.solver.cost_set(N, "yref", self.yref[N][:COST_E_DIM])
+
     self.x_sol = np.zeros((N+1, X_DIM))
     self.u_sol = np.zeros((N, 1))
     self.params = np.zeros((N+1, PARAM_DIM))
-    self.t_follow = T_FOLLOW
 
     for i in range(N+1):
       self.solver.set(i, 'x', np.zeros(X_DIM))
+
     self.last_cloudlog_t = 0
     self.status = False
     self.crash_cnt = 0.0
     self.solution_status = 0
-    # timers
+
     self.solve_time = 0.0
     self.time_qp_solution = 0.0
     self.time_linearization = 0.0
     self.time_integrator = 0.0
+
     self.x0 = np.zeros(X_DIM)
     self.set_weights()
 
   def set_cost_weights(self, cost_weights, constraint_cost_weights):
     W = np.asfortranarray(np.diag(cost_weights))
     for i in range(N):
-      # TODO don't hardcode A_CHANGE_COST idx
-      # reduce the cost on (a-a_prev) later in the horizon.
       W[4, 4] = cost_weights[4] * np.interp(T_IDXS[i], [0.0, 1.0, 2.0],
                                             [1.0, 1.0, 0.0])
       self.solver.cost_set(i, 'W', W)
-    # Setting the slice without the copy make the array not contiguous,
-    # causing issues with the C interface.
     self.solver.cost_set(N, 'W', np.copy(W[:COST_E_DIM, :COST_E_DIM]))
 
-    # Set L2 slack cost on lower bound constraints
     Zl = np.array(constraint_cost_weights)
     for i in range(N):
       self.solver.cost_set(i, 'Zl', Zl)
 
-  # === KRKeegan: t_follow & v_ego & gap 에 따른 cost multiplier ===
   def get_cost_multipliers(self, v_lead0, v_lead1):
     v_ego = self.x0[1]
     v_ego_bps = [0.0, 10.0]
     TFs = [1.2, 1.45, 1.8]
 
-    # TF에 의한 a,j,d cost변경 (gap이 짧을수록 a,j cost 감소, danger zone cost 증가)
     a_change_tf = interp(self.t_follow, TFs, [.8, 1., 1.1])
     j_ego_tf = interp(self.t_follow, TFs, [.8, 1., 1.1])
     d_zone_tf = interp(self.t_follow, TFs, [1.3, 1., 1.])
 
-    # 가속 개선용: 상대속도/ego 속도에 따른 추가 가중치
     j_ego_v_ego = 1.0
     a_change_v_ego = 1.0
     if (v_lead0 - v_ego >= 0) and (v_lead1 - v_ego >= 0):
       j_ego_v_ego = interp(v_ego, v_ego_bps, [.05, 1.])
       a_change_v_ego = interp(v_ego, v_ego_bps, [.05, 1.])
 
-    # gap 에 따른 cost scaling
-    gap = float(getattr(self, "cruise_gap", AUTO_TR_CRUISE_GAP))
-    gap_bps = [1., 2., 3., 4.]
-
-    # gap 1: 더 민감(코스트 작게)  / gap 4: 더 둔하게(코스트 크게)
-    a_gap_mul = interp(gap, gap_bps, [0.8, 0.9, 1.0, 1.1])
-    j_gap_mul = interp(gap, gap_bps, [0.8, 0.9, 1.0, 1.1])
-    # gap 작을수록 danger zone cost 좀 더 키움
-    d_gap_mul = interp(gap, gap_bps, [1.1, 1.05, 1.0, 0.95])
-
-    j_ego = min(j_ego_tf, j_ego_v_ego) * j_gap_mul
-    a_change = min(a_change_tf, a_change_v_ego) * a_gap_mul
-    d_zone = d_zone_tf * d_gap_mul
-
-    return (a_change, j_ego, d_zone)
+    j_ego = min(j_ego_tf, j_ego_v_ego)
+    a_change = min(a_change_tf, a_change_v_ego)
+    return (a_change, j_ego, d_zone_tf)
 
   def set_weights(self, prev_accel_constraint=True, v_lead0=0.0, v_lead1=0.0):
-    jerk_factor = ntune_scc_get('jerkFactor')
-
     if self.mode == 'acc':
       base_a_change_cost = A_CHANGE_COST if prev_accel_constraint else 40.0
-
-      # KRKeegan 동적 cost 적용 여부
       if self.applyLongDynamicCost:
         a_mul, j_mul, d_zone_tf = self.get_cost_multipliers(v_lead0, v_lead1)
-
         cost_weights = [
-          X_EGO_OBSTACLE_COST,
-          X_EGO_COST,
-          V_EGO_COST,
-          A_EGO_COST,
-          jerk_factor * base_a_change_cost * a_mul,
-          jerk_factor * J_EGO_COST * j_mul,
+          X_EGO_OBSTACLE_COST, X_EGO_COST, V_EGO_COST, A_EGO_COST,
+          base_a_change_cost * a_mul,
+          J_EGO_COST * j_mul,
         ]
         constraint_cost_weights = [
           LIMIT_COST, LIMIT_COST, LIMIT_COST,
@@ -372,16 +326,11 @@ class LongitudinalMpc:
         ]
       else:
         cost_weights = [
-          X_EGO_OBSTACLE_COST,
-          X_EGO_COST,
-          V_EGO_COST,
-          A_EGO_COST,
-          jerk_factor * base_a_change_cost,
-          jerk_factor * J_EGO_COST,
+          X_EGO_OBSTACLE_COST, X_EGO_COST, V_EGO_COST, A_EGO_COST,
+          base_a_change_cost, J_EGO_COST,
         ]
         constraint_cost_weights = [
-          LIMIT_COST, LIMIT_COST, LIMIT_COST,
-          DANGER_ZONE_COST,
+          LIMIT_COST, LIMIT_COST, LIMIT_COST, DANGER_ZONE_COST,
         ]
 
     elif self.mode == 'blended':
@@ -397,7 +346,7 @@ class LongitudinalMpc:
     v_prev = self.x0[1]
     self.x0[1] = v
     self.x0[2] = a
-    if abs(v_prev - v) > 2.:  # probably only helps if v < v_prev
+    if abs(v_prev - v) > 2.:
       for i in range(N+1):
         self.solver.set(i, 'x', self.x0)
 
@@ -418,14 +367,11 @@ class LongitudinalMpc:
       a_lead = lead.aLeadK
       a_lead_tau = lead.aLeadTau
     else:
-      # Fake a fast lead car, so mpc can keep running in the same mode
       x_lead = 50.0
       v_lead = v_ego + 10.0
       a_lead = 0.0
       a_lead_tau = _LEAD_ACCEL_TAU
 
-    # MPC will not converge if immediate crash is expected
-    # Clip lead distance to what is still possible to brake for
     min_x_lead = ((v_ego + v_lead)/2) * (v_ego - v_lead) / (-ACCEL_MIN * 2)
     x_lead = clip(x_lead, min_x_lead, 1e8)
     v_lead = clip(v_lead, 0.0, 1e8)
@@ -437,75 +383,112 @@ class LongitudinalMpc:
     self.cruise_min_a = min_a
     self.max_a = max_a
 
-  # KRKeegan 동적 cost용 파라미터 로딩 (ApplyLongDynamicCost 상수 고정: True)
+  # ---- (2) 첫 코드처럼 Params 주기 업데이트 ----
   def update_params(self):
     self.lo_timer += 1
     if self.lo_timer > 200:
       self.lo_timer = 0
     elif self.lo_timer == 60:
-      # 파람 사용 안하고 상수로 고정
-      self.applyLongDynamicCost = True
+      self.applyLongDynamicCost = Params().get_bool("ApplyLongDynamicCost")
+    elif self.lo_timer == 100:
+      # gap 관련 파라미터
+      try:
+        self.tFollowSpeedRatio = float(int(Params().get("TFollowSpeedRatio", encoding="utf8"))) / 100.
+        self.tFollowGap1 = float(int(Params().get("TFollowGap1", encoding="utf8"))) / 100.
+        self.tFollowGap2 = float(int(Params().get("TFollowGap2", encoding="utf8"))) / 100.
+        self.tFollowGap3 = float(int(Params().get("TFollowGap3", encoding="utf8"))) / 100.
+        self.tFollowGap4 = float(int(Params().get("TFollowGap4", encoding="utf8"))) / 100.
+      except Exception:
+        # 파람 없으면 기본값 유지
+        pass
+
+  # ---- (3) 첫 코드 update_gap_tf 로직 이식 (inputs: carstate만 사용 가능 버전) ----
+  def update_gap_tf(self, carstate, v_ego, a_ego):
+    v_ego_kph = v_ego * CV.MS_TO_KPH
+
+    # 첫 코드: mySafeModeFactor는 controls에서 왔는데,
+    # 두 번째 코드에는 없어서 "있으면 쓰고, 없으면 1.0"
+    self.mySafeModeFactor = float(getattr(carstate, "mySafeModeFactor", 1.0))
+    self.mySafeModeFactor = clip(self.mySafeModeFactor, 0.5, 1.0)
+
+    # 첫 코드: controls.longCruiseGap (1~4) → 여기서는 carstate.cruiseGap 사용
+    raw_gap = float(getattr(carstate, "cruiseGap", 1.0))
+    self.applyCruiseGap = int(clip(raw_gap if raw_gap > 0 else 1.0, 1, 4))
+
+    if self.openpilotLongitudinalControl:
+      # 첫 코드: 감속(속도 감소) 중에는 t_follow 계산 안함
+      if v_ego_kph >= self.v_ego_kph_prev:
+        cruiseGap_dict = {
+          1: self.tFollowGap1,
+          2: self.tFollowGap2,
+          3: self.tFollowGap3,
+          4: self.tFollowGap4,
+        }
+        tf = cruiseGap_dict[self.applyCruiseGap]
+        cruiseGapRatio = interp(v_ego_kph, [0, 100], [tf, tf * self.tFollowSpeedRatio])
+        self.t_follow = max(0.6, cruiseGapRatio * (2.0 - self.mySafeModeFactor))
+      # else: 감속중이면 기존 t_follow 유지
+
+    else:
+      # 첫 코드: openpilotLongitudinalControl=False일 때는 status(lead 유무)에 따라 gap 자동확대
+      # 여기서는 같은 동작 유지: lead 있으면 감속 a_ego에 따라 gap을 4로 올려버림(급감속일수록)
+      if self.status:
+        if v_ego_kph < 0.1:
+          self.applyCruiseGap = 1
+        else:
+          self.applyCruiseGap = int(interp(a_ego, [-1.5, -0.5], [4, self.applyCruiseGap]))
+
+      # gap별 base tf를 바로 t_follow로 사용 (첫 코드 openpilotLongitudinalControl=True일 때 방식에 맞춤)
+      cruiseGap_dict = {
+        1: self.tFollowGap1,
+        2: self.tFollowGap2,
+        3: self.tFollowGap3,
+        4: self.tFollowGap4,
+      }
+      tf = cruiseGap_dict[int(clip(self.applyCruiseGap, 1, 4))]
+      cruiseGapRatio = interp(v_ego_kph, [0, 100], [tf, tf * self.tFollowSpeedRatio])
+      self.t_follow = max(0.6, cruiseGapRatio * (2.0 - self.mySafeModeFactor))
+
+    self.v_ego_kph_prev = v_ego_kph
 
   def update(self, carstate, radarstate, v_cruise, x, v, a, j):
     v_ego = self.x0[1]
+    a_ego = float(getattr(carstate, "aEgo", 0.0))
     self.status = radarstate.leadOne.status or radarstate.leadTwo.status
 
-    # KRKeegan 관련 파라미터 주기적 업데이트
+    # Params 갱신
     self.update_params()
 
     lead_xv_0 = self.process_lead(radarstate.leadOne)
     lead_xv_1 = self.process_lead(radarstate.leadTwo)
 
-    # --- CruiseGap + AutoTR (KRKeegan 방식 호환) ---
-    cruise_gap = int(clip(carstate.cruiseGap, 1., 4.)) if carstate.cruiseGap > 0 else AUTO_TR_CRUISE_GAP
-    self.cruise_gap = cruise_gap  # gap 저장 (가속/감속/코스트용)
-
-    if self.mode == 'acc':
-      if cruise_gap == AUTO_TR_CRUISE_GAP:
-        t_follow = interp(carstate.vEgo, AUTO_TR_BP, AUTO_TR_V)
-      else:
-        t_follow = interp(float(cruise_gap), CRUISE_GAP_BP, CRUISE_GAP_V)
-    else:
-      t_follow = T_FOLLOW
-
-    t_follow = np.clip(t_follow, 0.6, 2.5)
-
-    # 속도에 따라 TR 조금 더 늘려주기
-    speed_ratio = interp(carstate.vEgo,
-                         [0., 100.*CV.KPH_TO_MS],
-                         [1.0, 1.3])
-    t_follow *= speed_ratio
-
-    self.t_follow = t_follow
+    # ---- (4) 첫 코드 gap 방식으로 t_follow 갱신 ----
+    self.update_gap_tf(carstate, v_ego, a_ego)
     self.params[:, 4] = self.t_follow
 
-    stop_distance = ntune_scc_get('stopDistance')
-    comfort_brake = ntune_scc_get('comfortBrake')
-    self.params[:, 6] = comfort_brake
-    self.params[:, 7] = stop_distance
+    # stop/comfort 값 읽어서 첫 코드처럼 mySafeModeFactor 적용
+    stop_distance = float(ntune_scc_get('stopDistance'))  # 기본 stopDistance
+    comfort_brake = float(ntune_scc_get('comfortBrake'))
 
-    # === gap 에 따른 가속/감속 한계 조정 ===
-    # gap 1: 가속/제동 더 강하게, gap 4: 더 부드럽게
-    gap_bps = [1., 4.]
+    applyStopDistance = stop_distance * (2.0 - self.mySafeModeFactor)
+    comfort_brake_eff = comfort_brake * self.mySafeModeFactor
 
-    if self.mode == 'acc':
-      accel_gain = interp(float(cruise_gap), gap_bps, [1.2, 0.8])   # max_a 스케일
-      brake_gain = interp(float(cruise_gap), gap_bps, [1.2, 0.8])   # ACCEL_MIN 스케일(더 음수)
-    else:
-      accel_gain = 1.0
-      brake_gain = 1.0
+    self.params[:, 6] = comfort_brake_eff
+    self.params[:, 7] = applyStopDistance
 
-    max_a_eff = self.max_a * accel_gain
-    a_min_eff = ACCEL_MIN * brake_gain
+    # 가감속 한계는 (두번째 코드 기존 gap 스케일) 제거하고 기본값 유지
+    a_min_eff = ACCEL_MIN
+    max_a_eff = self.max_a
+    self.params[:, 0] = a_min_eff
+    self.params[:, 1] = max_a_eff
 
-    # === KRKeegan: lead를 “정지 장애물 등가”로 바꾸는 부분 ===
-    # self.x_sol[:,1] 는 이전 horizon의 ego 속도 솔루션 (원본 krkeegan도 동일하게 사용)
+    # ---- KRKeegan stopped equivalence (첫 코드와 동일한 입력 방식) ----
     lead_0_obstacle = lead_xv_0[:, 0] + get_stopped_equivalence_factor(
       lead_xv_0[:, 1],
       self.x_sol[:, 1],
       t_follow=self.t_follow,
-      stop_distance=stop_distance,
-      comfort_brake=comfort_brake,
+      stop_distance=applyStopDistance,
+      comfort_brake=comfort_brake_eff,
       krkeegan=self.applyLongDynamicCost
     )
 
@@ -513,23 +496,17 @@ class LongitudinalMpc:
       lead_xv_1[:, 1],
       self.x_sol[:, 1],
       t_follow=self.t_follow,
-      stop_distance=stop_distance,
-      comfort_brake=comfort_brake,
+      stop_distance=applyStopDistance,
+      comfort_brake=comfort_brake_eff,
       krkeegan=self.applyLongDynamicCost
     )
 
-    # gap 반영된 가감속 한계를 MPC 파라미터에 입력
-    self.params[:, 0] = a_min_eff
-    self.params[:, 1] = max_a_eff
-
-    # KRKeegan 동적 cost: lead 속도를 기반으로 set_weights 업데이트
+    # 동적 cost 갱신
     self.set_weights(prev_accel_constraint=True,
                      v_lead0=lead_xv_0[0, 1],
                      v_lead1=lead_xv_1[0, 1])
 
-    # Update in ACC mode or ACC/e2e blend
     if self.mode == 'acc':
-
       if radarstate.leadOne.status:
         lead_danger_factor = np.interp(radarstate.leadOne.dRel,
                                        [STOP_DISTANCE, 10.],
@@ -539,24 +516,23 @@ class LongitudinalMpc:
 
       self.params[:, 5] = lead_danger_factor
 
-      # Fake an obstacle for cruise, this ensures smooth acceleration to set speed
-      # when the leads are no factor.
       v_lower = v_ego + (T_IDXS * a_min_eff * 1.05)
       v_upper = v_ego + (T_IDXS * max_a_eff * 1.05)
       v_cruise_clipped = np.clip(v_cruise * np.ones(N+1),
                                  v_lower,
                                  v_upper)
+
       cruise_obstacle = (np.cumsum(T_DIFFS * v_cruise_clipped) +
                          get_safe_obstacle_distance(v_cruise_clipped,
                                                     self.t_follow,
-                                                    comfort_brake,
-                                                    stop_distance))
+                                                    comfort_brake_eff,
+                                                    applyStopDistance))
+
       x_obstacles = np.column_stack([lead_0_obstacle,
                                      lead_1_obstacle,
                                      cruise_obstacle])
       self.source = SOURCES[np.argmin(x_obstacles[0])]
 
-      # These are not used in ACC mode
       x[:], v[:], a[:], j[:] = 0.0, 0.0, 0.0, 0.0
 
       cruise_target = T_IDXS * np.clip(v_cruise, v_ego - 2.0, 1e3) + x[0]
@@ -602,28 +578,24 @@ class LongitudinalMpc:
     else:
       self.crash_cnt = 0
 
-    # Check if it got within lead comfort range
-    # TODO This should be done cleaner
     if self.mode == 'blended':
       if any((lead_0_obstacle -
               get_safe_obstacle_distance(self.x_sol[:, 1],
                                          self.t_follow,
-                                         comfort_brake,
-                                         stop_distance)) -
+                                         comfort_brake_eff,
+                                         applyStopDistance)) -
              self.x_sol[:, 0] < 0.0):
         self.source = 'lead0'
       if any((lead_1_obstacle -
               get_safe_obstacle_distance(self.x_sol[:, 1],
                                          self.t_follow,
-                                         comfort_brake,
-                                         stop_distance)) -
+                                         comfort_brake_eff,
+                                         applyStopDistance)) -
              self.x_sol[:, 0] < 0.0) and \
          (lead_1_obstacle[0] - lead_0_obstacle[0]):
         self.source = 'lead1'
 
   def run(self):
-    # t0 = sec_since_boot()
-    # reset = 0
     for i in range(N+1):
       self.solver.set(i, 'p', self.params[i])
     self.solver.constraints_set(0, "lbx", self.x0)
@@ -652,7 +624,6 @@ class LongitudinalMpc:
         self.last_cloudlog_t = t
         cloudlog.warning(f"Long mpc reset, solution_status: {self.solution_status}")
       self.reset()
-    # print(f"long_mpc timings: total internal {self.solve_time:.2e}, external: {(sec_since_boot() - t0):.2e} qp {self.time_qp_solution:.2e}, lin {self.time_linearization:.2e} qp_iter {qp_iter}, reset {reset}")
 
 
 if __name__ == "__main__":
