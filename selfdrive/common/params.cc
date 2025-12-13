@@ -254,6 +254,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"TFollowGap2", PERSISTENT},
     {"TFollowGap3", PERSISTENT},
     {"TFollowGap4", PERSISTENT},
+    {"MySafeModeFactor", PERSISTENT},
     {"DampingFactor", PERSISTENT},
     {"LateralTorqueKd", PERSISTENT},
     {"TurnVisionControl", PERSISTENT},
