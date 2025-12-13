@@ -227,7 +227,7 @@ class LongitudinalMpc:
     self.mode = mode
     self.solver = AcadosOcpSolverCython(MODEL_NAME, ACADOS_SOLVER_TYPE, N)
 
-    # ---- (1) 첫 코드 gap 방식 파라미터/상태 ----
+    self.params_reader = Params()
     self.openpilotLongitudinalControl = False  # 첫 코드 구조 유지 (필요 시 True로)
     self.mySafeModeFactor = 1.0
     self.applyCruiseGap = 1
@@ -383,15 +383,21 @@ class LongitudinalMpc:
     self.cruise_min_a = min_a
     self.max_a = max_a
 
-  # ---- (2) 첫 코드처럼 Params 주기 업데이트 ----
   def update_params(self):
     self.lo_timer += 1
     if self.lo_timer > 200:
       self.lo_timer = 0
     elif self.lo_timer == 60:
       self.applyLongDynamicCost = Params().get_bool("ApplyLongDynamicCost")
+    elif self.lo_timer == 80:
+      try:
+        v = self.params_reader.get("MySafeModeFactor", encoding="utf8")
+        if v is not None:
+          self.mySafeModeFactor = float(int(v)) / 100.0
+      except Exception:
+        pass
+      self.mySafeModeFactor = clip(float(self.mySafeModeFactor), 0.5, 1.0)  
     elif self.lo_timer == 100:
-      # gap 관련 파라미터
       try:
         self.tFollowSpeedRatio = float(int(Params().get("TFollowSpeedRatio", encoding="utf8"))) / 100.
         self.tFollowGap1 = float(int(Params().get("TFollowGap1", encoding="utf8"))) / 100.
@@ -399,19 +405,13 @@ class LongitudinalMpc:
         self.tFollowGap3 = float(int(Params().get("TFollowGap3", encoding="utf8"))) / 100.
         self.tFollowGap4 = float(int(Params().get("TFollowGap4", encoding="utf8"))) / 100.
       except Exception:
-        # 파람 없으면 기본값 유지
         pass
 
-  # ---- (3) 첫 코드 update_gap_tf 로직 이식 (inputs: carstate만 사용 가능 버전) ----
   def update_gap_tf(self, carstate, v_ego, a_ego):
     v_ego_kph = v_ego * CV.MS_TO_KPH
 
-    # 첫 코드: mySafeModeFactor는 controls에서 왔는데,
-    # 두 번째 코드에는 없어서 "있으면 쓰고, 없으면 1.0"
-    self.mySafeModeFactor = float(getattr(carstate, "mySafeModeFactor", 1.0))
-    self.mySafeModeFactor = clip(self.mySafeModeFactor, 0.5, 1.0)
+    self.mySafeModeFactor = clip(float(self.mySafeModeFactor), 0.5, 1.0)
 
-    # 첫 코드: controls.longCruiseGap (1~4) → 여기서는 carstate.cruiseGap 사용
     raw_gap = float(getattr(carstate, "cruiseGap", 1.0))
     self.applyCruiseGap = int(clip(raw_gap if raw_gap > 0 else 1.0, 1, 4))
 
