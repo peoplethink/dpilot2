@@ -83,10 +83,8 @@ class CarController:
     self.maxAngleFrames = MAX_ANGLE_FRAMES
     self.angle_limit_counter = 0
 
-    # ===== apilot jerk 통합 =====
     self.jerkStartLimit = 1.0
     self.jerk_count = 0.0
-    # ===========================
 
   def update(self, CC, CS, controls):
     actuators = CC.actuators
@@ -144,11 +142,7 @@ class CarController:
     # ===== Params 주기 로드 =====
     if self.frame % 100 == 0:
       self.maxAngleFrames = int(Params().get("MaxAngleFrames", encoding="utf8"))
-      try:
-        self.jerkStartLimit = float(int(Params().get("JerkStartLimit", encoding="utf8"))) * 0.1
-      except Exception:
-        self.jerkStartLimit = 1.0
-    # ===========================
+      self.jerkStartLimit = float(int(Params().get("JerkStartLimit", encoding="utf8"))) * 0.1
 
     can_sends = []
 
@@ -289,14 +283,10 @@ class CarController:
           else:
             upper_jerk = min(max(0.5, jerk * 2.0), jerk_max)
             lower_jerk = min(max(1.0, -jerk * 2.0), jerk_max)
-          # ===========================================================
-
-          # ===== ajouatom style ComfortBand (accel 기반) =====
+            
           cb_upper = clip(0.9 + apply_accel * 0.2, 0.0, 1.2)
           cb_lower = clip(0.8 + apply_accel * 0.2, 0.0, 1.2)
-          # =================================================
-
-          # ===== ajouatom style ObjGap / ObjGap2 =====
+          
           lead = self.scc_smoother.get_lead(controls.sm)
           if lead is not None:
             d = float(lead.dRel)
@@ -306,7 +296,6 @@ class CarController:
           else:
             obj_gap = 0
             obj_gap2 = 0
-          # ==========================================
 
           can_sends.append(create_scc14(
             self.packer,
