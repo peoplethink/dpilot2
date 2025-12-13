@@ -110,6 +110,7 @@ def manager_init() -> None:
     ("TFollowGap2", "120"),
     ("TFollowGap3", "140"),
     ("TFollowGap4", "160"),
+    ("MySafeModeFactor", "80"),
     ("TurnVisionControl", "1"),
     ("DampingFactor", "25"),
     ("LateralTorqueKd", "800"),
