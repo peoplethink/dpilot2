@@ -93,6 +93,7 @@ class LongControl:
     if len(speeds) == CONTROL_N:
       v_target_now = interp(t_since_plan, T_IDXS[:CONTROL_N], speeds)
       a_target_now = interp(t_since_plan, T_IDXS[:CONTROL_N], long_plan.accels)
+      j_target = long_plan.jerks[0]
 
       v_target_lower = interp(self.longitudinalActuatorDelayLowerBound + t_since_plan, T_IDXS[:CONTROL_N], speeds)
       a_target_lower = 2 * (v_target_lower - v_target_now) / self.longitudinalActuatorDelayLowerBound - a_target_now
@@ -110,6 +111,7 @@ class LongControl:
       v_target_now = 0.0
       v_target_1sec = 0.0
       a_target = 0.0
+      j_target = 0.0
       a_target_lower = a_target_upper = 0.0
 
     self.pid.neg_limit = accel_limits[0]
@@ -121,12 +123,9 @@ class LongControl:
 
     output_accel = self.last_output_accel
 
-    # ✅ softHold 없이 호출 인자 맞춤 (에러 수정 포인트)
-    self.long_control_state, planned_stop = long_control_state_trans(
-      self.CP, active, self.long_control_state, CS.vEgo,
-      v_target, v_target_1sec, CS.brakePressed,
-      CS.cruiseState.standstill, a_target_now
-    )
+    self.long_control_state, planned_stop = long_control_state_trans(self.CP, active, self.long_control_state, CS.vEgo,
+                                                                     v_target, v_target_1sec, CS.brakePressed,
+                                                                     CS.cruiseState.standstill, a_target_now)
 
     if self.long_control_state == LongCtrlState.off:
       self.reset(CS.vEgo)
@@ -145,14 +144,8 @@ class LongControl:
     elif self.long_control_state == LongCtrlState.pid:
       self.v_pid = v_target_now
 
-      prevent_overshoot = (not self.CP.stoppingControl and
-                           CS.vEgo < 1.5 and
-                           v_target_1sec < 0.7 and
-                           v_target_1sec < self.v_pid)
-
-      deadzone = interp(CS.vEgo,
-                        self.CP.longitudinalTuning.deadzoneBP,
-                        self.CP.longitudinalTuning.deadzoneV)
+      prevent_overshoot = (not self.CP.stoppingControl and CS.vEgo < 1.5 and v_target_1sec < 0.7 and v_target_1sec < self.v_pid)
+      deadzone = interp(CS.vEgo, self.CP.longitudinalTuning.deadzoneBP, self.CP.longitudinalTuning.deadzoneV)
       freeze_integrator = prevent_overshoot
 
       error = self.v_pid - CS.vEgo
@@ -165,5 +158,4 @@ class LongControl:
     # 최종 출력 클립
     self.last_output_accel = clip(output_accel, accel_limits[0], accel_limits[1])
 
-    # ✅ 2번째 리턴은 jerk로 쓰는 자리라 accel 재사용하지 않도록 정리(권장)
-    return float(self.last_output_accel)
+    return self.last_output_accel, -0.5 if planned_stop else j_target
