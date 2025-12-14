@@ -11,7 +11,7 @@ struct CarEvent @0x9b1657f34caf3ad3 {
   # event types
   enable @1 :Bool;
   noEntry @2 :Bool;
-  warning @3 :Bool;   # alerts presented only when  enabled or soft disabling
+  warning @3 :Bool;   # alerts presented only when enabled or soft disabling
   userDisable @4 :Bool;
   softDisable @5 :Bool;
   immediateDisable @6 :Bool;
@@ -135,19 +135,19 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     modelLagWarningDEPRECATED @93;
     startupOneplusDEPRECATED @82;
     startupFuzzyFingerprintDEPRECATED @97;
-    
+
     turningIndicatorOn @112;
     autoLaneChange @113;
     slowingDownSpeed @114;
     slowingDownSpeedSound @115;
-    
+
     speedLimitActive @116;
     speedLimitValueChange @117;
     visionEntering @118;
     visionTurning @119;
     visionleaving @120;
     curvespeedValueChange @121;
-   }
+  }
 }
 
 # ******* main car state @ 100hz *******
@@ -215,15 +215,18 @@ struct CarState {
   rightBlindspot @34 :Bool; # Is there something blocking the right lane change
 
   cluSpeedMs @41 :Float32;
-  cruiseGap @42 : Int32;
-  autoHold @43 : Int32;
-  tpms @44 : Tpms;
+
+  cruiseGapDEPRECATED @42 :Int32;  # 기존 유지 (과거 호환용)
+  autoHold @43 :Int32;
+  tpms @44 :Tpms;
   vCluRatio @45 :Float32;
   aBasis @46 :Float32;
   currentGear @47 :Float32;
-  
-  engRpm @48 :Float32;
-  radarDistance @49 :Float32;
+
+  cruiseGap @48 :Int32;            # ✅ 위코드와 동일 태그로 맞춤
+
+  engRpm @50 :Float32;             # (기존 @48 → @50 이동)
+  radarDistance @51 :Float32;      # (기존 @49 → @51 이동)
 
   struct Tpms {
     fl @0 :Float32;
@@ -233,7 +236,6 @@ struct CarState {
   }
 
   struct WheelSpeeds {
-    # optional wheel speeds
     fl @0 :Float32;
     fr @1 :Float32;
     rl @2 :Float32;
@@ -302,42 +304,31 @@ struct RadarData @0x888ad6581cf0aacb {
     wrongConfig @2;
   }
 
-  # similar to LiveTracks
-  # is one timestamp valid for all? I think so
   struct RadarPoint {
     trackId @0 :UInt64;  # no trackId reuse
 
-    # these 3 are the minimum required
     dRel @1 :Float32; # m from the front bumper of the car
     yRel @2 :Float32; # m
     vRel @3 :Float32; # m/s
 
-    # these are optional and valid if they are not NaN
     aRel @4 :Float32; # m/s^2
     yvRel @5 :Float32; # m/s
 
-    # some radars flag measurements VS estimates
     measured @6 :Bool;
   }
 
-  # deprecated
   canMonoTimesDEPRECATED @2 :List(UInt64);
 }
 
 # ******* car controls @ 100hz *******
 
 struct CarControl {
-  # must be true for any actuator commands to work
   enabled @0 :Bool;
   latActive @11: Bool;
   longActive @12: Bool;
 
-  # Actuator commands as computed by controlsd
   actuators @6 :Actuators;
 
-  # Any car specific rate limits or quirks applied by
-  # the CarController are reflected in actuatorsOutput
-  # and matches what is sent to the car
   actuatorsOutput @10 :Actuators;
 
   orientationNED @13 :List(Float32);
@@ -349,7 +340,7 @@ struct CarControl {
   sccSmoother @15 :SccSmoother;
 
   struct SccSmoother {
-    longControl @0:Bool;
+    longControl @0: Bool;
     applyMaxSpeed @1 :Float32;
     cruiseMaxSpeed @2 :Float32;
     logMessage @3 :Text;
@@ -357,10 +348,8 @@ struct CarControl {
   }
 
   struct Actuators {
-    # range from 0.0 - 1.0
     gas @0: Float32;
     brake @1: Float32;
-    # range from -1.0 - 1.0
     steer @2: Float32;
     steeringAngleDeg @3: Float32;
 
@@ -376,7 +365,6 @@ struct CarControl {
       stopping @2;
       starting @3;
     }
-
   }
 
   struct CruiseControl {
@@ -399,9 +387,13 @@ struct CarControl {
     rightLaneDepart @8: Bool;
     leftLaneDepart @9: Bool;
 
+    cruiseGap @10 :Int32;     # ✅ 위코드 반영
+    objDist @11 :Int32;       # ✅ 위코드 반영
+    objRelSpd @12 :Float32;   # ✅ 위코드 반영
+    softHold @13 :Bool;       # ✅ 위코드 반영
+    radarAlarm @14 :Bool;     # ✅ 위코드 반영
+
     enum VisualAlert {
-      # these are the choices from the Honda
-      # map as good as you can for your car
       none @0;
       fcw @1;
       steerRequired @2;
@@ -425,7 +417,7 @@ struct CarControl {
       prompt @6;
       promptRepeat @7;
       promptDistracted @8;
-      
+
       slowingDownSpeed @9;
     }
   }
@@ -445,20 +437,20 @@ struct CarParams {
   carFingerprint @1 :Text;
   fuzzyFingerprint @55 :Bool;
 
-  notCar @66 :Bool;  # flag for non-car robotics platforms
+  notCar @66 :Bool;
 
   enableGasInterceptor @2 :Bool;
-  pcmCruise @3 :Bool;        # is openpilot's state tied to the PCM's cruise state?
-  enableDsu @5 :Bool;        # driving support unit
-  enableApgs @6 :Bool;       # advanced parking guidance system
-  enableBsm @56 :Bool;       # blind spot monitoring
-  flags @64 :UInt32;         # flags for car specific quirks
+  pcmCruise @3 :Bool;
+  enableDsu @5 :Bool;
+  enableApgs @6 :Bool;
+  enableBsm @56 :Bool;
+  flags @64 :UInt32;
 
   minEnableSpeed @7 :Float32;
   minSteerSpeed @8 :Float32;
   maxSteeringAngleDeg @54 :Float32;
   safetyConfigs @62 :List(SafetyConfig);
-  alternativeExperience @65 :Int16;      # panda flag for features like no disengage on gas
+  alternativeExperience @65 :Int16;
   maxLateralAccel @68 :Float32;
 
   steerMaxBPDEPRECATED @11 :List(Float32);
@@ -468,17 +460,15 @@ struct CarParams {
   brakeMaxBPDEPRECATED @15 :List(Float32);
   brakeMaxVDEPRECATED @16 :List(Float32);
 
-  # things about the car in the manual
-  mass @17 :Float32;            # [kg] curb weight: all fluids no cargo
-  wheelbase @18 :Float32;       # [m] distance from rear axle to front axle
-  centerToFront @19 :Float32;   # [m] distance from center of mass to front axle
-  steerRatio @20 :Float32;      # [] ratio of steering wheel angle to front wheel angle
-  steerRatioRear @21 :Float32;  # [] ratio of steering wheel angle to rear wheel angle (usually 0)
+  mass @17 :Float32;
+  wheelbase @18 :Float32;
+  centerToFront @19 :Float32;
+  steerRatio @20 :Float32;
+  steerRatioRear @21 :Float32;
 
-  # things we can derive
-  rotationalInertia @22 :Float32;    # [kg*m2] body rotational inertia
-  tireStiffnessFront @23 :Float32;   # [N/rad] front tire coeff of stiff
-  tireStiffnessRear @24 :Float32;    # [N/rad] rear tire coeff of stiff
+  rotationalInertia @22 :Float32;
+  tireStiffnessFront @23 :Float32;
+  tireStiffnessRear @24 :Float32;
 
   longitudinalTuning @25 :LongitudinalPIDTuning;
   lateralParams @48 :LateralParams;
@@ -490,38 +480,39 @@ struct CarParams {
   }
 
   steerLimitAlert @28 :Bool;
-  steerLimitTimer @47 :Float32;  # time before steerLimitAlert is issued
+  steerLimitTimer @47 :Float32;
 
-  vEgoStopping @29 :Float32; # Speed at which the car goes into stopping state
-  vEgoStarting @59 :Float32; # Speed at which the car goes into starting state
-  directAccelControl @30 :Bool; # Does the car have direct accel control or just gas/brake
-  stoppingControl @31 :Bool; # Does the car allows full control even at lows speeds when stopping
+  vEgoStopping @29 :Float32;
+  vEgoStarting @59 :Float32;
+  directAccelControl @30 :Bool;
+  stoppingControl @31 :Bool;
   steerControlType @34 :SteerControlType;
-  radarOffCan @35 :Bool; # True when radar objects aren't visible on CAN
-  stopAccel @60 :Float32; # Required acceleration to keep vehicle stationary
-  stoppingDecelRate @52 :Float32; # m/s^2/s while trying to stop
-  startAccel @32 :Float32; # Required acceleration to get car moving
-  startingState @78 :Bool; # Does this car make use of special starting state
-  steerActuatorDelay @36 :Float32; # Steering wheel actuator delay in seconds
-  longitudinalActuatorDelayUpperBound @58 :Float32; # Gas/Brake actuator delay in seconds, upper bound
+  radarOffCan @35 :Bool;
+  stopAccel @60 :Float32;
+  stoppingDecelRate @52 :Float32;
+  startAccel @32 :Float32;
+  startingState @78 :Bool;
+  steerActuatorDelay @36 :Float32;
+  longitudinalActuatorDelayUpperBound @58 :Float32;
   longitudinalActuatorDelayLowerBound @61 :Float32;
-  openpilotLongitudinalControl @37 :Bool; # is openpilot doing the longitudinal control?
-  carVin @38 :Text; # VIN number queried during fingerprinting
+  openpilotLongitudinalControl @37 :Bool;
+  carVin @38 :Text;
   dashcamOnly @41: Bool;
   transmissionType @43 :TransmissionType;
   carFw @44 :List(CarFw);
 
-  radarTimeStep @45: Float32 = 0.05;  # time delta between radar updates, 20Hz is very standard
+  radarTimeStep @45: Float32 = 0.05;
   fingerprintSource @49: FingerprintSource;
-  networkLocation @50 :NetworkLocation;  # Where Panda/C2 is integrated into the car's CAN network
+  networkLocation @50 :NetworkLocation;
 
-  wheelSpeedFactor @63 :Float32; # Multiplier on wheels speeds to computer actual speeds
+  wheelSpeedFactor @63 :Float32;
   pfeiferjDesiredCurvatures @79 :Bool;
+
   struct SafetyConfig {
     safetyModel @0 :SafetyModel;
     safetyParam @1 :Int16;
   }
-  
+
   mdpsBus @69: Int8;
   sasBus @70: Int8;
   sccBus @71: Int8;
@@ -548,7 +539,7 @@ struct CarParams {
     kdV @6 :List(Float32) = [0.];
     newKfTuned @7 :Bool;
   }
-  
+
   struct LateralTorqueTuning {
     useSteeringAngle @0 :Bool;
     kp @1 :Float32;
@@ -596,13 +587,12 @@ struct CarParams {
     ki @1 :Float32;
     dcGain @2 :Float32;
 
-    # State space system
     a @3 :List(Float32);
     b @4 :List(Float32);
     c @5 :List(Float32);
 
-    k @6 :List(Float32);  # LQR gain
-    l @7 :List(Float32);  # Kalman gain
+    k @6 :List(Float32);
+    l @7 :List(Float32);
   }
 
   enum SafetyModel {
@@ -625,10 +615,10 @@ struct CarParams {
     toyotaIpas @16;
     allOutput @17;
     gmAscm @18;
-    noOutput @19;  # like silent but without silent CAN TXs
+    noOutput @19;
     hondaBosch @20;
     volkswagenPq @21;
-    subaruLegacy @22;  # pre-Global platform
+    subaruLegacy @22;
     hyundaiLegacy @23;
     hyundaiCommunity @24;
     stellantis @25;
@@ -643,9 +633,9 @@ struct CarParams {
 
   enum TransmissionType {
     unknown @0;
-    automatic @1;  # Traditional auto, including DSG
-    manual @2;  # True "stick shift" only
-    direct @3;  # Electric vehicle or other direct drive
+    automatic @1;
+    manual @2;
+    direct @3;
     cvt @4;
   }
 
@@ -663,18 +653,16 @@ struct CarParams {
     fwdCamera @3;
     engine @4;
     unknown @5;
-    transmission @8; # Transmission Control Module
-    srs @9; # airbag
-    gateway @10; # can gateway
-    hud @11; # heads up display
-    combinationMeter @12; # instrument cluster
+    transmission @8;
+    srs @9;
+    gateway @10;
+    hud @11;
+    combinationMeter @12;
 
-    # Toyota only
     dsu @6;
     apgs @7;
 
-    # Honda only
-    vsa @13; # Vehicle Stability Assist
+    vsa @13;
     programmedFuelInjection @14;
     electricBrakeBooster @15;
     shiftByWire @16;
@@ -689,8 +677,8 @@ struct CarParams {
   }
 
   enum NetworkLocation {
-    fwdCamera @0;  # Standard/default integration at LKAS camera
-    gateway @1;    # Integration at vehicle's CAN gateway
+    fwdCamera @0;
+    gateway @1;
   }
 
   enableCameraDEPRECATED @4 :Bool;
