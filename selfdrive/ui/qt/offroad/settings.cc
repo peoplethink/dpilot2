@@ -844,8 +844,8 @@ TUNINGPanel::TUNINGPanel(QWidget* parent) : QWidget(parent) {
     toggleLayout->addWidget(new ParamControl("ApplyLongDynamicCost", "GAP: Dynamic Control(0)", "전방차량의 간격을 최대한 유지하도록 응답속도가 빨라집니다.", "../assets/offroad/icon_road.png", this));
     toggleLayout->addWidget(new CValueControl("JerkStartLimit", "LONG: JERK START(10)x0.1", "Starting Jerk.", "../assets/offroad/icon_road.png", 1, 50, 1));
     toggleLayout->addWidget(new CValueControl("MySafeModeFactor", "DRIVEMODE: SAFE ratio(80%)", "Accel/StopDistance/DecelRatio/Gap control ratio", "../assets/offroad/icon_road.png", 10, 90, 10));
-    toggleLayout->addWidget(new CValueControl("LongitudinalActuatorDelayLowerBound", "_LADLowerBound(30)", "LONG", "../assets/offroad/icon_road.png", 10, 100, 10));
-    toggleLayout->addWidget(new CValueControl("LongitudinalActuatorDelayUpperBound", "_LADUpperBound(45)", "LONG", "../assets/offroad/icon_road.png", 10, 100, 10));
+    toggleLayout->addWidget(new CValueControl("LongitudinalActuatorDelayLowerBound", "_LADLowerBound(30)", "LONG", "../assets/offroad/icon_road.png", 10, 100, 5));
+    toggleLayout->addWidget(new CValueControl("LongitudinalActuatorDelayUpperBound", "_LADUpperBound(45)", "LONG", "../assets/offroad/icon_road.png", 10, 100, 5));
     toggleLayout->addWidget(new CValueControl("TFollowSpeedRatio", "GAP: Dynamic Gap adjust (110%)", "Dynamic Gap adjust based on speed", "../assets/offroad/icon_road.png", 100, 300, 5));
     toggleLayout->addWidget(new CValueControl("TFollowGap1", "GAP1: Apply TFollow (110)x0.01s", "선행차와의 간격1단계, 속도x시간", "../assets/offroad/icon_road.png", 90, 300, 5));
     toggleLayout->addWidget(new CValueControl("TFollowGap2", "GAP2: Apply TFollow (120)x0.01s", "선행차와의 간격2단계, 속도x시간", "../assets/offroad/icon_road.png", 90, 300, 5));
