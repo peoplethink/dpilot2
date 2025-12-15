@@ -1193,21 +1193,26 @@ void NvgWindow::drawText(QPainter &p, int x, int y, const QString &text, int alp
 }
 
 void NvgWindow::drawBottomIcons(QPainter &p) {
-  UIState *s = uiState();	
-  const SubMaster &sm = *(uiState()->sm);
-  auto car_state = sm["carState"].getCarState();
-  auto scc_smoother = sm["carControl"].getCarControl().getSccSmoother();
-	
+  UIState *s = uiState();
+  const SubMaster &sm = *(s->sm);
+
+  const auto car_state = sm["carState"].getCarState();
+  const auto controls_state = sm["controlsState"].getControlsState();
+  const auto lp = sm["longitudinalPlan"].getLongitudinalPlan();
+  const auto scc_smoother = sm["carControl"].getCarControl().getSccSmoother();
+
   int x = radius / 2 + (bdr_s * 2) + (radius + 50);
   const int y = rect().bottom() - footer_h / 2 - 10;
-	
+
   // ========== Cruise Gap (항상 표시) ==========
   const int gap_cluster = controls_state.getLongCruiseGap();
   const float tFollow = lp.getTFollow();
-  const float v_ego = car_state.getVEgoCluster();
+  const float v_ego = car_state.getCluSpeedMs();
+
+  // getVEgoCluster()가 네 cereal에 없으니 getVEgo() 사용 (m/s)
+  //const float v_ego = car_state.getVEgo();
   const float dist_m = tFollow * v_ego + 6.0f;
 
-  auto scc_smoother = sm["carControl"].getCarControl().getSccSmoother();
   const bool longControl = scc_smoother.getLongControl();
 
   QString gap_str;
@@ -1217,10 +1222,10 @@ void NvgWindow::drawBottomIcons(QPainter &p) {
     gap_str = "N/A";
   } else if (longControl) {
     switch (gap_cluster) {
-      case 1: gap_str = "1";  break;
+      case 1: gap_str = "1"; break;
       case 2: gap_str = "2"; break;
-      case 3: gap_str = "3";  break;
-      case 4: gap_str = "4";   break;
+      case 3: gap_str = "3"; break;
+      case 4: gap_str = "4"; break;
       default:
         gap_str = QString::number(gap_cluster);
         textColor = QColor(255, 255, 225, 250);
