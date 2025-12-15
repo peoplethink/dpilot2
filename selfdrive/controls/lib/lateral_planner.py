@@ -3,7 +3,7 @@ from common.realtime import sec_since_boot, DT_MDL
 from common.numpy_fast import interp
 from selfdrive.swaglog import cloudlog
 from selfdrive.controls.lib.lateral_mpc_lib.lat_mpc import LateralMpc
-from selfdrive.controls.lib.drive_helpers import CONTROL_N, MPC_COST_LAT, LAT_MPC_N
+from selfdrive.controls.lib.drive_helpers import CONTROL_N, MPC_COST_LAT, LAT_MPC_N, MIN_SPEED, get_speed_error
 from selfdrive.controls.lib.lane_planner import LanePlanner, TRAJECTORY_SIZE
 from selfdrive.controls.lib.desire_helper import DesireHelper, AUTO_LCA_START_TIME
 import cereal.messaging as messaging
@@ -76,12 +76,24 @@ class LateralPlanner:
     self.read_param()
 
     # clip speed , lateral planning is not possible at 0 speed
-    v_ego = sm['carState'].vEgo
+    v_ego_car = sm['carState'].vEgo
     measured_curvature = sm['controlsState'].curvature
 
     # Parse model predictions
     md = sm['modelV2']
     self.LP.parse_model(md)
+    v_ego = v_ego_car
+    if (len(md.position.x) == TRAJECTORY_SIZE and
+        len(md.orientation.x) == TRAJECTORY_SIZE and
+        len(md.velocity.x) == TRAJECTORY_SIZE):
+
+      velocity_xyz = np.column_stack([md.velocity.x, md.velocity.y, md.velocity.z])
+      car_speed = np.linalg.norm(velocity_xyz, axis=1)
+      car_speed = car_speed - get_speed_error(md, v_ego_car)
+
+      v_plan = np.clip(car_speed, MIN_SPEED, np.inf)
+      v_ego = float(v_plan[0])
+          
     if len(md.position.x) == TRAJECTORY_SIZE and len(md.orientation.x) == TRAJECTORY_SIZE:
       self.path_xyz = np.column_stack([md.position.x, md.position.y, md.position.z])
       self.t_idxs = np.array(md.position.t)
