@@ -924,6 +924,8 @@ struct LongitudinalPlan @0xe00b5b3eba12876c {
  
   visionCurrentLatAcc @56 :Float32;
   visionMaxPredLatAcc @57 :Float32;
+  tFollow @58 :Float32;
+  cruiseGap @59 :Float32;
 
   enum XState {
     lead @0;
