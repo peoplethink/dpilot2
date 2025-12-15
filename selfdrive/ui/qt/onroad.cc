@@ -1200,62 +1200,50 @@ void NvgWindow::drawBottomIcons(QPainter &p) {
 	
   int x = radius / 2 + (bdr_s * 2) + (radius + 50);
   const int y = rect().bottom() - footer_h / 2 - 10;
+	
+  // ========== Cruise Gap (항상 표시) ==========
+  const int gap_cluster = controls_state.getLongCruiseGap();
+  const float tFollow = lp.getTFollow();
+  const float v_ego = car_state.getVEgoCluster();
+  const float dist_m = tFollow * v_ego + 6.0f;
 
-  // cruise gap
-  int gap = car_state.getCruiseGap();
-  bool longControl = scc_smoother.getLongControl();
-  int autoTrGap = scc_smoother.getAutoTrGap();
+  auto scc_smoother = sm["carControl"].getCarControl().getSccSmoother();
+  const bool longControl = scc_smoother.getLongControl();
 
-  p.setPen(Qt::NoPen);
-  p.setBrush(QBrush(QColor(255, 255, 255, 255 * 0.0f)));
-  p.drawEllipse(x - radius / 2, y - radius / 2, radius, radius);
-
-  QString str;
-  float textSize = 35.f;
+  QString gap_str;
   QColor textColor = QColor(255, 255, 255, 250);
 
-  if(gap <= 0) {
-    str = "N/A";
-  }
-  else if(longControl && gap == 1) {
-    str = "SPORT";
-    textColor = QColor(255, 255, 255, 250);
-  }
-  else if(longControl && gap == 2) {
-    str = "NORMAL";
-    textColor = QColor(255, 255, 255, 250);
-  }
-  else if(longControl && gap == 3) {
-    str = "RELAX";
-    textColor = QColor(255, 255, 255, 250);
-  }
-  else if(longControl && gap == 4) {
-    str = "AUTO";
-    textColor = QColor(255, 255, 255, 250);
-  }
-  else {
-    str.sprintf("%d", (int)gap);
+  if (gap_cluster <= 0) {
+    gap_str = "N/A";
+  } else if (longControl) {
+    switch (gap_cluster) {
+      case 1: gap_str = "1";  break;
+      case 2: gap_str = "2"; break;
+      case 3: gap_str = "3";  break;
+      case 4: gap_str = "4";   break;
+      default:
+        gap_str = QString::number(gap_cluster);
+        textColor = QColor(255, 255, 225, 250);
+        break;
+    }
+  } else {
+    gap_str = QString::number(gap_cluster);
     textColor = QColor(255, 255, 225, 250);
-    textSize = 35.f;
   }
 
+  // GAP 문자
   configFont(p, "Open Sans", 35, "Bold");
-  drawText(p, x, y-30, "", 200);
+  drawTextWithColor(p, x - 290, y + 135, gap_str, textColor);
 
-  configFont(p, "Open Sans", textSize, "Bold");
-  drawTextWithColor(p, x-290, y+135, str, textColor);
-/*
- // auto hold
-  int autohold = car_state.getAutoHold();
-  if(autohold >= 0) {
-    x = radius / 2 + (bdr_s * 2) + (radius + 50) - 20;
-    float img_alpha = autohold > 0 ? 1.0f : 0.15f;
-    float bg_alpha = autohold > 0 ? 0.0f : 0.0f;
-    drawIcon(p, x, y-20, autohold > 1 ? ic_autohold_warning : ic_autohold_active,
-            QColor(0, 0, 0, (255 * bg_alpha)), img_alpha);
-  }*/
-	
- // Accel표시
+  // --- 항상 표시되는 Gap Info ---
+  QString tf_str = QString::asprintf("%.2f", tFollow);
+  QString dm_str = QString::asprintf("%.0fM", dist_m);
+
+  configFont(p, "Open Sans", 28, "Bold");
+  drawTextWithColor(p, x - 290, y + 105, tf_str, QColor(255, 255, 255, 220));
+  drawTextWithColor(p, x - 290, y + 165, dm_str, QColor(255, 255, 255, 220));
+
+  // Accel표시
   float accel = car_state.getAEgo();  
   float dx = 138 + 1330;
 #ifdef __TEST  
