@@ -31,6 +31,7 @@ _A_TOTAL_MAX_BP = [20., 40.]
 def get_max_accel(v_ego):
   return interp(v_ego, A_CRUISE_MAX_BP, A_CRUISE_MAX_VALS)
 
+
 def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
   """
   This function returns a limited long acceleration allowed, depending on the existing lateral acceleration
@@ -72,16 +73,20 @@ class Planner:
     self.vision_turn_controller = VisionTurnController(CP)
     self.events = Events()
 
+    # >>> MOD: cruise gap 관련 보관값(디버그/출력용)
+    self.applyCruiseGap = 1.0
+    self.tFollow = 0.0
+
   def read_param(self):
     self.mpc.mode = 'blended' if self.params.get_bool('EndToEndLong') else 'acc'
-    
+
   def parse_model(self, model_msg, model_error):
     if (len(model_msg.position.x) == 33 and
        len(model_msg.velocity.x) == 33 and
        len(model_msg.acceleration.x) == 33):
       x = np.interp(T_IDXS_MPC, T_IDXS, model_msg.position.x) - model_error * T_IDXS_MPC
       v = np.interp(T_IDXS_MPC, T_IDXS, model_msg.velocity.x) - model_error
-      a = np.interp(T_IDXS_MPC, T_IDXS, model_msg.acceleration.x) 
+      a = np.interp(T_IDXS_MPC, T_IDXS, model_msg.acceleration.x)
       j = np.zeros(len(T_IDXS_MPC))
     else:
       x = np.zeros(len(T_IDXS_MPC))
@@ -122,7 +127,7 @@ class Planner:
     else:
       accel_limits = [ACCEL_MIN, ACCEL_MAX]
       accel_limits_turns = [ACCEL_MIN, ACCEL_MAX]
-	  
+
     if reset_state:
       self.v_desired_filter.x = v_ego
       # Clip aEgo to cruise limits to prevent large accelerations when becoming active
@@ -132,14 +137,14 @@ class Planner:
     self.v_desired_filter.x = max(0.0, self.v_desired_filter.update(v_ego))
 
     self.v_model_error = get_speed_error(sm['modelV2'], v_ego)
-	  
+
     if force_slow_decel:
       v_cruise = 0.0
 
     # Get acceleration and active solutions for custom long mpc.
     v_cruise = self.cruise_solutions(not reset_state, self.v_desired_filter.x,
                                      self.a_desired, v_cruise, sm)
-    
+
     # clip limits, cannot init MPC outside of bounds
     accel_limits_turns[0] = min(accel_limits_turns[0], self.a_desired + 0.05)
     accel_limits_turns[1] = max(accel_limits_turns[1], self.a_desired - 0.05)
@@ -153,6 +158,28 @@ class Planner:
     self.v_desired_trajectory = np.interp(T_IDXS[:CONTROL_N], T_IDXS_MPC, self.mpc.v_solution)
     self.a_desired_trajectory = np.interp(T_IDXS[:CONTROL_N], T_IDXS_MPC, self.mpc.a_solution)
     self.j_desired_trajectory = np.interp(T_IDXS[:CONTROL_N], T_IDXS_MPC[:-1], self.mpc.j_solution)
+
+    # >>> MOD: cruise gap / tfollow 값 캐싱(있으면 mpc, 없으면 controlsState)
+    mpc_gap = getattr(self.mpc, 'applyCruiseGap', None)
+    mpc_tf = getattr(self.mpc, 't_follow', None)
+
+    if mpc_gap is not None:
+      self.applyCruiseGap = float(mpc_gap)
+    else:
+      # controlsState.longCruiseGap(정수 1~4) 기반 fallback
+      if hasattr(sm['controlsState'], 'longCruiseGap'):
+        try:
+          self.applyCruiseGap = float(clip(int(sm['controlsState'].longCruiseGap), 1, 4))
+        except Exception:
+          self.applyCruiseGap = 1.0
+      else:
+        self.applyCruiseGap = 1.0
+
+    if mpc_tf is not None:
+      self.tFollow = float(mpc_tf)
+    else:
+      # gap 기반 단순 fallback(원하면 여기 mapping 바꿔줄 수 있음)
+      self.tFollow = 0.0
 
     # TODO counter is only needed because radar is glitchy, remove once radar is gone
     self.fcw = self.mpc.crash_cnt > 2 and not sm['carState'].standstill
@@ -188,6 +215,22 @@ class Planner:
     longitudinalPlan.fcw = self.fcw
 
     longitudinalPlan.solverExecutionTime = self.mpc.solve_time
+
+    # >>> MOD: cruise gap 관련 정식 필드 송출
+    # (cereal에 필드가 있어야 함: longitudinalPlan.tFollow / cruiseGap)
+    longitudinalPlan.tFollow = float(self.tFollow)
+    longitudinalPlan.cruiseGap = float(self.applyCruiseGap)
+
+    # (선택) mpc에 값이 있을 때만 안전하게 추가로 채움 (있으면 UI/로그에서 쓰기 편함)
+    if hasattr(longitudinalPlan, 'xStop'):
+      longitudinalPlan.xStop = float(getattr(self.mpc, 'stopDist', 0.0))
+    if hasattr(longitudinalPlan, 'xObstacle'):
+      xobs = getattr(self.mpc, 'x_obstacle_min', None)
+      longitudinalPlan.xObstacle = float(xobs[0]) if isinstance(xobs, (list, tuple, np.ndarray)) and len(xobs) else 0.0
+    if hasattr(longitudinalPlan, 'mpcEvent'):
+      longitudinalPlan.mpcEvent = int(getattr(self.mpc, 'mpcEvent', 0))
+    if hasattr(longitudinalPlan, 'mpcMode'):
+      longitudinalPlan.mpcMode = 1 if getattr(self.mpc, 'mode', 'acc') == 'blended' else 0
 
     pm.send('longitudinalPlan', plan_send)
 
