@@ -154,7 +154,7 @@ protected:
   QMap<QString, QPixmap> ic_oil_com;
   
   void drawText(QPainter &p, int x, int y, const QString &text, int alpha = 255);
-  void drawTextWithColor(QPainter &p, int x, int y, const QString &text, QColor& color);
+  void drawTextWithColor(QPainter &p, int x, int y, const QString &text, const QColor &color);
   void drawText2(QPainter &p, int x, int y, int flags, const QString &text, const QColor& color);
   void drawLaneChangeIndicator(QPainter &p, const UIState *s);
   void drawMaxSpeed(QPainter &p);
