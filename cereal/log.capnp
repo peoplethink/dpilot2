@@ -616,6 +616,9 @@ struct ControlsState @0x97ff69c53601abf1 {
   sccStockCamAct @72 :Float32;
   sccStockCamStatus @73 :Float32;
 
+  # cruise gap (UI/controls용)
+  longCruiseGap @79 :Int8;
+
   # add
   lateralControlSelect  @74 :UInt8;
   totalCameraOffset @78 :Float32;
