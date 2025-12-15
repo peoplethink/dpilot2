@@ -223,10 +223,10 @@ struct CarState {
   aBasis @46 :Float32;
   currentGear @47 :Float32;
 
-  cruiseGap @48 :Int32;            # ✅ 위코드와 동일 태그로 맞춤
+  cruiseGap @48 :Int32;
 
-  engRpm @50 :Float32;             # (기존 @48 → @50 이동)
-  radarDistance @51 :Float32;      # (기존 @49 → @51 이동)
+  engRpm @49 :Float32;
+  radarDistance @50 :Float32;
 
   struct Tpms {
     fl @0 :Float32;
