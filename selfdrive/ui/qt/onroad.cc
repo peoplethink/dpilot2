@@ -1206,17 +1206,9 @@ void NvgWindow::drawBottomIcons(QPainter &p) {
 
   // ========== Cruise Gap (항상 표시) ==========
   const int gap_cluster = controls_state.getLongCruiseGap();
+  const float tFollow = lp.getTFollow();
   //const float v_ego = car_state.getCluSpeedMs();
 
-  float tFollow = 0.f;
-  switch (gap_cluster) {
-    case 1: tFollow = 1.0f; break;
-    case 2: tFollow = 1.4f; break;
-    case 3: tFollow = 1.8f; break;
-    case 4: tFollow = 2.2f; break;
-    default: tFollow = 0.f; break;
-  }
-	
   // getVEgoCluster()가 네 cereal에 없으니 getVEgo() 사용 (m/s)
   const float v_ego = car_state.getVEgo();
   const float dist_m = tFollow * v_ego + 6.0f;
