@@ -500,6 +500,8 @@ class LongitudinalMpc:
       t_follow=self.t_follow,
       stop_distance=applyStopDistance,
       comfort_brake=comfort_brake_eff,
+      krkeegan=self.applyLongDynamicCost
+    )
 
     if self.mode == 'acc':
       self.params[:, 5] = LEAD_DANGER_FACTOR
