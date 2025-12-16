@@ -825,25 +825,14 @@ TUNINGPanel::TUNINGPanel(QWidget* parent) : QWidget(parent) {
     toggleLayout->addWidget(new LabelControl("〓〓〓〓〓〓〓〓【 조향메뉴 】〓〓〓〓〓〓〓〓", ""));
     toggleLayout->addWidget(new ParamControl("Steer_SRTune", "SR가변 사용", "SR속도 가변사용(반드시 활성화할것)", "../assets/offroad/icon_road.png", this));
     toggleLayout->addWidget(new CValueControl("Steer_SRTune_v", "SR가변 비율", "SR가변시 비율값(추천:95)", "../assets/offroad/icon_road.png", 80, 120, 1));
-    toggleLayout->addWidget(new CValueControl("MaxAngleFrames", "MaxAngleFrames(89)", "89:기본, lkas fault 발생시 87:사용", "../assets/offroad/icon_road.png", 80, 100, 1));
-    toggleLayout->addWidget(horizontal_line());
-    toggleLayout->addWidget(new ParamControl("AverageDesiredCurvature", "Average Desired Curvature", "Use for smoother handling of curves.", "../assets/offroad/icon_road.png", this));
-    toggleLayout->addWidget(horizontal_line());
-    toggleLayout->addWidget(new BrightnessControl());
-    toggleLayout->addWidget(new ParamControl("CustomRoadUI", "Custom Road UI", "Personalize the road UI of openpilot.", "../assets/offroad/icon_road.png"));
-    toggleLayout->addWidget(new LaneLinesWidth());
-    toggleLayout->addWidget(new PathWidth());
-    toggleLayout->addWidget(new RoadEdgesWidth());
-    toggleLayout->addWidget(new BlindspotLineWidth());
-    toggleLayout->addWidget(horizontal_line());
+    toggleLayout->addWidget(new CValueControl("MaxAngleFrames", "MaxAngleFrames(89)", "89:기본, lkas fault 발생시 87:사용", "../assets/offroad/icon_road.png", 80, 100, 1);
     toggleLayout->addWidget(new LabelControl("〓〓〓〓〓〓〓〓【 롱컨메뉴 】〓〓〓〓〓〓〓〓", ""));
     toggleLayout->addWidget(new CValueControl("MixRadarInfo", "MixRadarInfo for SCC Rardar", "0:Not used,1:Use", "../assets/offroad/icon_shell.png", 0, 1, 1));
-    toggleLayout->addWidget(new CValueControl("StartAccelApply", "LONG: StartingAccel 2.0x(0%)", "정지->출발시 가속도의 가속율을 지정합니다 0: 사용안함.", "../assets/offroad/icon_road.png", 0, 100, 10));
-    toggleLayout->addWidget(new CValueControl("StopAccelApply", "LONG: StoppingAccel -2.0x(30%)", "정지유지시 브레이크압을 조정합니다. 0: 사용안함. ", "../assets/offroad/icon_road.png", 0, 100, 10));
-    toggleLayout->addWidget(horizontal_line());
+    toggleLayout->addWidget(new CValueControl("StartAccelApply", "LONG: StartingAccel 2.0x(0%)", "정지->출발시 가속도의 가속율을 지정합니다 0: 사용안함.", "../assets/offroad/icon_road.png", 0, 100, 5));
+    toggleLayout->addWidget(new CValueControl("StopAccelApply", "LONG: StoppingAccel -2.0x(30%)", "정지유지시 브레이크압을 조정합니다. 0: 사용안함. ", "../assets/offroad/icon_road.png", 0, 100, 5));
     toggleLayout->addWidget(new ParamControl("ApplyLongDynamicCost", "GAP: Dynamic Control(0)", "전방차량의 간격을 최대한 유지하도록 응답속도가 빨라집니다.", "../assets/offroad/icon_road.png", this));
     toggleLayout->addWidget(new CValueControl("JerkStartLimit", "LONG: JERK START(10)x0.1", "Starting Jerk.", "../assets/offroad/icon_road.png", 1, 50, 1));
-    toggleLayout->addWidget(new CValueControl("MySafeModeFactor", "DRIVEMODE: SAFE ratio(80%)", "Accel/StopDistance/DecelRatio/Gap control ratio", "../assets/offroad/icon_road.png", 10, 90, 10));
+    toggleLayout->addWidget(new CValueControl("MySafeModeFactor", "DRIVEMODE: SAFE ratio(80%)", "Accel/StopDistance/DecelRatio/Gap control ratio", "../assets/offroad/icon_road.png", 10, 100, 5));
     toggleLayout->addWidget(new CValueControl("LongitudinalActuatorDelayLowerBound", "_LADLowerBound(30)", "LONG", "../assets/offroad/icon_road.png", 10, 100, 5));
     toggleLayout->addWidget(new CValueControl("LongitudinalActuatorDelayUpperBound", "_LADUpperBound(45)", "LONG", "../assets/offroad/icon_road.png", 10, 100, 5));
     toggleLayout->addWidget(new CValueControl("TFollowSpeedRatio", "GAP: Dynamic Gap adjust (110%)", "Dynamic Gap adjust based on speed", "../assets/offroad/icon_road.png", 100, 300, 5));
@@ -851,6 +840,13 @@ TUNINGPanel::TUNINGPanel(QWidget* parent) : QWidget(parent) {
     toggleLayout->addWidget(new CValueControl("TFollowGap2", "GAP2: Apply TFollow (120)x0.01s", "선행차와의 간격2단계, 속도x시간", "../assets/offroad/icon_road.png", 90, 300, 5));
     toggleLayout->addWidget(new CValueControl("TFollowGap3", "GAP3: Apply TFollow (160)x0.01s", "선행차와의 간격3단계, 속도x시간", "../assets/offroad/icon_road.png", 90, 300, 5));
     toggleLayout->addWidget(new CValueControl("TFollowGap4", "GAP4: Apply TFollow (120)x0.01s", "선행차와의 간격4단계, 속도x시간", "../assets/offroad/icon_road.png", 90, 300, 5));
+    toggleLayout->addWidget(new LabelControl("〓〓〓〓〓〓〓〓【 UI 】〓〓〓〓〓〓〓〓", ""));
+    toggleLayout->addWidget(new BrightnessControl());
+    toggleLayout->addWidget(new ParamControl("CustomRoadUI", "Custom Road UI", "Personalize the road UI of openpilot.", "../assets/offroad/icon_road.png"));
+    toggleLayout->addWidget(new LaneLinesWidth());
+    toggleLayout->addWidget(new PathWidth());
+    toggleLayout->addWidget(new RoadEdgesWidth());
+    toggleLayout->addWidget(new BlindspotLineWidth());
 }
 
 CValueControl::CValueControl(const QString& params, const QString& title, const QString& desc, const QString& icon, int min, int max, int unit/*=1*/) : AbstractControl(title, desc, icon)
