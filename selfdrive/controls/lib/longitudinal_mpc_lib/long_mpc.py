@@ -460,18 +460,15 @@ class LongitudinalMpc:
   # -------------------------------------------------------------------
   def update(self, carstate, radarstate, model, controls, v_cruise, x, v, a, j, prev_accel_constraint, reset_state):
     v_ego = self.x0[1]
-    a_ego = float(getattr(carstate, "aEgo", 0.0))
+    a_ego = carstate.aEgo
+    
     self.status = radarstate.leadOne.status or radarstate.leadTwo.status
-
-    # param 갱신
     self.update_params()
 
     lead_xv_0 = self.process_lead(radarstate.leadOne)
     lead_xv_1 = self.process_lead(radarstate.leadTwo)
 
-    # --- (요청 반영) gap/tFollow 갱신 ---
     self.update_gap_tf(controls, v_ego, a_ego)
-    # solver params로 반영
     self.params[:, 4] = self.t_follow
 
     # comfort / stopDistance는 ntune 값 + safe factor 적용
@@ -503,13 +500,6 @@ class LongitudinalMpc:
       t_follow=self.t_follow,
       stop_distance=applyStopDistance,
       comfort_brake=comfort_brake_eff,
-      krkeegan=self.applyLongDynamicCost
-    )
-
-    # 가중치 설정 (dynamic cost 포함)
-    self.set_weights(prev_accel_constraint=prev_accel_constraint,
-                     v_lead0=lead_xv_0[0, 1],
-                     v_lead1=lead_xv_1[0, 1])
 
     if self.mode == 'acc':
       self.params[:, 5] = LEAD_DANGER_FACTOR
