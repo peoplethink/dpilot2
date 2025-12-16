@@ -59,10 +59,11 @@ T_IDXS_LST = [index_function(idx, max_val=MAX_T, max_idx=N) for idx in range(N+1
 T_IDXS = np.array(T_IDXS_LST)
 FCW_IDXS = T_IDXS < 5.0
 T_DIFFS = np.diff(T_IDXS, prepend=[0.])
-
+MIN_ACCEL = -4.0
+MAX_ACCEL = 2.5
 T_FOLLOW = 1.25
 COMFORT_BRAKE = 2.5
-STOP_DISTANCE = 5.0
+STOP_DISTANCE = 6.0
 
 
 # === KRKeegan 스타일의 stopped_equivalence + 기본 버전 겸용 ===
@@ -482,8 +483,8 @@ class LongitudinalMpc:
     self.params[:, 7] = applyStopDistance
 
     # accel limits (기존 구조 유지)
-    self.params[:, 0] = float(getattr(self, "cruise_min_a", -1.2)) if not reset_state else a_ego
-    self.params[:, 1] = float(getattr(self, "max_a", 1.2)) if not reset_state else a_ego
+    self.params[:,0] = MIN_ACCEL if not reset_state else a_ego
+    self.params[:,1] = self.max_a if not reset_state else a_ego
 
     # stopped equivalence (KRKeegan 옵션 포함)
     lead_0_obstacle = lead_xv_0[:, 0] + get_stopped_equivalence_factor(
