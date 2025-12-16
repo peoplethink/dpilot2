@@ -458,10 +458,7 @@ class LongitudinalMpc:
 
     self.v_ego_kph_prev = v_ego_kph
   # -------------------------------------------------------------------
-
-  def update(self, carstate, radarstate, model, controls, v_cruise, x, v, a, j,
-             prev_accel_constraint=True, reset_state=False):
-
+  def update(self, carstate, radarstate, model, controls, v_cruise, x, v, a, j, prev_accel_constraint, reset_state):
     v_ego = self.x0[1]
     a_ego = float(getattr(carstate, "aEgo", 0.0))
     self.status = radarstate.leadOne.status or radarstate.leadTwo.status
