@@ -533,7 +533,7 @@ class Controls:
             self.state = State.enabled
           self.current_alert_types.append(ET.ENABLE)
           if not self.CP.pcmCruise:
-            self.v_cruise_kph = initialize_v_cruise(CS.vEgo, CS.buttonEvents, self.v_cruise_kph_last)
+            self.v_cruise_kph = initialize_v_cruise(CS.vEgo, CS.buttonEvents, self.button_timers, self.v_cruise_kph_last)
 
     self.enabled = self.state in ENABLED_STATES
     self.active = self.state in ACTIVE_STATES
@@ -579,6 +579,7 @@ class Controls:
     actuators = CC.actuators
     actuators.longControlState = self.LoC.long_control_state
     actuators.jerk = 0.0
+    actuators.speed = 0.0  # default
 
     if CS.leftBlinker or CS.rightBlinker:
       self.last_blinker_frame = self.sm.frame
@@ -596,7 +597,10 @@ class Controls:
       t_since_plan = (self.sm.frame - self.sm.rcv_frame['longitudinalPlan']) * DT_CTRL
       actuators.accel, actuators.jerk = self.LoC.update(CC.longActive and CS.cruiseState.enabledAcc,
                                                         CS, long_plan, pid_accel_limits, t_since_plan)
-
+  
+      if len(long_plan.speeds):
+        actuators.speed = long_plan.speeds[-1]
+        
       self.desired_curvature, self.desired_curvature_rate = get_lag_adjusted_curvature(
         self.CP, CS.vEgo,
         lat_plan.psis,
