@@ -1,7 +1,7 @@
 #include "selfdrive/ui/qt/onroad.h"
 
 #include <cmath>
-
+#include <algorithm>
 #include <QDebug>
 #include <QSound>
 
@@ -12,6 +12,25 @@
 #include "selfdrive/ui/qt/maps/map.h"
 #include "selfdrive/ui/qt/maps/map_helpers.h"
 #endif
+
+static void drawGapBars(QPainter &p, int x, int y, int gap, bool active_long) {
+  int bars = std::clamp(gap, 0, 4);
+
+  const int bar_w = 26;
+  const int bar_h = 14;
+  const int bar_gap = 8;
+  const int radius = 4;
+
+  QColor onColor  = QColor(0, 200, 0, 255);   // 진한 녹색
+  QColor offColor = QColor(0, 200, 0, 60);    // 비활성 막대 (연한 녹색)
+
+  for (int i = 0; i < 4; i++) {
+    QRect r(x + i * (bar_w + bar_gap), y, bar_w, bar_h);
+    p.setPen(Qt::NoPen);
+    p.setBrush(i < bars ? onColor : offColor);
+    p.drawRoundedRect(r, radius, radius);
+  }
+}
 
 #define FONT_OPEN_SANS "Inter" //"Open Sans"
 OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
@@ -1234,17 +1253,20 @@ void NvgWindow::drawBottomIcons(QPainter &p) {
     textColor = QColor(255, 255, 225, 250);
   }
 
-  // GAP 문자
-  configFont(p, "Open Sans", 35, "Bold");
-  drawTextWithColor(p, x - 290, y + 135, gap_str, textColor);
+  // GAP 막대 (1=1개, 4=4개)
+  const int gap_x = x - 350;   // 기존 텍스트 위치 기준
+  const int gap_y = y + 110;   // 막대는 텍스트보다 약간 위/아래 취향 조절
 
   // --- 항상 표시되는 Gap Info ---
   QString tf_str = QString::asprintf("%.2f", tFollow);
   QString dm_str = QString::asprintf("%.0fM", dist_m);
 
-  configFont(p, "Open Sans", 28, "Bold");
-  drawTextWithColor(p, x - 290, y + 105, tf_str, QColor(255, 255, 255, 220));
-  drawTextWithColor(p, x - 290, y + 165, dm_str, QColor(255, 255, 255, 220));
+  if (gap_cluster <= 0) {
+    configFont(p, "Open Sans", 28, "Bold");
+    drawTextWithColor(p, gap_x, y + 135, "N/A", QColor(255,255,255,220));
+  } else {
+    drawGapBars(p, gap_x, gap_y, gap_cluster, longControl);
+  }
 
   // Accel표시
   float accel = car_state.getAEgo();  
