@@ -77,6 +77,7 @@ enum {
   HYUNDAI_BTN_NONE = 0,
   HYUNDAI_BTN_RESUME = 1,
   HYUNDAI_BTN_SET = 2,
+  HYUNDAI_BTN_GAP = 3,
   HYUNDAI_BTN_CANCEL = 4,
 };
 
@@ -313,8 +314,10 @@ static int hyundai_tx_hook(CANPacket_t *to_send, bool longitudinal_allowed) {
     int button = GET_BYTE(to_send, 0) & 0x7U;
 
     bool allowed_resume = (button == 1) && controls_allowed;
+    bool allowed_set_decel = (button == 2) && controls_allowed;
+    bool allowed_gap_dist = (button == 3) && controls_allowed;
     bool allowed_cancel = (button == 4) && cruise_engaged_prev;
-    if (!(allowed_resume || allowed_cancel)) {
+    if (!(allowed_resume || allowed_set_decel || allowed_gap_dist || allowed_cancel)) {
       tx = 0;
     }
   }
