@@ -682,7 +682,7 @@ class Controls:
     hudControl.leadVisible = self.sm['longitudinalPlan'].hasLead
 
     # >>> MOD: HUD에 롱갭/티팔로우 값 송출
-    hudControl.cruiseGap = clip(int(self.longCruiseGap), 1, 4)
+    hudControl.cruiseGap = clip(int(self.sm['longitudinalPlan'].cruiseGap), 1, 4) #CS.cruiseGap
     hudControl.objDist = int(self.dRel)
     hudControl.objRelSpd = float(self.vRel)
 
