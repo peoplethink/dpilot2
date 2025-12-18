@@ -17,7 +17,7 @@ static void drawGapBars(QPainter &p, int x, int y, int gap, bool active_long) {
   int bars = std::clamp(gap, 0, 4);
 
   const int bar_w = 26;
-  const int bar_h = 14;
+  const int bar_h = 12;
   const int bar_gap = 8;
   const int radius = 4;
 
@@ -1261,6 +1261,46 @@ void NvgWindow::drawBottomIcons(QPainter &p) {
   QString tf_str = QString::asprintf("%.2f", tFollow);
   QString dm_str = QString::asprintf("%.0fM", dist_m);
 
+  {
+    const int bar_w = 26;
+    const int bar_h = 12;
+    const int bar_gap = 8;
+    const int max_bars = 4;
+
+    // 막대 위 텍스트 Y (원하면 -8~-14로 조절)
+    const int info_y = gap_y - 6;
+
+    // 2칸 영역 폭(왼쪽2칸/오른쪽2칸)
+    const int half_block_w = (bar_w * 2) + bar_gap;
+
+    // 왼쪽 블록 중앙
+    const int tf_center_x = gap_x + (half_block_w / 2);
+
+    // 오른쪽 블록 시작(3번째 막대 위치) + 중앙
+    const int dm_block_x  = gap_x + (bar_w + bar_gap) * 2;
+    const int dm_center_x = dm_block_x + (half_block_w / 2);
+
+    configFont(p, "Open Sans", 22, "Bold");
+    QFontMetrics fm(p.font());
+
+    if (gap_cluster > 0) {
+      // t_follow (왼쪽)
+      const int tf_w = fm.horizontalAdvance(tf_str);
+      drawTextWithColor(p, tf_center_x - tf_w / 2, info_y, tf_str, QColor(255,255,255,230));
+
+      // dist_m (오른쪽)
+      const int dm_w = fm.horizontalAdvance(dm_str);
+      drawTextWithColor(p, dm_center_x - dm_w / 2, info_y, dm_str, QColor(255,255,255,230));
+    } else {
+      // gap 없음이면 전체 중앙에 N/A
+      const QString na = "N/A";
+      const int na_w = fm.horizontalAdvance(na);
+      const int total_w = (bar_w * max_bars) + (bar_gap * (max_bars - 1));
+      const int center_x = gap_x + total_w / 2;
+      drawTextWithColor(p, center_x - na_w / 2, info_y, na, QColor(255,255,255,220));
+    }
+  }
+	
   if (gap_cluster <= 0) {
     configFont(p, "Open Sans", 28, "Bold");
     drawTextWithColor(p, gap_x, y + 135, "N/A", QColor(255,255,255,220));
