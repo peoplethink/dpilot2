@@ -8,7 +8,7 @@ from selfdrive.car.hyundai.hyundaican import create_lkas11, create_clu11, \
   create_scc11, create_scc12, create_scc13, create_scc14, \
   create_mdps12, create_lfahda_mfc, create_hda_mfc
 from selfdrive.car.hyundai.scc_smoother import SccSmoother
-from selfdrive.car.hyundai.values import Buttons, CAR, FEATURES, CarControllerParams
+from selfdrive.car.hyundai.values import Buttons, CAR, FEATURES, CarControllerParams, LEGACY_SAFETY_MODE_CAR
 from opendbc.can.packer import CANPacker
 from common.conversions import Conversions as CV
 from common.params import Params
@@ -61,6 +61,11 @@ class CarController:
     self.resume_cnt = 0
     self.last_lead_distance = 0
     self.resume_wait_timer = 0
+
+    self.last_button_frame = 0     # 10Hz 버튼 제한용 (resume 등)
+    self.button_wait = 12          # 랜덤 버튼 간격 기본값
+    self.button_alive = 0          # 버튼 alive 랜덤 간격
+    self.button_alive_frame = 0
 
     self.turning_signal_timer = 0
     self.longcontrol = CP.openpilotLongitudinalControl
@@ -187,26 +192,23 @@ class CarController:
 
   def update_auto_resume(self, CC, CS, clu11_speed, can_sends):
     if CC.cruiseControl.resume and not CS.out.gasPressed:
-      if self.last_lead_distance == 0:
-        self.last_lead_distance = CS.lead_distance
-        self.resume_cnt = 0
-        self.resume_wait_timer = 0
-
-      elif self.scc_smoother.is_active(self.frame):
-        pass
-
-      elif self.resume_wait_timer > 0:
-        self.resume_wait_timer -= 1
-
-      elif abs(CS.lead_distance - self.last_lead_distance) > 0.1:
-        can_sends.append(create_clu11(self.packer, CS.scc_bus, CS.clu11, Buttons.RES_ACCEL, clu11_speed))
-        self.resume_cnt += 1
-        if self.resume_cnt >= int(randint(4, 5) * 2):
-          self.resume_cnt = 0
-          self.resume_wait_timer = int(randint(20, 25) * 2)
-
-    elif self.last_lead_distance != 0:
-      self.last_lead_distance = 0
+      if self.car_fingerprint in LEGACY_SAFETY_MODE_CAR:
+        if self.resume_wait_timer > 0:
+          self.resume_wait_timer -= 1
+        else:
+          can_sends.append(create_clu11(self.packer, CS.scc_bus, CS.clu11, Buttons.RES_ACCEL, clu11_speed))
+          self.resume_cnt += 1
+          if self.resume_cnt >= int(randint(4, 5) * 2):
+            self.resume_cnt = 0
+            self.resume_wait_timer = int(randint(20, 25) * 2)
+      else:
+        # Non-legacy: send resume at a max freq of 10Hz
+        if (self.frame - self.last_button_frame) * DT_CTRL > 0.1:
+          can_sends.append(create_clu11(self.packer, CS.scc_bus, CS.clu11, Buttons.RES_ACCEL, clu11_speed))
+          self.last_button_frame = self.frame
+    else:
+      self.resume_wait_timer = 0
+      self.resume_cnt = 0
 
   def update_scc(self, CC, CS, actuators, controls, hud_control, can_sends):
     self.scc_smoother.update(CC.enabled, can_sends, self.packer, CC, CS, self.frame, controls)
