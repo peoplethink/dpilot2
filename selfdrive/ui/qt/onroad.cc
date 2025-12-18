@@ -17,7 +17,7 @@ static void drawGapBars(QPainter &p, int x, int y, int gap, bool active_long) {
   int bars = std::clamp(gap, 0, 4);
 
   const int bar_w = 26;
-  const int bar_h = 12;
+  const int bar_h = 16;
   const int bar_gap = 8;
   const int radius = 4;
 
@@ -1254,8 +1254,8 @@ void NvgWindow::drawBottomIcons(QPainter &p) {
   }
 
   // GAP 막대 (1=1개, 4=4개)
-  const int gap_x = x - 350;   // 기존 텍스트 위치 기준
-  const int gap_y = y + 110;   // 막대는 텍스트보다 약간 위/아래 취향 조절
+  const int gap_x = x - 340;   // 기존 텍스트 위치 기준
+  const int gap_y = y + 118;   // 막대는 텍스트보다 약간 위/아래 취향 조절
 
   // --- 항상 표시되는 Gap Info ---
   QString tf_str = QString::asprintf("%.2f", tFollow);
@@ -1263,7 +1263,7 @@ void NvgWindow::drawBottomIcons(QPainter &p) {
 
   {
     const int bar_w = 26;
-    const int bar_h = 12;
+    const int bar_h = 16;
     const int bar_gap = 8;
     const int max_bars = 4;
 
