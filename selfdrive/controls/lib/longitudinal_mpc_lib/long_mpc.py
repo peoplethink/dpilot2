@@ -43,7 +43,8 @@ X_EGO_COST = 0.
 V_EGO_COST = 0.
 A_EGO_COST = 0.
 J_EGO_COST = 5.0
-A_CHANGE_COST = 150.
+A_CHANGE_COST = 200.
+A_CHANGE_COST_STARTING = 30.0   # (1) 추가: starting(재출발/초기) 구간용 a-change 비용
 DANGER_ZONE_COST = 100.
 CRASH_DISTANCE = .25
 LEAD_DANGER_FACTOR = 0.75
@@ -278,7 +279,7 @@ class LongitudinalMpc:
     self.time_integrator = 0.0
 
     self.x0 = np.zeros(X_DIM)
-    self.set_weights()
+    self.set_weights()  # reset 시 기본값 1회 세팅
 
   def set_cost_weights(self, cost_weights, constraint_cost_weights):
     W = np.asfortranarray(np.diag(cost_weights))
@@ -311,9 +312,11 @@ class LongitudinalMpc:
     a_change = min(a_change_tf, a_change_v_ego)
     return (a_change, j_ego, d_zone_tf)
 
-  def set_weights(self, prev_accel_constraint=True, v_lead0=0.0, v_lead1=0.0):
+  # (2)(3) 반영: starting 비용을 파라미터로 받고, prev_accel_constraint=False일 때 적용
+  def set_weights(self, prev_accel_constraint=True, v_lead0=0.0, v_lead1=0.0,
+                  a_change_cost_starting=A_CHANGE_COST_STARTING):
     if self.mode == 'acc':
-      base_a_change_cost = A_CHANGE_COST if prev_accel_constraint else 40.0
+      base_a_change_cost = A_CHANGE_COST if prev_accel_constraint else a_change_cost_starting
       if self.applyLongDynamicCost:
         a_mul, j_mul, d_zone_tf = self.get_cost_multipliers(v_lead0, v_lead1)
         cost_weights = [
@@ -393,8 +396,6 @@ class LongitudinalMpc:
     elif self.lo_timer == 60:
       self.applyLongDynamicCost = Params().get_bool("ApplyLongDynamicCost")
     elif self.lo_timer == 80:
-      # mySafeModeFactor는 controls.mySafeModeFactor가 우선이지만, fallback으로 Params도 유지
-      # (Params에 있다면 읽되, update()에서 controls로 덮어씁니다)
       try:
         v = self.params_reader.get("MySafeModeFactor", encoding="utf8")
         if v is not None:
@@ -413,28 +414,14 @@ class LongitudinalMpc:
         pass
 
   def update_gap_tf(self, controls, v_ego, a_ego):
-    """
-    첫 코드 update_gap_tf(controls, v_ego, a_ego) 로직을 그대로 반영.
-    - applyCruiseGap = clip(controls.longCruiseGap, 1, 4)
-    - openpilotLongitudinalControl=True: 감속(속도 감소) 시 t_follow 계산 스킵
-    - openpilotLongitudinalControl=False: lead 있으면 감속 a_ego로 gap 자동확대(최대 4)
-    """
     v_ego_kph = v_ego * CV.MS_TO_KPH
 
-    # 정식 필드명: controls.mySafeModeFactor, controls.longCruiseGap
     self.mySafeModeFactor = clip(float(getattr(controls, "mySafeModeFactor", 1.0)), 0.5, 1.0)
-
-    # gap 입력(정식필드): controls.longCruiseGap
     self.applyCruiseGap = int(clip(int(getattr(controls, "longCruiseGap", 1)), 1, 4))
 
     if self.openpilotLongitudinalControl:
-      if v_ego_kph >= self.v_ego_kph_prev:  # 감속일때는 t_follow(gap) 계산안함
-        cruiseGap_dict = {
-          1: self.tFollowGap1,
-          2: self.tFollowGap2,
-          3: self.tFollowGap3,
-          4: self.tFollowGap4,
-        }
+      if v_ego_kph >= self.v_ego_kph_prev:
+        cruiseGap_dict = {1: self.tFollowGap1, 2: self.tFollowGap2, 3: self.tFollowGap3, 4: self.tFollowGap4}
         tf = cruiseGap_dict[self.applyCruiseGap]
         cruiseGapRatio = interp(v_ego_kph, [0, 100], [tf, tf * self.tFollowSpeedRatio])
         self.t_follow = max(0.6, cruiseGapRatio * (2.0 - self.mySafeModeFactor))
@@ -443,36 +430,37 @@ class LongitudinalMpc:
         if v_ego_kph < 0.1:
           self.applyCruiseGap = 1
         else:
-          # 감속이 큰 경우 gap을 키움(최대 4)
           self.applyCruiseGap = int(interp(a_ego, [-1.5, -0.5], [4, self.applyCruiseGap]))
 
-      # openpilotLongitudinalControl=False에서도 t_follow는 gap 기반으로 만들어주는 게 안정적이라 추가(첫 코드 흐름과 동일한 결과)
-      cruiseGap_dict = {
-        1: self.tFollowGap1,
-        2: self.tFollowGap2,
-        3: self.tFollowGap3,
-        4: self.tFollowGap4,
-      }
+      cruiseGap_dict = {1: self.tFollowGap1, 2: self.tFollowGap2, 3: self.tFollowGap3, 4: self.tFollowGap4}
       tf = cruiseGap_dict[int(clip(self.applyCruiseGap, 1, 4))]
       cruiseGapRatio = interp(v_ego_kph, [0, 100], [tf, tf * self.tFollowSpeedRatio])
       self.t_follow = max(0.6, cruiseGapRatio * (2.0 - self.mySafeModeFactor))
 
     self.v_ego_kph_prev = v_ego_kph
   # -------------------------------------------------------------------
+
   def update(self, carstate, radarstate, model, controls, v_cruise, x, v, a, j, prev_accel_constraint, reset_state):
     v_ego = self.x0[1]
     a_ego = carstate.aEgo
-    
+
     self.status = radarstate.leadOne.status or radarstate.leadTwo.status
     self.update_params()
 
+    # lead 처리 (v_lead 추출은 weight 갱신에도 사용)
     lead_xv_0 = self.process_lead(radarstate.leadOne)
     lead_xv_1 = self.process_lead(radarstate.leadTwo)
+
+    v_lead0 = radarstate.leadOne.vLead if radarstate.leadOne.status else v_ego
+    v_lead1 = radarstate.leadTwo.vLead if radarstate.leadTwo.status else v_ego
+
+    # (4) 반영: 매 프레임 prev_accel_constraint/리드상황을 반영해서 weight 갱신
+    self.set_weights(prev_accel_constraint=prev_accel_constraint, v_lead0=v_lead0, v_lead1=v_lead1,
+                     a_change_cost_starting=A_CHANGE_COST_STARTING)
 
     self.update_gap_tf(controls, v_ego, a_ego)
     self.params[:, 4] = self.t_follow
 
-    # comfort / stopDistance는 ntune 값 + safe factor 적용
     stop_distance = float(ntune_scc_get('stopDistance')) if ntune_scc_get('stopDistance') is not None else STOP_DISTANCE
     comfort_brake = float(ntune_scc_get('comfortBrake')) if ntune_scc_get('comfortBrake') is not None else COMFORT_BRAKE
 
@@ -482,9 +470,9 @@ class LongitudinalMpc:
     self.params[:, 6] = comfort_brake_eff
     self.params[:, 7] = applyStopDistance
 
-    # accel limits (기존 구조 유지)
-    self.params[:,0] = ACCEL_MIN if not reset_state else a_ego
-    self.params[:,1] = self.max_a if not reset_state else a_ego
+    # accel limits
+    self.params[:, 0] = ACCEL_MIN if not reset_state else a_ego
+    self.params[:, 1] = self.max_a if not reset_state else a_ego
 
     # stopped equivalence (KRKeegan 옵션 포함)
     lead_0_obstacle = lead_xv_0[:, 0] + get_stopped_equivalence_factor(
@@ -520,7 +508,6 @@ class LongitudinalMpc:
       x_obstacles = np.column_stack([lead_0_obstacle, lead_1_obstacle, cruise_obstacle])
       self.source = SOURCES[int(np.argmin(x_obstacles[0]))]
 
-      # ACC mode는 목표 traj를 0으로(기존 구조 유지)
       x[:], v[:], a[:], j[:] = 0.0, 0.0, 0.0, 0.0
 
     elif self.mode == 'blended':
@@ -551,7 +538,7 @@ class LongitudinalMpc:
     # solver params 설정
     self.params[:, 2] = np.min(x_obstacles, axis=1)
     self.params[:, 3] = np.copy(self.prev_a)
-    self.params[:, 4] = self.t_follow  # 최종 확정
+    self.params[:, 4] = self.t_follow
 
     self.run()
 
