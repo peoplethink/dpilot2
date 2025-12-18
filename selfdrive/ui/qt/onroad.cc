@@ -21,12 +21,12 @@ static void drawGapBars(QPainter &p, int x, int y, int gap, bool active_long) {
   const int bar_gap = 8;
   const int radius = 4;
 
-  QColor onColor  = QColor(0, 200, 0, 255);   // 진한 녹색
+  QColor onColor  = QColor(0, 255, 0, 255);   // 진한 녹색
   QColor offColor = QColor(0, 200, 0, 60);    // 비활성 막대 (연한 녹색)
 
   for (int i = 0; i < 4; i++) {
     QRect r(x + i * (bar_w + bar_gap), y, bar_w, bar_h);
-    p.setPen(Qt::NoPen);
+    p.setPen(QPen(QColor(0, 120, 0, 200), 1));
     p.setBrush(i < bars ? onColor : offColor);
     p.drawRoundedRect(r, radius, radius);
   }
@@ -1286,11 +1286,11 @@ void NvgWindow::drawBottomIcons(QPainter &p) {
     if (gap_cluster > 0) {
       // t_follow (왼쪽)
       const int tf_w = fm.horizontalAdvance(tf_str);
-      drawTextWithColor(p, tf_center_x - tf_w / 2, info_y, tf_str, QColor(255,255,255,230));
+      drawTextWithColor(p, tf_center_x - tf_w / 2, info_y, tf_str, QColor(255,255,255,255));
 
       // dist_m (오른쪽)
       const int dm_w = fm.horizontalAdvance(dm_str);
-      drawTextWithColor(p, dm_center_x - dm_w / 2, info_y, dm_str, QColor(255,255,255,230));
+      drawTextWithColor(p, dm_center_x - dm_w / 2, info_y, dm_str, QColor(255,255,255,255));
     } else {
       // gap 없음이면 전체 중앙에 N/A
       const QString na = "N/A";
