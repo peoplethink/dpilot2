@@ -55,6 +55,8 @@ class CarController:
 
     self.apply_steer_last = 0
     self.accel = 0
+    self.accel_last = 0  # (참고) 첫 코드의 accel_last 개념
+
     self.lkas11_cnt = 0
     self.scc12_cnt = -1
 
@@ -220,13 +222,13 @@ class CarController:
           set_speed = min_set_speed
         set_speed *= CV.MS_TO_MPH if CS.is_set_speed_in_mph else CV.MS_TO_KPH
 
-        #accel = clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
-        #stopping = actuators.longControlState == LongCtrlState.stopping
-
-        stopping = controls.LoC.long_control_state == LongCtrlState.stopping
+        # ===== (이식) accel/stopping/jerk/cb : softHold 완전 제거 버전 =====
         apply_accel = clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
-        #apply_accel = self.scc_smoother.get_apply_accel(CS, controls.sm, apply_accel, stopping)
+        stopping = (actuators.longControlState == LongCtrlState.stopping)
+
+        # 외부에서 쓰는 값들
         self.accel = apply_accel
+        self.accel_last = apply_accel
         controls.apply_accel = apply_accel
 
         aReqValue = CS.scc12["aReqValue"]
@@ -266,7 +268,6 @@ class CarController:
         if CS.has_scc14:
           acc_standstill = stopping if CS.out.vEgo < 2. else False
 
-          # ===== apilot jerk (JerkStartLimit 통합, softHold 없음) =====
           jerk = getattr(actuators, "jerk", 0.0)
           startingJerk = self.jerkStartLimit
           jerkLimit = 5.0
@@ -274,7 +275,10 @@ class CarController:
           self.jerk_count += DT_CTRL
           jerk_max = interp(self.jerk_count, [0, 1.5, 2.5], [startingJerk, startingJerk, jerkLimit])
 
-          long_state = controls.LoC.long_control_state
+          cb_upper = 0.0
+          cb_lower = 0.0
+
+          long_state = actuators.longControlState
           if long_state == LongCtrlState.off:
             upper_jerk = jerkLimit
             lower_jerk = jerkLimit
@@ -286,10 +290,9 @@ class CarController:
           else:
             upper_jerk = min(max(0.5, jerk * 2.0), jerk_max)
             lower_jerk = min(max(1.0, -jerk * 2.0), jerk_max)
-            
-          cb_upper = clip(0.9 + apply_accel * 0.2, 0.0, 1.2)
-          cb_lower = clip(0.8 + apply_accel * 0.2, 0.0, 1.2)
-          
+            cb_upper = clip(0.9 + apply_accel * 0.2, 0.0, 1.2)
+            cb_lower = clip(0.8 + apply_accel * 0.2, 0.0, 1.2)
+
           lead = self.scc_smoother.get_lead(controls.sm)
           if lead is not None:
             d = float(lead.dRel)
@@ -310,7 +313,7 @@ class CarController:
             lower_jerk,
             cb_upper,
             cb_lower,
-            CC.cruiseControl.override,   # long_override
+            CC.cruiseControl.override,
             obj_gap,
             obj_gap2,
             CS.scc14
