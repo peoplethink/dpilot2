@@ -5,7 +5,7 @@ from cereal import car
 from common.numpy_fast import interp
 from panda import Panda
 from common.conversions import Conversions as CV
-from selfdrive.car.hyundai.values import CAR, DBC, Buttons, CarControllerParams, FEATURES
+from selfdrive.car.hyundai.values import CAR, DBC, Buttons, CarControllerParams, FEATURES, LEGACY_SAFETY_MODE_CAR
 from selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR
 from selfdrive.car import STD_CARGO_KG, scale_tire_stiffness, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
