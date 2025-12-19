@@ -8,9 +8,8 @@ from common.conversions import Conversions as CV
 from common.filter_simple import FirstOrderFilter
 from common.realtime import DT_MDL
 from selfdrive.modeld.constants import T_IDXS
-from selfdrive.car.interfaces import ACCEL_MIN, ACCEL_MAX
 from selfdrive.controls.lib.longcontrol import LongCtrlState
-from selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import LongitudinalMpc, N
+from selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import LongitudinalMpc, N, ACCEL_MIN, ACCEL_MAX
 from selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import T_IDXS as T_IDXS_MPC
 from selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, CONTROL_N, get_speed_error
 from selfdrive.swaglog import cloudlog
@@ -21,10 +20,10 @@ from selfdrive.controls.lib.events import Events
 LON_MPC_STEP = 0.2  # first step is 0.2s
 
 A_CRUISE_MIN = -1.2
-A_CRUISE_MAX_VALS = [2.0, 1.2, 0.8, 0.6]
-A_CRUISE_MAX_BP = [0., 10.0, 25., 40.]
+A_CRUISE_MAX_VALS = [1.8, 1.4, 0.5, 0.2, 0.15, 0.1]
+A_CRUISE_MAX_BP = [0., 40 * CV.KPH_TO_MS, 60 * CV.KPH_TO_MS, 80 * CV.KPH_TO_MS, 110 * CV.KPH_TO_MS, 140 * CV.KPH_TO_MS,]
 # Lookup table for turns
-_A_TOTAL_MAX_V = [1.7, 3.2]
+_A_TOTAL_MAX_V = [2.5, 3.2]
 _A_TOTAL_MAX_BP = [20., 40.]
 
 
