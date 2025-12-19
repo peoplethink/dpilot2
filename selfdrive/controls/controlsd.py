@@ -64,6 +64,8 @@ ACTUATOR_FIELDS = tuple(car.CarControl.Actuators.schema.fields.keys())
 ACTIVE_STATES = (State.enabled, State.softDisabling, State.overriding)
 ENABLED_STATES = (State.preEnabled, *ACTIVE_STATES)
 
+LongControlState = car.CarControl.Actuators.LongControlState
+
 
 class Controls:
   def __init__(self, sm=None, pm=None, can_sock=None, CI=None):
@@ -192,6 +194,10 @@ class Controls:
     self.desired_curvature = 0.0
     self.desired_curvature_rate = 0.0
     self.nn_alert_shown = False
+
+    # ====== (추가) longControlState 통일 변수 ======
+    self.long_control_state = LongControlState.off
+    self.stopping = False
 
     # scc smoother
     self.is_cruise_enabled = False
@@ -577,9 +583,12 @@ class Controls:
     CC.longActive = self.active and not self.events.any(ET.OVERRIDE) and self.CP.openpilotLongitudinalControl
 
     actuators = CC.actuators
-    actuators.longControlState = self.LoC.long_control_state
     actuators.jerk = 0.0
     actuators.speed = 0.0  # default
+
+    # ====== (통일) update 전에는 "직전 프레임 상태"를 우선 사용 ======
+    self.long_control_state = self.LoC.long_control_state
+    actuators.longControlState = self.long_control_state
 
     if CS.leftBlinker or CS.rightBlinker:
       self.last_blinker_frame = self.sm.frame
@@ -588,6 +597,9 @@ class Controls:
       self.LaC.reset()
     if not CC.longActive:
       self.LoC.reset(v_pid=CS.vEgo)
+      # ====== (권장) longActive 꺼지면 off로 정리 ======
+      self.long_control_state = LongControlState.off
+      self.stopping = False
 
     if not CS.cruiseState.enabledAcc:
       self.LoC.reset(v_pid=CS.vEgo)
@@ -595,12 +607,17 @@ class Controls:
     if not self.joystick_mode:
       pid_accel_limits = self.CI.get_pid_accel_limits(self.CP, CS.vEgo, self.v_cruise_kph * CV.KPH_TO_MS)
       t_since_plan = (self.sm.frame - self.sm.rcv_frame['longitudinalPlan']) * DT_CTRL
+
       actuators.accel, actuators.jerk = self.LoC.update(CC.longActive and CS.cruiseState.enabledAcc,
                                                         CS, long_plan, pid_accel_limits, t_since_plan)
-  
+
+      # ====== (통일) update 후에는 "actuators.longControlState"를 단 하나의 진실로 ======
+      self.long_control_state = actuators.longControlState
+      self.stopping = (actuators.longControlState == LongControlState.stopping)
+
       if len(long_plan.speeds):
         actuators.speed = long_plan.speeds[-1]
-        
+
       self.desired_curvature, self.desired_curvature_rate = get_lag_adjusted_curvature(
         self.CP, CS.vEgo,
         lat_plan.psis,
@@ -620,6 +637,9 @@ class Controls:
       if self.sm.rcv_frame['testJoystick'] > 0:
         if CC.longActive:
           actuators.accel = 4.0 * clip(self.sm['testJoystick'].axes[0], -1, 1)
+          # joystick 모드에서도 통일(원하면)
+          self.long_control_state = actuators.longControlState
+          self.stopping = (actuators.longControlState == LongControlState.stopping)
 
         if CC.latActive:
           steer = clip(self.sm['testJoystick'].axes[1], -1, 1)
@@ -686,7 +706,7 @@ class Controls:
     hudControl.leadVisible = self.sm['longitudinalPlan'].hasLead
 
     # >>> MOD: HUD에 롱갭/티팔로우 값 송출
-    hudControl.cruiseGap = clip(int(self.sm['longitudinalPlan'].cruiseGap), 1, 4) #CS.cruiseGap
+    hudControl.cruiseGap = clip(int(self.sm['longitudinalPlan'].cruiseGap), 1, 4)  # CS.cruiseGap
     hudControl.objDist = int(self.dRel)
     hudControl.objRelSpd = float(self.vRel)
 
@@ -768,7 +788,10 @@ class Controls:
     controlsState.desiredCurvatureRate = self.desired_curvature_rate
     controlsState.state = self.state
     controlsState.engageable = not self.events.any(ET.NO_ENTRY)
-    controlsState.longControlState = self.LoC.long_control_state
+
+    # ====== (통일) 여기서도 self.long_control_state만 사용 ======
+    controlsState.longControlState = self.long_control_state
+
     controlsState.vPid = float(self.LoC.v_pid)
     controlsState.vCruise = float(self.applyMaxSpeed if self.CP.openpilotLongitudinalControl else self.v_cruise_kph)
     controlsState.upAccelCmd = float(self.LoC.pid.p)
