@@ -298,10 +298,8 @@ class CarInterface(CarInterfaceBase):
     ret.steerControlType = car.CarParams.SteerControlType.torque
 
     # longitudinal
-    ret.longitudinalTuning.kpBP = [0., 5.*CV.KPH_TO_MS, 10.*CV.KPH_TO_MS, 30.*CV.KPH_TO_MS, 130.*CV.KPH_TO_MS]
-    ret.longitudinalTuning.kpV = [1.2, 1.05, 1.0, 0.92, 0.55]
-    ret.longitudinalTuning.kiBP = [0., 130. * CV.KPH_TO_MS]
-    ret.longitudinalTuning.kiV = [0.1, 0.05]
+    ret.longitudinalTuning.kpV = [0.5]
+    ret.longitudinalTuning.kiV = [0.0]
 
     # 기본적으로 정지/출발 상태 머신 사용
     ret.stoppingControl = True
