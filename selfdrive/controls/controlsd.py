@@ -58,6 +58,9 @@ EventName = car.CarEvent.EventName
 ButtonEvent = car.CarState.ButtonEvent
 SafetyModel = car.CarParams.SafetyModel
 
+# ✅ (추가) softHold 판정용
+XState = log.LongitudinalPlan.XState
+
 IGNORED_SAFETY_MODES = (SafetyModel.silent, SafetyModel.noOutput)
 CSID_MAP = {"1": EventName.roadCameraError, "2": EventName.wideRoadCameraError, "0": EventName.driverCameraError}
 ACTUATOR_FIELDS = tuple(car.CarControl.Actuators.schema.fields.keys())
@@ -637,7 +640,6 @@ class Controls:
       if self.sm.rcv_frame['testJoystick'] > 0:
         if CC.longActive:
           actuators.accel = 4.0 * clip(self.sm['testJoystick'].axes[0], -1, 1)
-          # joystick 모드에서도 통일(원하면)
           self.long_control_state = actuators.longControlState
           self.stopping = (actuators.longControlState == LongControlState.stopping)
 
@@ -662,9 +664,6 @@ class Controls:
       attr = getattr(actuators, p)
       if not isinstance(attr, SupportsFloat):
         continue
-      if not math.isfinite(attr):
-        cloudlog.error(f"actuators.{p} not finite {actuators.to_dict()}")
-        setattr(actuators, p, 0.0)
       if not math.isfinite(attr):
         cloudlog.error(f"actuators.{p} not finite {actuators.to_dict()}")
         setattr(actuators, p, 0.0)
@@ -704,6 +703,10 @@ class Controls:
     hudControl.speedVisible = self.enabled
     hudControl.lanesVisible = self.enabled
     hudControl.leadVisible = self.sm['longitudinalPlan'].hasLead
+
+    # ✅ (추가) softHold 전달 (hyundaican / CarController에서 hud_control.softHold 사용)
+    xState = self.sm['longitudinalPlan'].xState
+    hudControl.softHold = bool(CC.longActive and (xState == XState.softHold))
 
     # >>> MOD: HUD에 롱갭/티팔로우 값 송출
     hudControl.cruiseGap = clip(int(self.sm['longitudinalPlan'].cruiseGap), 1, 4)  # CS.cruiseGap
@@ -755,6 +758,7 @@ class Controls:
       hudControl.visualAlert = current_alert.visual_alert
 
     if not self.read_only and self.initialized:
+      # NOTE: apilot 포크처럼 CI.apply가 (CC, controls) 받는 구조 유지
       self.last_actuators, can_sends = self.CI.apply(CC, self)
       self.pm.send('sendcan', can_list_to_can_capnp(can_sends, msgtype='sendcan', valid=CS.canValid))
       CC.actuatorsOutput = self.last_actuators
