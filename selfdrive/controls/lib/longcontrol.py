@@ -10,26 +10,37 @@ from common.params import Params
 LongCtrlState = car.CarControl.Actuators.LongControlState
 
 
-# softHold 제거된 시그니처
+# softHold 포함 전이 함수 (리턴: long_control_state, planned_stop, soft_hold)
 def long_control_state_trans(CP, active, long_control_state, v_ego, v_target,
                              v_target_1sec, brake_pressed, cruise_standstill, a_target_now):
+  # Gas interceptor 차종은 stock standstill 신뢰도가 낮아 기존과 동일하게 제외
   cruise_standstill = cruise_standstill and not CP.enableGasInterceptor
+
   accelerating = v_target_1sec > (v_target + 0.01)
+
   planned_stop = (v_target < CP.vEgoStopping and
                   v_target_1sec < CP.vEgoStopping and
                   not accelerating)
+
   stay_stopped = (v_ego < CP.vEgoStopping and
                   (brake_pressed or cruise_standstill))
+
   stopping_condition = planned_stop or stay_stopped
 
   starting_condition = (v_target_1sec > CP.vEgoStarting and
                         accelerating and
                         not cruise_standstill and
                         not brake_pressed)
+
   started_condition = v_ego > CP.vEgoStarting
+
+  # ✅ softHold 정의: "정지 유지(stay_stopped)" 상태이면 True
+  # (planned_stop은 '정지 예정'이라 softHold로 보긴 애매해서 stay_stopped만 반영)
+  soft_hold = bool(active and stay_stopped)
 
   if not active:
     long_control_state = LongCtrlState.off
+    soft_hold = False
 
   else:
     if long_control_state in (LongCtrlState.off, LongCtrlState.pid):
@@ -49,33 +60,41 @@ def long_control_state_trans(CP, active, long_control_state, v_ego, v_target,
       elif started_condition:
         long_control_state = LongCtrlState.pid
 
-  return long_control_state, planned_stop
+  return long_control_state, planned_stop, soft_hold
 
 
 class LongControl:
   def __init__(self, CP):
     self.CP = CP
     self.long_control_state = LongCtrlState.off  # initialized to off
+
     self.pid = PIDController((CP.longitudinalTuning.kpBP, CP.longitudinalTuning.kpV),
                              (CP.longitudinalTuning.kiBP, CP.longitudinalTuning.kiV),
                              k_f=CP.longitudinalTuning.kf,
                              k_d=(CP.longitudinalTuning.kdBP, CP.longitudinalTuning.kdV),
                              derivative_period=0.5, rate=1 / DT_CTRL)
+
     self.v_pid = 0.0
     self.last_output_accel = 0.0
+
     self.readParamCount = 0
     self.longitudinalTuningKpV = 1.0
     self.longitudinalTuningKiV = 0.0
     self.longitudinalTuningKf = 1.0
     self.startAccelApply = 0.0
     self.stopAccelApply = 0.0
+
     self.longitudinalActuatorDelayLowerBound = float(int(Params().get("LongitudinalActuatorDelayLowerBound", encoding="utf8"))) * 0.01
     self.longitudinalActuatorDelayUpperBound = float(int(Params().get("LongitudinalActuatorDelayUpperBound", encoding="utf8"))) * 0.01
+
+    # ✅ (추가) 외부(controlsd/CC/hudControl)에서 참조할 softHold 플래그
+    self.softHold = False
 
   def reset(self, v_pid):
     """Reset PID controller and change setpoint"""
     self.pid.reset()
     self.v_pid = v_pid
+    self.softHold = False  # ✅ reset 시에는 off
 
   def update(self, active, CS, long_plan, accel_limits, t_since_plan):
     self.readParamCount += 1
@@ -86,16 +105,18 @@ class LongControl:
       self.longitudinalTuningKiV = float(int(Params().get("LongitudinalTuningKiV", encoding="utf8"))) * 0.001
       self.longitudinalTuningKf = float(int(Params().get("LongitudinalTuningKf", encoding="utf8"))) * 0.01
 
-      ## longcontrolTuning이 한개일때만 적용
-      if len(self.CP.longitudinalTuning.kpBP) == 1 and len(self.CP.longitudinalTuning.kiBP)==1:
+      # longcontrolTuning이 한개일때만 적용
+      if len(self.CP.longitudinalTuning.kpBP) == 1 and len(self.CP.longitudinalTuning.kiBP) == 1:
         self.CP.longitudinalTuning.kpV = [self.longitudinalTuningKpV]
         self.CP.longitudinalTuning.kiV = [self.longitudinalTuningKiV]
         self.pid._k_p = (self.CP.longitudinalTuning.kpBP, self.CP.longitudinalTuning.kpV)
         self.pid._k_i = (self.CP.longitudinalTuning.kiBP, self.CP.longitudinalTuning.kiV)
         self.pid.k_f = self.longitudinalTuningKf
+
     elif self.readParamCount == 30:
       self.longitudinalActuatorDelayLowerBound = float(int(Params().get("LongitudinalActuatorDelayLowerBound", encoding="utf8"))) * 0.01
       self.longitudinalActuatorDelayUpperBound = float(int(Params().get("LongitudinalActuatorDelayUpperBound", encoding="utf8"))) * 0.01
+
     elif self.readParamCount == 40:
       self.startAccelApply = float(int(Params().get("StartAccelApply", encoding="utf8"))) * 0.01
       self.stopAccelApply = float(int(Params().get("StopAccelApply", encoding="utf8"))) * 0.01
@@ -105,6 +126,7 @@ class LongControl:
     # Interp control trajectory
     speeds = long_plan.speeds
     a_target_now = 0.0
+
     if len(speeds) == CONTROL_N:
       v_target_now = interp(t_since_plan, T_IDXS[:CONTROL_N], speeds)
       a_target_now = interp(t_since_plan, T_IDXS[:CONTROL_N], long_plan.accels)
@@ -120,14 +142,12 @@ class LongControl:
       a_target = min(a_target_lower, a_target_upper)
 
       v_target_1sec = interp(self.longitudinalActuatorDelayLowerBound + t_since_plan + 1.0, T_IDXS[:CONTROL_N], speeds)
-
     else:
       v_target = 0.0
       v_target_now = 0.0
       v_target_1sec = 0.0
       a_target = 0.0
       j_target = 0.0
-      a_target_lower = a_target_upper = 0.0
 
     self.pid.neg_limit = accel_limits[0]
     self.pid.pos_limit = accel_limits[1]
@@ -138,9 +158,13 @@ class LongControl:
 
     output_accel = self.last_output_accel
 
-    self.long_control_state, planned_stop = long_control_state_trans(self.CP, active, self.long_control_state, CS.vEgo,
-                                                                     v_target, v_target_1sec, CS.brakePressed,
-                                                                     CS.cruiseState.standstill, a_target_now)
+    # ✅ (변경) softHold 포함 전이
+    self.long_control_state, planned_stop, soft_hold = long_control_state_trans(
+      self.CP, active, self.long_control_state, CS.vEgo,
+      v_target, v_target_1sec, CS.brakePressed,
+      CS.cruiseState.standstill, a_target_now
+    )
+    self.softHold = soft_hold
 
     if self.long_control_state == LongCtrlState.off:
       self.reset(CS.vEgo)
@@ -151,6 +175,8 @@ class LongControl:
         output_accel = min(output_accel, 0.0)
         output_accel -= self.CP.stoppingDecelRate * DT_CTRL
       self.reset(CS.vEgo)
+      # stopping에서 reset을 호출하면 softHold가 False로 초기화되므로 다시 세팅
+      self.softHold = soft_hold
 
     elif self.long_control_state == LongCtrlState.starting:
       output_accel = self.CP.startAccel
@@ -165,12 +191,14 @@ class LongControl:
 
       error = self.v_pid - CS.vEgo
       error_deadzone = apply_deadzone(error, deadzone)
-      output_accel = self.pid.update(error_deadzone,
-                                     speed=CS.vEgo,
-                                     feedforward=a_target,
-                                     freeze_integrator=freeze_integrator)
+      output_accel = self.pid.update(
+        error_deadzone,
+        speed=CS.vEgo,
+        feedforward=a_target,
+        freeze_integrator=freeze_integrator
+      )
 
     # 최종 출력 클립
     self.last_output_accel = clip(output_accel, accel_limits[0], accel_limits[1])
 
-    return self.last_output_accel, -0.5 if planned_stop else j_target
+    return self.last_output_accel, (-0.5 if planned_stop else j_target)
