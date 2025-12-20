@@ -28,14 +28,18 @@ static void drawGapBars(QPainter &p, int x, int y, int gap, bool active_long) {
   QColor onColor  = QColor(0, 255, 0, 255);   // 진한 녹색
   QColor offColor = QColor(0, 200, 0, 60);    // 비활성 (연한 녹색)
 
-  // longControl OFF면 살짝 톤다운 (선택적이지만 추천)
+  // longControl OFF
   if (!active_long) {
-    onColor  = QColor(0, 220, 0, 200);
-    offColor = QColor(0, 180, 0, 50);
+    onColor  = QColor(0, 80, 200, 230);
+    offColor = QColor(0, 80, 200, 60);
   }
 
   // === 테두리 (가독성 강화) ===
-  p.setPen(QPen(QColor(0, 120, 0, 200), 1));
+  QColor borderColor = active_long
+    ? QColor(0, 120, 0, 200)
+    : QColor(0, 60, 160, 200);
+
+  p.setPen(QPen(borderColor, 1));	
 
   // === 막대 그리기 ===
   for (int i = 0; i < 4; i++) {
