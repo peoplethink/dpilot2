@@ -240,6 +240,11 @@ class CarController:
           controls.aReqValueMin = controls.aReqValue
         if aReqValue > controls.aReqValueMax:
           controls.aReqValueMax = controls.aReqValue
+
+        if self.stock_navi_decel_enabled:
+          controls.sccStockCamAct = CS.scc11["Navi_SCC_Camera_Act"]
+          controls.sccStockCamStatus = CS.scc11["Navi_SCC_Camera_Status"]
+          apply_accel, stock_cam = self.scc_smoother.get_stock_cam_accel(apply_accel, aReqValue, CS.scc11)
         else:
           controls.sccStockCamAct = 0
           controls.sccStockCamStatus = 0
