@@ -92,6 +92,9 @@ class CarController:
     self.jerkStartLimit = 1.0
     self.jerk_count = 0.0
 
+    # ===== softHold =====
+    self.softHoldMode = 1  # (첫 코드와 동일) 0이면 무시, 1이면 사용
+
   def update(self, CC, CS, controls):
     actuators = CC.actuators
     hud_control = CC.hudControl
@@ -149,6 +152,12 @@ class CarController:
     if self.frame % 100 == 0:
       self.maxAngleFrames = int(Params().get("MaxAngleFrames", encoding="utf8"))
       self.jerkStartLimit = float(int(Params().get("JerkStartLimit", encoding="utf8"))) * 0.1
+      # softHoldMode도 같이 로드 (첫 코드와 동일 주기)
+      try:
+        self.softHoldMode = int(Params().get("SoftHoldMode", encoding="utf8"))
+      except Exception:
+        # 파람이 없으면 기본값 유지
+        pass
 
     can_sends = []
 
@@ -236,9 +245,12 @@ class CarController:
           controls.sccStockCamStatus = 0
           stock_cam = False
 
-        # (핵심) softHold 없으니 "저속/정지 근처"에서 jerk_count 리셋을 stopping만 믿지 말고 보강
+        # ===== softHold 반영 (핵심) =====
+        # hud_control에 softHold 필드가 없는 브랜치도 있을 수 있어서 getattr로 안전하게.
+        soft_hold = bool(getattr(hud_control, "softHold", False)) and (self.softHoldMode > 0)
+
         low_speed = CS.out.vEgo < 1.0
-        near_stop = stopping or low_speed or CS.out.brakePressed
+        near_stop = stopping or soft_hold or low_speed or CS.out.brakePressed
         if near_stop:
           self.jerk_count = 0.0
 
@@ -261,7 +273,8 @@ class CarController:
           can_sends.append(create_scc13(self.packer, CS.scc13))
 
         if CS.has_scc14:
-          acc_standstill = (CS.out.vEgo < 0.3) or stopping
+          # 여기에도 softHold를 standstill 판단에 포함(첫 코드의 stopping/hud_control.softHold 취지)
+          acc_standstill = (CS.out.vEgo < 0.3) or stopping or soft_hold
 
           jerk = getattr(actuators, "jerk", 0.0)
           startingJerk = self.jerkStartLimit
@@ -278,7 +291,13 @@ class CarController:
             upper_jerk = jerkLimit
             lower_jerk = jerkLimit
             self.jerk_count = 0.0
-          elif long_state == LongCtrlState.stopping or near_stop:
+          elif long_state == LongCtrlState.stopping or soft_hold:
+            # 첫 코드와 동일: stopping 또는 softHold면 upper_jerk를 0.5로 눌러주고 카운트 리셋
+            upper_jerk = 0.5
+            lower_jerk = jerkLimit
+            self.jerk_count = 0.0
+          elif near_stop:
+            # softHold가 없더라도 near_stop(저속/브레이크)면 stopping과 유사하게 처리
             upper_jerk = 0.5
             lower_jerk = jerkLimit
             self.jerk_count = 0.0
