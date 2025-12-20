@@ -266,6 +266,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"LongitudinalTuningKpV", PERSISTENT},
     {"LongitudinalTuningKiV", PERSISTENT},
     {"LongitudinalTuningKf", PERSISTENT},
+    {"SoftHoldMode", PERSISTENT},
     {"NNFF", PERSISTENT},
     {"NNFFLite", PERSISTENT},
     {"NNFFModelName", PERSISTENT},
