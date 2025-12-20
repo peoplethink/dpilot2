@@ -50,6 +50,19 @@ static void drawGapBars(QPainter &p, int x, int y, int gap, bool active_long) {
   p.restore();
 }
 
+static inline bool calc_soft_hold_active(const cereal::ControlsState::Reader &cs,
+                                         const cereal::CarState::Reader &car_state) {
+  const float v_ego = car_state.getVEgo();
+
+  const int long_state = (int)cs.getLongControlState();
+  const bool enabled = cs.getEnabled();
+
+  const bool near_standstill = (v_ego < 0.08f);
+  const bool stopping_state  = (long_state == 2);
+
+  return enabled && near_standstill && stopping_state;
+}
+
 #define FONT_OPEN_SANS "Inter" //"Open Sans"
 OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout  = new QVBoxLayout(this);
@@ -438,7 +451,6 @@ void OnroadHud::updateState(const UIState &s) {
 }
 
 void OnroadHud::paintEvent(QPaintEvent *event) {
-  //UIState *s = &QUIState::ui_state;
   QPainter p(this);
   p.setRenderHint(QPainter::Antialiasing);
 	
@@ -449,7 +461,6 @@ void OnroadHud::paintEvent(QPaintEvent *event) {
   p.fillRect(0, 0, width(), header_h, bg);
 	
   // engage-ability icon
-  //if (engageable) {
   if (showVTC) {
       drawVisionTurnControllerUI(p, rect().right() - 184 - bdr_s, bdr_s, 184, vtcColor, vtcSpeed, 100);
   } else if (true) {
@@ -460,6 +471,55 @@ void OnroadHud::paintEvent(QPaintEvent *event) {
   if (compass && bearingAccuracyDeg != 180.00) {
     drawCompass(p, rect().right() - radius / 2 - bdr_s * 2, radius / 2 + bdr_s + 530,
                 compass_outer_img, blackColor(180), 5.0, bearingDeg);
+  }
+
+  {
+    const SubMaster &sm = *(uiState()->sm);
+    const auto cs = sm["controlsState"].getControlsState();
+    const auto car_state = sm["carState"].getCarState();
+
+    const bool soft_hold_active = calc_soft_hold_active(cs, car_state);
+
+    if (soft_hold_active) {
+      p.save();
+
+      const int cx = rect().right() - radius / 2 - bdr_s * 2;
+      const int cy = radius / 2 + bdr_s + 530;
+
+      const int r = radius;
+      p.setPen(Qt::NoPen);
+      p.setBrush(QColor(0, 0, 0, 180));
+      p.drawEllipse(cx - r / 2, cy - r / 2, r, r);
+
+      const QColor blue(0, 80, 200, 255);
+      const QColor shadow(0, 0, 0, 200);
+
+      configFont(p, "Open Sans", 26, "Bold");
+      QFontMetrics fm(p.font());
+
+      const QString line1 = "SOFT";
+      const QString line2 = "HOLD";
+
+      const int line_gap = fm.height() - 6;   // 줄 간격(필요하면 -4~-10 사이 조절)
+      const int total_h = line_gap * 2;
+      const int y_start = cy - total_h / 2 + fm.ascent();
+
+      // SOFT
+      const int w1 = fm.horizontalAdvance(line1);
+      p.setPen(shadow);
+      p.drawText(cx - w1 / 2 + 2, y_start + 2, line1);
+      p.setPen(blue);
+      p.drawText(cx - w1 / 2, y_start, line1);
+
+      // HOLD
+      const int w2 = fm.horizontalAdvance(line2);
+      p.setPen(shadow);
+      p.drawText(cx - w2 / 2 + 2, y_start + line_gap + 2, line2);
+      p.setPen(blue);
+      p.drawText(cx - w2 / 2, y_start + line_gap, line2);
+
+      p.restore();
+    }
   }
 
   if (traffic_state >= 0) {
