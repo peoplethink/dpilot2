@@ -15,7 +15,8 @@ from common.filter_simple import StreamingMovingAverage
 from cereal import log, car
 
 EventName = car.CarEvent.EventName
-XState = log.LongitudinalPlan.XState
+# ✅ XState 제거 (요청사항)
+# XState = log.LongitudinalPlan.XState
 
 if __name__ == '__main__':  # generating code
   from pyextra.acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
@@ -44,15 +45,13 @@ V_EGO_COST = 0.
 A_EGO_COST = 0.
 J_EGO_COST = 5.0
 A_CHANGE_COST = 200.
-A_CHANGE_COST_STARTING = 30.0   # (1) 추가: starting(재출발/초기) 구간용 a-change 비용
+A_CHANGE_COST_STARTING = 30.0   # starting(재출발/초기) 구간용 a-change 비용
 DANGER_ZONE_COST = 100.
 CRASH_DISTANCE = .25
 LEAD_DANGER_FACTOR = 0.75
 LIMIT_COST = 1e6
 ACADOS_SOLVER_TYPE = 'SQP_RTI'
 
-# Fewer timestamps don't hurt performance and lead to
-# much better convergence of the MPC with low iterations
 N = 12
 MAX_T = 10.0
 T_IDXS_LST = [index_function(idx, max_val=MAX_T, max_idx=N) for idx in range(N+1)]
@@ -67,7 +66,6 @@ COMFORT_BRAKE = 2.5
 STOP_DISTANCE = 6.0
 
 
-# === KRKeegan 스타일의 stopped_equivalence + 기본 버전 겸용 ===
 def get_stopped_equivalence_factor(v_lead, v_ego, t_follow=T_FOLLOW,
                                    stop_distance=STOP_DISTANCE,
                                    comfort_brake=COMFORT_BRAKE,
@@ -227,7 +225,7 @@ class LongitudinalMpc:
 
     self.params_reader = Params()
 
-    # --- tFollow / Gap 관련 (요청 수정 반영) ---
+    # --- tFollow / Gap 관련 ---
     self.openpilotLongitudinalControl = False
     self.mySafeModeFactor = 1.0
     self.applyCruiseGap = 1
@@ -241,6 +239,12 @@ class LongitudinalMpc:
     # dynamic cost
     self.applyLongDynamicCost = False
     self.t_follow = T_FOLLOW
+
+    # ✅ softHold 관련(첫 코드 방식 이식, XState 없이)
+    self.softHoldMode = 1
+    self.softHoldTimer = 0
+    self.softHold = False          # 외부에서 참조할 플래그
+    self.mpcEvent = 0              # EventName.autoHold 등
 
     # timers / debug
     self.lo_timer = 0
@@ -279,7 +283,13 @@ class LongitudinalMpc:
     self.time_integrator = 0.0
 
     self.x0 = np.zeros(X_DIM)
-    self.set_weights()  # reset 시 기본값 1회 세팅
+
+    # ✅ softHold 상태 초기화
+    self.softHoldTimer = 0
+    self.softHold = False
+    self.mpcEvent = 0
+
+    self.set_weights()
 
   def set_cost_weights(self, cost_weights, constraint_cost_weights):
     W = np.asfortranarray(np.diag(cost_weights))
@@ -312,7 +322,6 @@ class LongitudinalMpc:
     a_change = min(a_change_tf, a_change_v_ego)
     return (a_change, j_ego, d_zone_tf)
 
-  # (2)(3) 반영: starting 비용을 파라미터로 받고, prev_accel_constraint=False일 때 적용
   def set_weights(self, prev_accel_constraint=True, v_lead0=0.0, v_lead1=0.0,
                   a_change_cost_starting=A_CHANGE_COST_STARTING):
     if self.mode == 'acc':
@@ -376,7 +385,6 @@ class LongitudinalMpc:
       a_lead = 0.0
       a_lead_tau = _LEAD_ACCEL_TAU
 
-    # min_x_lead: ACCEL_MIN은 ntune에서 뽑아오므로 update에서 반영(여긴 방어적으로 -4)
     min_x_lead = ((v_ego + v_lead)/2) * (v_ego - v_lead) / (4.0 * 2.0)
     x_lead = clip(x_lead, min_x_lead, 1e8)
     v_lead = clip(v_lead, 0.0, 1e8)
@@ -388,7 +396,7 @@ class LongitudinalMpc:
     self.cruise_min_a = min_a
     self.max_a = max_a
 
-  # ---------- 요청 핵심: tFollow 관련 값/로직을 “첫 코드 방식”으로 이식 ----------
+  # ✅ 소프트홀드 포함 파라미터 업데이트
   def update_params(self):
     self.lo_timer += 1
     if self.lo_timer > 200:
@@ -410,6 +418,12 @@ class LongitudinalMpc:
         self.tFollowGap2 = float(int(Params().get("TFollowGap2", encoding="utf8"))) / 100.
         self.tFollowGap3 = float(int(Params().get("TFollowGap3", encoding="utf8"))) / 100.
         self.tFollowGap4 = float(int(Params().get("TFollowGap4", encoding="utf8"))) / 100.
+      except Exception:
+        pass
+    elif self.lo_timer == 140:
+      # ✅ 첫 코드와 동일: SoftHoldMode 파라미터 반영
+      try:
+        self.softHoldMode = int(Params().get("SoftHoldMode", encoding="utf8"))
       except Exception:
         pass
 
@@ -438,7 +452,28 @@ class LongitudinalMpc:
       self.t_follow = max(0.6, cruiseGapRatio * (2.0 - self.mySafeModeFactor))
 
     self.v_ego_kph_prev = v_ego_kph
-  # -------------------------------------------------------------------
+
+  # ✅ (핵심) XState 없이 softHold 플래그만 생성
+  def update_soft_hold(self, carstate, v_ego):
+    # 기본값
+    self.mpcEvent = 0
+
+    # 소프트홀드 진입 조건: 브레이크 + 거의 정지 + 모드 on
+    if carstate.brakePressed and v_ego < 0.1 and self.softHoldMode > 0:
+      self.softHoldTimer += 1
+      if (self.softHoldTimer * DT_MDL) >= 0.7:
+        if not self.softHold:
+          self.mpcEvent = EventName.autoHold
+        self.softHold = True
+    else:
+      self.softHoldTimer = 0
+      # 정지 조건 풀리면 해제
+      self.softHold = False
+
+    # 홀드 중 가속페달 밟으면 즉시 해제
+    if self.softHold and carstate.gasPressed:
+      self.softHoldTimer = 0
+      self.softHold = False
 
   def update(self, carstate, radarstate, model, controls, v_cruise, x, v, a, j, prev_accel_constraint, reset_state):
     v_ego = self.x0[1]
@@ -447,14 +482,15 @@ class LongitudinalMpc:
     self.status = radarstate.leadOne.status or radarstate.leadTwo.status
     self.update_params()
 
-    # lead 처리 (v_lead 추출은 weight 갱신에도 사용)
+    # ✅ softHold 업데이트 (XState 제거 버전)
+    self.update_soft_hold(carstate, v_ego)
+
     lead_xv_0 = self.process_lead(radarstate.leadOne)
     lead_xv_1 = self.process_lead(radarstate.leadTwo)
 
     v_lead0 = radarstate.leadOne.vLead if radarstate.leadOne.status else v_ego
     v_lead1 = radarstate.leadTwo.vLead if radarstate.leadTwo.status else v_ego
 
-    # (4) 반영: 매 프레임 prev_accel_constraint/리드상황을 반영해서 weight 갱신
     self.set_weights(prev_accel_constraint=prev_accel_constraint, v_lead0=v_lead0, v_lead1=v_lead1,
                      a_change_cost_starting=A_CHANGE_COST_STARTING)
 
@@ -470,22 +506,18 @@ class LongitudinalMpc:
     self.params[:, 6] = comfort_brake_eff
     self.params[:, 7] = applyStopDistance
 
-    # accel limits
     self.params[:, 0] = ACCEL_MIN if not reset_state else a_ego
     self.params[:, 1] = self.max_a if not reset_state else a_ego
 
-    # stopped equivalence (KRKeegan 옵션 포함)
     lead_0_obstacle = lead_xv_0[:, 0] + get_stopped_equivalence_factor(
-      lead_xv_0[:, 1],
-      self.x_sol[:, 1],
+      lead_xv_0[:, 1], self.x_sol[:, 1],
       t_follow=self.t_follow,
       stop_distance=applyStopDistance,
       comfort_brake=comfort_brake_eff,
       krkeegan=self.applyLongDynamicCost
     )
     lead_1_obstacle = lead_xv_1[:, 0] + get_stopped_equivalence_factor(
-      lead_xv_1[:, 1],
-      self.x_sol[:, 1],
+      lead_xv_1[:, 1], self.x_sol[:, 1],
       t_follow=self.t_follow,
       stop_distance=applyStopDistance,
       comfort_brake=comfort_brake_eff,
@@ -526,7 +558,6 @@ class LongitudinalMpc:
     else:
       raise NotImplementedError(f'Planner mode {self.mode} not recognized in planner update')
 
-    # yref 설정
     self.yref[:, 1] = x
     self.yref[:, 2] = v
     self.yref[:, 3] = a
@@ -535,7 +566,6 @@ class LongitudinalMpc:
       self.solver.set(i, "yref", self.yref[i])
     self.solver.set(N, "yref", self.yref[N][:COST_E_DIM])
 
-    # solver params 설정
     self.params[:, 2] = np.min(x_obstacles, axis=1)
     self.params[:, 3] = np.copy(self.prev_a)
     self.params[:, 4] = self.t_follow
