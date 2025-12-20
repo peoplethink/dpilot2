@@ -104,7 +104,11 @@ def create_mdps12(packer, frame, mdps12):
   return packer.make_can_msg("MDPS12", 2, values)
 
 
-def create_scc11(packer, frame, enabled, set_speed, lead_visible, scc_live, scc11, active_cam, stock_cam):
+# ✅ softHold 반영: SCCInfoDisplay(있을 때만) 제어
+def create_scc11(packer, frame, enabled, set_speed, lead_visible, scc_live, scc11,
+                 active_cam, stock_cam,
+                 longActive=False, radarAlarm=False,
+                 softHoldInfo=False):
   values = copy.copy(scc11)
   values["AliveCounterACC"] = frame // 2 % 0x10
 
@@ -118,11 +122,21 @@ def create_scc11(packer, frame, enabled, set_speed, lead_visible, scc_live, scc1
     values["ObjValid"] = 1 if enabled else 0
     values["DriverAlertDisplay"] = 0
 
+  # (핵심) SCCInfoDisplay가 DBC에 존재할 때만 세팅 (없으면 건드리지 않음)
+  # 위 코드 로직: 3(전방상황주의) > 4(출발준비) 우선순위였고,
+  # 실제로는 longActive일 때만 띄우도록 했음.
+  if "SCCInfoDisplay" in values:
+    values["SCCInfoDisplay"] = 3 if (longActive and radarAlarm) else \
+                               4 if (longActive and softHoldInfo) else \
+                               (0 if enabled else 0)
+
   return packer.make_can_msg("SCC11", 0, values)
 
 
-def create_scc12(packer, apply_accel, enabled, cnt, scc_live, scc12, long_override, brakepressed,
-                 standstill, car_fingerprint):
+# ✅ softHold 반영: softHold+brakePressed+enabled+softHoldMode==2이면 ACCMode/StopReq 보정
+def create_scc12(packer, apply_accel, enabled, cnt, scc_live, scc12, long_override,
+                 brakepressed, standstill, car_fingerprint,
+                 softHold=False, softHoldMode=1):
   values = copy.copy(scc12)
 
   if car_fingerprint in EV_HYBRID_CAR:
@@ -147,6 +161,15 @@ def create_scc12(packer, apply_accel, enabled, cnt, scc_live, scc12, long_overri
     if not scc_live:
       values["ACCMode"] = 1 if enabled else 0
 
+  # ===== softHold 보정 (위 create_acc_commands_mix_scc 이식 핵심) =====
+  # softHold & brakePressed & longEnabled & softHoldMode==2:
+  #   scc12_accMode=1, stopReq=1
+  if enabled and softHold and brakepressed and (softHoldMode == 2):
+    # 기존 코드가 StopReq를 어디서든 쓰고 있을 수 있어 안전하게 보정
+    if "ACCMode" in values:
+      values["ACCMode"] = 1
+    values["StopReq"] = 1
+
   values["CR_VSM_ChkSum"] = 0
   dat = packer.make_can_msg("SCC12", 0, values)[2]
   values["CR_VSM_ChkSum"] = 16 - sum([sum(divmod(i, 16)) for i in dat]) % 16
@@ -159,23 +182,30 @@ def create_scc13(packer, scc13):
   return packer.make_can_msg("SCC13", 0, values)
 
 
-# ✅ 시그니처 변경: cb_upper/cb_lower + objgap2 추가
+# ✅ 시그니처 유지 + softHold 힌트 옵션(필요 시)
 def create_scc14(packer, enabled, e_vgo, standstill, accel,
                  upper_jerk, lower_jerk,
                  cb_upper, cb_lower,
-                 long_override, objgap, objgap2, scc14):
+                 long_override, objgap, objgap2, scc14,
+                 softHold=False, softHoldMode=1, brakePressed=False):
   values = copy.copy(scc14)
 
   if enabled:
-    values["ACCMode"] = 2 if long_override and (accel > -0.2) else 1
+    # 기본: 2(override) / 1(cruise)
+    acc_mode = 2 if long_override and (accel > -0.2) else 1
+
+    # softHoldMode==2이고 brakePressed+softHold면 “출발준비/정지유지” 성격으로 1 유지
+    # (SCC14는 StopReq가 없고 ACCMode로만 분위기 맞추는 용도)
+    if softHold and brakePressed and (softHoldMode == 2):
+      acc_mode = 1
+
+    values["ACCMode"] = acc_mode
     values["ObjGap"] = objgap
     values["ObjGap2"] = objgap2
 
-    # Controller에서 계산된 jerk를 그대로 반영 (여기선 clamp만)
     values["JerkUpperLimit"] = clip(upper_jerk, 0.5, 5.0)
     values["JerkLowerLimit"] = clip(lower_jerk, 0.5, 5.0)
 
-    # ajouatom comfort band 반영
     values["ComfortBandUpper"] = cb_upper
     values["ComfortBandLower"] = cb_lower
 
