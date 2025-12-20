@@ -55,7 +55,6 @@ class CarController:
 
     self.apply_steer_last = 0
     self.accel = 0
-    self.accel_last = 0
 
     self.lkas11_cnt = 0
     self.scc12_cnt = -1
@@ -221,9 +220,10 @@ class CarController:
           set_speed = min_set_speed
         set_speed *= CV.MS_TO_MPH if CS.is_set_speed_in_mph else CV.MS_TO_KPH
 
-        # ===== accel/stopping/jerk/cb : softHold 제거(유지) + 급가속 방지 보정 =====
         apply_accel = clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
         stopping = (actuators.longControlState == LongCtrlState.stopping)
+        self.accel = apply_accel
+        controls.apply_accel = apply_accel
 
         aReqValue = CS.scc12["aReqValue"]
         controls.aReqValue = aReqValue
@@ -231,21 +231,10 @@ class CarController:
           controls.aReqValueMin = controls.aReqValue
         if aReqValue > controls.aReqValueMax:
           controls.aReqValueMax = controls.aReqValue
-
-        # (중요) stock_cam 보정은 apply_accel 확정 전에 반영하고, 확정 후 self.accel/controls.apply_accel에 넣기
-        if self.stock_navi_decel_enabled:
-          controls.sccStockCamAct = CS.scc11["Navi_SCC_Camera_Act"]
-          controls.sccStockCamStatus = CS.scc11["Navi_SCC_Camera_Status"]
-          apply_accel, stock_cam = self.scc_smoother.get_stock_cam_accel(apply_accel, aReqValue, CS.scc11)
         else:
           controls.sccStockCamAct = 0
           controls.sccStockCamStatus = 0
           stock_cam = False
-
-        # 확정된 accel을 내부 상태/외부에 반영 (급가속 체감 튐 방지)
-        self.accel = apply_accel
-        self.accel_last = apply_accel
-        controls.apply_accel = apply_accel
 
         # (핵심) softHold 없으니 "저속/정지 근처"에서 jerk_count 리셋을 stopping만 믿지 말고 보강
         low_speed = CS.out.vEgo < 1.0
@@ -272,7 +261,6 @@ class CarController:
           can_sends.append(create_scc13(self.packer, CS.scc13))
 
         if CS.has_scc14:
-          # standstill 판단도 약간 보강(softHold 없이 정지/출발 안정)
           acc_standstill = (CS.out.vEgo < 0.3) or stopping
 
           jerk = getattr(actuators, "jerk", 0.0)
@@ -291,7 +279,6 @@ class CarController:
             lower_jerk = jerkLimit
             self.jerk_count = 0.0
           elif long_state == LongCtrlState.stopping or near_stop:
-            # softHold은 제거했지만 "정지 근처"는 동일하게 출발 jerk 억제
             upper_jerk = 0.5
             lower_jerk = jerkLimit
             self.jerk_count = 0.0
