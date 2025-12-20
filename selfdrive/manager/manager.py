@@ -122,6 +122,7 @@ def manager_init() -> None:
     ("LongitudinalTuningKf", "100"),
     ("LongitudinalActuatorDelayUpperBound", "45"),
     ("LongitudinalActuatorDelayLowerBound", "30"),
+    ("SoftHoldMode", "1"), 
     ("NNFF", "0"),
     ("NNFFLite", "0"),
     ("PutPrebuilt", "0"), 
