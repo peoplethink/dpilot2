@@ -932,6 +932,7 @@ struct LongitudinalPlan @0xe00b5b3eba12876c {
     cruise @1;
     e2eCruise @2;
     e2eStop @3;
+    softHold @4;
   }
  
   enum LongitudinalPlanSource {
