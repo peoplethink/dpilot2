@@ -388,11 +388,12 @@ struct CarControl {
     rightLaneDepart @8: Bool;
     leftLaneDepart @9: Bool;
 
-    cruiseGap @10 :Int32;     # ✅ 위코드 반영
-    objDist @11 :Int32;       # ✅ 위코드 반영
-    objRelSpd @12 :Float32;   # ✅ 위코드 반영
-    softHold @13 :Bool;       # ✅ 위코드 반영
-    radarAlarm @14 :Bool;     # ✅ 위코드 반영
+    cruiseGap @10 :Int32;
+    objDist @11 :Int32;
+    objRelSpd @12 :Float32;
+    softHold @13 :Bool;
+    radarAlarm @14 :Bool;
+    softHold @15: Bool;
 
     enum VisualAlert {
       none @0;
