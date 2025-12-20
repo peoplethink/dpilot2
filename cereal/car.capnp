@@ -393,7 +393,6 @@ struct CarControl {
     objRelSpd @12 :Float32;
     softHold @13 :Bool;
     radarAlarm @14 :Bool;
-    softHold @15: Bool;
 
     enum VisualAlert {
       none @0;
