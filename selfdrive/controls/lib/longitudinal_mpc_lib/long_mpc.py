@@ -444,6 +444,7 @@ class LongitudinalMpc:
       except Exception:
         pass
     elif self.lo_timer == 60:
+      self.endToEndLong = Params().get_bool("EndToEndLong")
       self.applyLongDynamicCost = Params().get_bool("ApplyLongDynamicCost")
       try:
         self.trafficStopAccel = float(int(Params().get("TrafficStopAccel", encoding="utf8"))) / 100.0
