@@ -482,11 +482,6 @@ class LongitudinalMpc:
         self.trafficStopAdjustRatio = float(int(Params().get("TrafficStopAdjustRatio", encoding="utf8"))) / 100.0
       except Exception:
         pass
-    elif self.lo_timer == 180:
-      try:
-        self.endToEndLong = Params().get_bool("EndToEndLong")
-      except Exception:
-        self.endToEndLong = False
 
   # =========================
   # Gap -> t_follow
