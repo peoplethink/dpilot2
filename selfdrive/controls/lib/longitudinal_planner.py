@@ -19,9 +19,13 @@ from selfdrive.controls.lib.events import Events
 
 LON_MPC_STEP = 0.2  # first step is 0.2s
 
+# =========================
+# Cruise accel limits base
+# =========================
 A_CRUISE_MIN = -1.2
 A_CRUISE_MAX_VALS = [1.5, 1.3, 0.4, 0.2, 0.15, 0.1]
-A_CRUISE_MAX_BP = [0., 40 * CV.KPH_TO_MS, 60 * CV.KPH_TO_MS, 80 * CV.KPH_TO_MS, 110 * CV.KPH_TO_MS, 140 * CV.KPH_TO_MS,]
+A_CRUISE_MAX_BP = [0., 40 * CV.KPH_TO_MS, 60 * CV.KPH_TO_MS, 80 * CV.KPH_TO_MS, 110 * CV.KPH_TO_MS, 140 * CV.KPH_TO_MS]
+
 # Lookup table for turns
 _A_TOTAL_MAX_V = [1.7, 3.2]
 _A_TOTAL_MAX_BP = [20., 40.]
@@ -36,13 +40,9 @@ def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
   This function returns a limited long acceleration allowed, depending on the existing lateral acceleration
   this should avoid accelerating when losing the target in turns
   """
-
-  # FIXME: This function to calculate lateral accel is incorrect and should use the VehicleModel
-  # The lookup table for turns should also be updated if we do this
   a_total_max = interp(v_ego, _A_TOTAL_MAX_BP, _A_TOTAL_MAX_V)
   a_y = v_ego ** 2 * angle_steers * CV.DEG_TO_RAD / (CP.steerRatio * CP.wheelbase)
   a_x_allowed = math.sqrt(max(a_total_max ** 2 - a_y ** 2, 0.))
-
   return [a_target[0], min(a_target[1], a_x_allowed)]
 
 
@@ -53,6 +53,17 @@ class Planner:
     self.param_read_counter = 0
     self.mpc = LongitudinalMpc(dt=dt)
     self.dt = dt
+
+    # ===== myDrivingMode related (ported) =====
+    self.vCluRatio = 1.0
+    self.myEcoModeFactor = 1.0
+    self.cruiseMaxVals1 = 1.0
+    self.cruiseMaxVals2 = 1.0
+    self.cruiseMaxVals3 = 1.0
+    self.cruiseMaxVals4 = 1.0
+    self.cruiseMaxVals5 = 1.0
+    self.cruiseMaxVals6 = 1.0
+
     self.read_param()
 
     self.fcw = False
@@ -76,8 +87,56 @@ class Planner:
     self.applyCruiseGap = 1.0
     self.tFollow = 0.0
 
+  # =========================
+  # Params read (ported safely)
+  # =========================
   def read_param(self):
+    # mode
     self.mpc.mode = 'blended' if self.params.get_bool('EndToEndLong') else 'acc'
+
+    # safe reads with fallback
+    def _read_float100(key, default):
+      try:
+        v = self.params.get(key, encoding="utf8")
+        if v is None:
+          return float(default)
+        return float(int(v)) / 100.0
+      except Exception:
+        return float(default)
+
+    def _read_int(key, default):
+      try:
+        v = self.params.get(key, encoding="utf8")
+        if v is None:
+          return int(default)
+        return int(v)
+      except Exception:
+        return int(default)
+
+    self.myEcoModeFactor = _read_float100("MyEcoModeFactor", 100)
+    self.cruiseMaxVals1 = _read_float100("CruiseMaxVals1", int(A_CRUISE_MAX_VALS[0] * 100))
+    self.cruiseMaxVals2 = _read_float100("CruiseMaxVals2", int(A_CRUISE_MAX_VALS[1] * 100))
+    self.cruiseMaxVals3 = _read_float100("CruiseMaxVals3", int(A_CRUISE_MAX_VALS[2] * 100))
+    self.cruiseMaxVals4 = _read_float100("CruiseMaxVals4", int(A_CRUISE_MAX_VALS[3] * 100))
+    self.cruiseMaxVals5 = _read_float100("CruiseMaxVals5", int(A_CRUISE_MAX_VALS[4] * 100))
+    self.cruiseMaxVals6 = _read_float100("CruiseMaxVals6", int(A_CRUISE_MAX_VALS[5] * 100))
+
+    # NOTE: 기존 아래코드에는 AutoTurnControl이 없으니 저장만 해두고 사용 안함
+    self.autoTurnControl = _read_int("AutoTurnControl", 0)
+
+  # =========================
+  # per-user max accel curve (ported)
+  # =========================
+  def get_max_accel_user(self, v_ego):
+    cruiseMaxVals = [
+      float(self.cruiseMaxVals1),
+      float(self.cruiseMaxVals2),
+      float(self.cruiseMaxVals3),
+      float(self.cruiseMaxVals4),
+      float(self.cruiseMaxVals5),
+      float(self.cruiseMaxVals6),
+    ]
+    return interp(v_ego, A_CRUISE_MAX_BP, cruiseMaxVals)
 
   def parse_model(self, model_msg, model_error):
     if (len(model_msg.position.x) == 33 and
@@ -104,12 +163,18 @@ class Planner:
     v_cruise_kph = min(sm['controlsState'].vCruise, V_CRUISE_MAX)
     v_cruise = v_cruise_kph * CV.KPH_TO_MS
 
-    # neokii
+    # neokii: cluster ratio 적용 (ported, 안전하게)
     if not self.use_cluster_speed:
-      vCluRatio = sm['carState'].vCluRatio
+      vCluRatio = getattr(sm['carState'], 'vCluRatio', 1.0)
       if vCluRatio > 0.5:
+        self.vCluRatio = vCluRatio
         v_cruise *= vCluRatio
         v_cruise = int(v_cruise * CV.MS_TO_KPH + 0.25) * CV.KPH_TO_MS
+
+    # myDrivingMode / safe factor (ported)
+    mySafeModeFactor = float(getattr(sm['controlsState'], 'mySafeModeFactor', 1.0))
+    mySafeModeFactor = float(clip(mySafeModeFactor, 0.5, 1.0))
+    myDrivingMode = int(getattr(sm['controlsState'], 'myDrivingMode', 0))
 
     long_control_off = sm['controlsState'].longControlState == LongCtrlState.off
     force_slow_decel = sm['controlsState'].forceDecel
@@ -120,8 +185,23 @@ class Planner:
     # No change cost when user is controlling the speed, or when standstill
     prev_accel_constraint = not (reset_state or sm['carState'].standstill)
 
+    # =========================
+    # accel limits (myDrivingMode ported)
+    # =========================
     if self.mpc.mode == 'acc':
-      accel_limits = [A_CRUISE_MIN, get_max_accel(v_ego)]
+      base_max = float(self.get_max_accel_user(v_ego))
+
+      if myDrivingMode in [1]:  # 연비
+        myMaxAccel = clip(base_max * self.myEcoModeFactor, 0.0, ACCEL_MAX)
+      elif myDrivingMode in [2]:  # 안전
+        myMaxAccel = clip(base_max * self.myEcoModeFactor * mySafeModeFactor, 0.0, ACCEL_MAX)
+      elif myDrivingMode in [3, 4]:  # 일반, 고속
+        myMaxAccel = clip(base_max, 0.0, ACCEL_MAX)
+      else:
+        # fallback (기본 곡선)
+        myMaxAccel = clip(base_max, 0.0, ACCEL_MAX)
+
+      accel_limits = [A_CRUISE_MIN, float(myMaxAccel)]
       accel_limits_turns = limit_accel_in_turns(v_ego, sm['carState'].steeringAngleDeg, accel_limits, self.CP)
     else:
       accel_limits = [ACCEL_MIN, ACCEL_MAX]
@@ -131,12 +211,12 @@ class Planner:
       self.v_desired_filter.x = v_ego
       # Clip aEgo to cruise limits to prevent large accelerations when becoming active
       self.a_desired = clip(sm['carState'].aEgo, accel_limits[0], accel_limits[1])
-      self.mpc.prev_a = np.full(N+1, self.a_desired) ## mpc에서는 prev_a를 참고하여 constraint작동함.... pid off -> on시에는 현재 constraint가 작동하지 않아서 집어넣어봄...
+      # mpc에서는 prev_a를 참고하여 constraint작동함.... pid off -> on시에는 현재 constraint가 작동하지 않아서 집어넣어봄...
+      self.mpc.prev_a = np.full(N+1, self.a_desired)
       accel_limits_turns[0] = accel_limits_turns[0] = 0.0
 
     # Prevent divergence, smooth in current v_ego
     self.v_desired_filter.x = max(0.0, self.v_desired_filter.update(v_ego))
-
     self.v_model_error = get_speed_error(sm['modelV2'], v_ego)
 
     if force_slow_decel:
@@ -150,12 +230,12 @@ class Planner:
     accel_limits_turns[0] = min(accel_limits_turns[0], self.a_desired + 0.05)
     accel_limits_turns[1] = max(accel_limits_turns[1], self.a_desired - 0.05)
 
-    #self.mpc.set_weights(prev_accel_constraint)
     self.mpc.set_accel_limits(accel_limits_turns[0], accel_limits_turns[1])
     self.mpc.set_cur_state(self.v_desired_filter.x, self.a_desired)
     x, v, a, j = self.parse_model(sm['modelV2'], self.v_model_error)
 
-    self.mpc.update(sm['carState'], sm['radarState'], sm['modelV2'], sm['controlsState'], v_cruise, x, v, a, j, prev_accel_constraint, reset_state)
+    self.mpc.update(sm['carState'], sm['radarState'], sm['modelV2'], sm['controlsState'],
+                    v_cruise, x, v, a, j, prev_accel_constraint, reset_state)
 
     self.v_desired_trajectory = np.interp(T_IDXS[:CONTROL_N], T_IDXS_MPC, self.mpc.v_solution)
     self.a_desired_trajectory = np.interp(T_IDXS[:CONTROL_N], T_IDXS_MPC, self.mpc.a_solution)
@@ -168,7 +248,6 @@ class Planner:
     if mpc_gap is not None:
       self.applyCruiseGap = float(mpc_gap)
     else:
-      # controlsState.longCruiseGap(정수 1~4) 기반 fallback
       if hasattr(sm['controlsState'], 'longCruiseGap'):
         try:
           self.applyCruiseGap = float(clip(int(sm['controlsState'].longCruiseGap), 1, 4))
@@ -180,7 +259,6 @@ class Planner:
     if mpc_tf is not None:
       self.tFollow = float(mpc_tf)
     else:
-      # gap 기반 단순 fallback(원하면 여기 mapping 바꿔줄 수 있음)
       self.tFollow = 0.0
 
     # TODO counter is only needed because radar is glitchy, remove once radar is gone
@@ -188,14 +266,13 @@ class Planner:
     if self.fcw:
       cloudlog.info("FCW triggered")
 
-    # Interpolate 0.05 seconds and save as starting point for next iteration
+    # Interpolate dt seconds and save as starting point for next iteration
     a_prev = self.a_desired
     self.a_desired = float(interp(self.dt, T_IDXS[:CONTROL_N], self.a_desired_trajectory))
     self.v_desired_filter.x = self.v_desired_filter.x + self.dt * (self.a_desired + a_prev) / 2.0
 
   def publish(self, sm, pm):
     plan_send = messaging.new_message('longitudinalPlan')
-
     plan_send.valid = sm.all_checks(service_list=['carState', 'controlsState'])
 
     longitudinalPlan = plan_send.longitudinalPlan
@@ -224,7 +301,6 @@ class Planner:
     longitudinalPlan.tFollow = float(self.tFollow)
     longitudinalPlan.cruiseGap = float(self.applyCruiseGap)
 
-    # (선택) mpc에 값이 있을 때만 안전하게 추가로 채움 (있으면 UI/로그에서 쓰기 편함)
     if hasattr(longitudinalPlan, 'xStop'):
       longitudinalPlan.xStop = float(getattr(self.mpc, 'stopDist', 0.0))
     if hasattr(longitudinalPlan, 'xObstacle'):
