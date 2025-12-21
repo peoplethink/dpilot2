@@ -699,7 +699,10 @@ class LongitudinalMpc:
           mode = 'blended'
         else:
           mode = 'acc'
-
+          
+    if self.xState in [XState.e2eStop, XState.e2eCruisePrepare]:
+      mode = 'blended'
+      
     self.comfort_brake *= self.mySafeModeFactor
     self.prev_enabled = enabled_now
     self.cruiseButtonCounter = controls.cruiseButtonCounter
