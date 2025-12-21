@@ -58,7 +58,7 @@ EventName = car.CarEvent.EventName
 ButtonEvent = car.CarState.ButtonEvent
 SafetyModel = car.CarParams.SafetyModel
 
-# ✅ (반영) xState 다시 사용
+# ✅ xState 사용
 XState = log.LongitudinalPlan.XState
 
 IGNORED_SAFETY_MODES = (SafetyModel.silent, SafetyModel.noOutput)
@@ -93,10 +93,8 @@ class Controls:
       self.log_sock = messaging.sub_sock('androidLog')
 
     if CI is None:
-      # wait for one pandaState and one CAN packet
       print("Waiting for CAN messages...")
       get_one_can(self.can_sock)
-
       self.CI, self.CP = get_car(self.can_sock, self.pm.sock['sendcan'])
     else:
       self.CI, self.CP = CI, CI.CP
@@ -127,11 +125,8 @@ class Controls:
     passive = params.get_bool("Passive") or not openpilot_enabled_toggle
     self.set_speed_offset = params.get_bool("SetSpeedOffset") * (1 if self.is_metric else CV.MPH_TO_KPH)
 
-    # detect sound card presence and ensure successful init
     sounds_available = HARDWARE.get_sound_card_online()
-
     car_recognized = self.CP.carName != 'mock'
-
     controller_available = self.CI.CC is not None and not passive and not self.CP.dashcamOnly
     self.read_only = not car_recognized or not controller_available or self.CP.dashcamOnly
     if self.read_only:
@@ -173,6 +168,10 @@ class Controls:
     elif self.CP.lateralTuning.which() == 'torque' and self.CP.steerControlType != car.CarParams.SteerControlType.angle:
       self.LaC = LatControlTorque(self.CP, self.CI)
       self.lateral_control_select = 3
+    else:
+      # fallback (안전)
+      self.LaC = LatControlPID(self.CP, self.CI)
+      self.lateral_control_select = 0
 
     self.initialized = False
     self.state = State.disabled
@@ -198,7 +197,7 @@ class Controls:
     self.desired_curvature_rate = 0.0
     self.nn_alert_shown = False
 
-    # ====== (추가) longControlState 통일 변수 ======
+    # ====== longControlState 통일 변수 ======
     self.long_control_state = LongControlState.off
     self.stopping = False
 
@@ -221,10 +220,14 @@ class Controls:
     self.disable_op_fcw = params.get_bool('DisableOpFcw')
     self.mad_mode_enabled = Params().get_bool('MadModeEnabled')
 
-    # >>> MOD: 롱크루즈갭 + T-follow 값 보관
+    # 롱크루즈갭 + lead 정보 보관
     self.longCruiseGap = 1
     self.dRel = 0.0
     self.vRel = 0.0
+
+    # ✅✅ (이식) planner가 참조하는 myDrivingMode / mySafeModeFactor 기본값
+    self.myDrivingMode = 0
+    self.mySafeModeFactor = 1.0
 
     # TODO: no longer necessary, aside from process replay
     self.sm['liveParameters'].valid = True
@@ -245,9 +248,8 @@ class Controls:
       self.events.add(EventName.joystickDebug, static=True)
       self.startup_event = None
 
-    # controlsd is driven by can recv, expected at 100Hz
     self.rk = Ratekeeper(100, print_delay_threshold=None)
-    self.prof = Profiler(False)  # off by default
+    self.prof = Profiler(False)
 
   def update_events(self, CS):
     self.events.clear()
@@ -444,12 +446,10 @@ class Controls:
       self.mismatch_counter += 1
 
     self.distance_traveled += CS.vEgo * DT_CTRL
-
     return CS
 
   def state_transition(self, CS):
     self.v_cruise_kph_last = self.v_cruise_kph
-
     self.CP.pcmCruise = self.CI.CP.pcmCruise
 
     if not self.CP.pcmCruise:
@@ -460,7 +460,21 @@ class Controls:
       else:
         self.v_cruise_kph = 0
 
+    # SCC smoother (여기서 myDrivingMode/mySafeModeFactor가 갱신되는 구조면 그대로 타고감)
     SccSmoother.update_cruise_buttons(self, CS, self.CP.openpilotLongitudinalControl)
+
+    # ✅✅ (이식) myDrivingMode / mySafeModeFactor sanitize (capnp 존재 전제)
+    try:
+      self.myDrivingMode = int(self.myDrivingMode)
+    except Exception:
+      self.myDrivingMode = 0
+
+    try:
+      self.mySafeModeFactor = float(self.mySafeModeFactor)
+    except Exception:
+      self.mySafeModeFactor = 1.0
+
+    self.mySafeModeFactor = float(clip(self.mySafeModeFactor, 0.1, 1.0))
 
     self.longCruiseGap = clip(int(self.sm['longitudinalPlan'].cruiseGap), 1, 4)
     lead = self.sm['radarState'].leadOne
@@ -568,7 +582,7 @@ class Controls:
                    (not standstill or self.joystick_mode) \
                    and abs(CS.steeringAngleDeg) < self.CP.maxSteeringAngleDeg
     CC.longActive = self.active and not self.events.any(ET.OVERRIDE) and self.CP.openpilotLongitudinalControl
-    
+
     hudControl = CC.hudControl
     xState = long_plan.xState
     hudControl.softHold = True if (xState == XState.softHold and CC.longActive) else False
@@ -687,7 +701,6 @@ class Controls:
     hudControl.lanesVisible = self.enabled
     hudControl.leadVisible = self.sm['longitudinalPlan'].hasLead
 
-    # ✅ (반영) 첫 코드 방식: xState 기반 softHold
     xState = self.sm['longitudinalPlan'].xState
     hudControl.softHold = True if (xState == XState.softHold and CC.longActive) else False
 
@@ -805,6 +818,10 @@ class Controls:
 
     controlsState.longCruiseGap = clip(int(self.longCruiseGap), 1, 4)
 
+    # ✅✅ (이식) planner에서 읽는 필드 publish (capnp 존재 전제)
+    controlsState.myDrivingMode = int(self.myDrivingMode)
+    controlsState.mySafeModeFactor = float(self.mySafeModeFactor)
+
     if self.joystick_mode:
       controlsState.lateralControlState.debugState = lac_log
     elif self.CP.steerControlType == car.CarParams.SteerControlType.angle:
@@ -820,6 +837,7 @@ class Controls:
 
     self.pm.send('controlsState', dat)
 
+    # carState
     car_events = self.events.to_msg()
     cs_send = messaging.new_message('carState')
     cs_send.valid = CS.canValid
@@ -827,46 +845,45 @@ class Controls:
     cs_send.carState.events = car_events
     self.pm.send('carState', cs_send)
 
+    # carEvents
     if (self.sm.frame % int(1. / DT_CTRL) == 0) or (self.events.names != self.events_prev):
       ce_send = messaging.new_message('carEvents', len(self.events))
       ce_send.carEvents = car_events
       self.pm.send('carEvents', ce_send)
     self.events_prev = self.events.names.copy()
 
+    # carParams - logged every 50 seconds (> 1 per segment)
     if (self.sm.frame % int(50. / DT_CTRL) == 0):
       cp_send = messaging.new_message('carParams')
       cp_send.carParams = self.CP
       self.pm.send('carParams', cp_send)
 
+    # carControl
     cc_send = messaging.new_message('carControl')
     cc_send.valid = CS.canValid
     cc_send.carControl = CC
     self.pm.send('carControl', cc_send)
 
+    # copy CarControl
     self.CC = CC
 
   def step(self):
     start_time = sec_since_boot()
-    self.prof.checkpoint("Ratekeeper", ignore=True)
 
+    # Sample data
     CS = self.data_sample()
-    cloudlog.timestamp("Data sampled")
-    self.prof.checkpoint("Sample")
 
+    # Update events & transitions
     self.update_events(CS)
-    cloudlog.timestamp("Events updated")
-
     if not self.read_only and self.initialized:
       self.state_transition(CS)
-      self.prof.checkpoint("State transition")
 
+    # Control
     CC, lac_log = self.state_control(CS)
-    self.prof.checkpoint("State Control")
 
+    # Publish
     self.publish_logs(CS, start_time, CC, lac_log)
-    self.prof.checkpoint("Sent")
 
-    self.update_button_timers(CS.buttonEvents)
     self.CS_prev = CS
 
   def controlsd_thread(self):
