@@ -215,6 +215,7 @@ class Planner:
     longitudinalPlan.visionMaxPredLatAcc = float(self.vision_turn_controller.max_pred_lat_acc)
     longitudinalPlan.eventsDEPRECATED = self.events.to_msg()
     longitudinalPlan.fcw = self.fcw
+    longitudinalPlan.xState = self.mpc.xState
 
     longitudinalPlan.solverExecutionTime = self.mpc.solve_time
 
