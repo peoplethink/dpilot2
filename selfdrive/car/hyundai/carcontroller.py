@@ -212,7 +212,7 @@ class CarController:
             self.resume_cnt = 0
             self.resume_wait_timer = int(randint(20, 25) * 2)
       else:
-        if (self.frame - self.last_button_frame) * DT_CTRL > 0.1:
+        if (self.frame - self.last_button_frame) * DT_CTRL >= 0.15:
           can_sends.append(create_clu11(self.packer, CS.scc_bus, CS.clu11, Buttons.RES_ACCEL, clu11_speed))
           self.last_button_frame = self.frame
     else:
