@@ -844,6 +844,12 @@ TUNINGPanel::TUNINGPanel(QWidget* parent) : QWidget(parent) {
     toggleLayout->addWidget(new CValueControl("TFollowGap2", "GAP2: Apply TFollow (120)x0.01s", "선행차와의 간격2단계, 속도x시간", "../assets/offroad/icon_road.png", 90, 300, 5));
     toggleLayout->addWidget(new CValueControl("TFollowGap3", "GAP3: Apply TFollow (140)x0.01s", "선행차와의 간격3단계, 속도x시간", "../assets/offroad/icon_road.png", 90, 300, 5));
     toggleLayout->addWidget(new CValueControl("TFollowGap4", "GAP4: Apply TFollow (160)x0.01s", "선행차와의 간격4단계, 속도x시간", "../assets/offroad/icon_road.png", 90, 300, 5));
+    toggleLayout->addWidget(new CValueControl("TrafficStopMode", "STOPPING: Traffice Stop Mode (1)", "0:사용안함,1:사용함,2:APilot모드", "../assets/offroad/icon_road.png", 0, 2, 1));
+    toggleLayout->addWidget(new CValueControl("TrafficStopAccel", "STOPPING: DECEL. rate (80%)", "신호를 만나면 서서히 감속하여 정지합니다.", "../assets/offroad/icon_road.png", 10, 120, 10));
+    toggleLayout->addWidget(new CValueControl("ApplyModelDistOrder", "STOPPING: DECEL. model (30)", "숫자가적을수록 미리감속하고 서서히 정지합니다.", "../assets/offroad/icon_road.png", 1, 32, 1));
+    toggleLayout->addWidget(new CValueControl("TrafficStopAdjustRatio", "STOPPING: Stop line adjust ratio (90)", "for Test", "../assets/offroad/icon_road.png", 0, 200, 1));
+   toggleLayout->addWidget(new CValueControl("TrafficStopDistanceAdjust", "TrafficStop Adjust(200cm)", "+값으로 하면 정지선에 다가갑니다.", "../assets/offroad/icon_road.png", -1000, 1000, 10));
+
     toggleLayout->addWidget(new LabelControl("〓〓〓〓〓〓〓〓【 UI 】〓〓〓〓〓〓〓〓", ""));
     toggleLayout->addWidget(new BrightnessControl());
     toggleLayout->addWidget(new ParamControl("CustomRoadUI", "Custom Road UI", "Personalize the road UI of openpilot.", "../assets/offroad/icon_road.png"));
