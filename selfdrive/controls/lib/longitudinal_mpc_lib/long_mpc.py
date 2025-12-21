@@ -174,7 +174,6 @@ def gen_long_ocp():
   ocp.cost.yref = np.zeros((COST_DIM, ))
   ocp.cost.yref_e = np.zeros((COST_E_DIM, ))
 
-  # ✅ CasADi SX용 함수 사용
   desired_dist_comfort = get_safe_obstacle_distance_sx(v_ego, lead_t_follow,
                                                       comfort_brake, stop_distance)
 
@@ -240,15 +239,13 @@ class LongitudinalMpc:
     self.source = SOURCES[2]
     self.openpilotLongitudinalControl = False
 
-    # ✅ experimentalMode 제거 → EndToEndLong로 대체
+    # experimentalMode 제거 → EndToEndLong로 대체
     self.endToEndLong = False
 
-    # ✅ longActiveUser 제거 → enabled 엣지 감지로 대체
+    # longActiveUser 제거 → enabled 엣지 감지로 대체
     self.prev_enabled = False
 
-    # ===== e2e/traffic/stop related (이식) =====
-    self.debugLongText1 = ""
-    self.debugLongText2 = ""
+    # ===== e2e/traffic/stop related =====
     self.trafficState = 0
     self.trafficStopDistanceAdjust = 0.0
     self.applyLongDynamicCost = False
@@ -486,14 +483,13 @@ class LongitudinalMpc:
       except Exception:
         pass
     elif self.lo_timer == 180:
-      # ✅ EndToEndLong: experimentalMode 대체
       try:
         self.endToEndLong = Params().get_bool("EndToEndLong")
       except Exception:
         self.endToEndLong = False
 
   # =========================
-  # Gap -> t_follow (이식 유지)
+  # Gap -> t_follow
   # =========================
   def update_gap_tf(self, controls, v_ego, a_ego):
     v_ego_kph = v_ego * CV.MS_TO_KPH
@@ -519,7 +515,7 @@ class LongitudinalMpc:
     self.v_ego_kph_prev = v_ego_kph
 
   # =========================
-  # stop dist helpers (이식)
+  # stop dist helpers
   # =========================
   def update_stop_dist(self, stop_x):
     stop_x = self.xStopFilter.process(stop_x, median=True)
@@ -551,13 +547,13 @@ class LongitudinalMpc:
       self.trafficState = 0
 
   # =========================
-  # ✅ MPC mode 결정 방식 + XState 상태기계 (longActiveUser 제거 버전)
+  # MPC mode 결정 + XState 상태기계 (longActiveUser 제거 버전)
   # =========================
   def update_apilot(self, controls, carstate, radarstate, model, v_cruise, mode):
     v_ego = carstate.vEgo
     v_ego_kph = v_ego * CV.MS_TO_KPH
 
-    enabled_now = bool(getattr(controls, "enabled", True))  # ✅ longActiveUser 대체
+    enabled_now = bool(getattr(controls, "enabled", True))
 
     x = model.position.x
     y = model.position.y
@@ -579,11 +575,10 @@ class LongitudinalMpc:
     if self.e2eCruiseCount > 0:
       self.e2eCruiseCount -= 1
 
-    # ✅ longActiveUser 제거
     if carstate.gasPressed or carstate.brakePressed or (not enabled_now):
       self.mpcEvent = 0
 
-    # SOFT_HOLD: 검사
+    # SOFT_HOLD
     if carstate.brakePressed and v_ego < 0.1 and self.softHoldMode > 0:
       self.softHoldTimer += 1
       if self.softHoldTimer * DT_MDL >= 0.7:
@@ -592,7 +587,6 @@ class LongitudinalMpc:
     else:
       self.softHoldTimer = 0
 
-    ## 소프트홀드중
     if self.xState == XState.softHold:
       stop_x = 0.0
       self.trafficError = False
@@ -608,14 +602,12 @@ class LongitudinalMpc:
           self.xState = XState.e2eCruise
           self.mpcEvent = EventName.trafficSignGreen
 
-    # 고속모드 또는 신호감지 일시정지: 신호정지 사용안함.
     elif getattr(controls, "myDrivingMode", 0) == 4 or self.trafficStopMode == 0:
       self.xState = XState.lead if self.status else XState.cruise
       self.trafficState = 0
       self.trafficError = False
       stop_x = 1000.0
 
-    ## 신호감속정지중
     elif self.xState == XState.e2eStop:
       if carstate.gasPressed:
         self.xState = XState.e2eCruisePrepare
@@ -650,7 +642,6 @@ class LongitudinalMpc:
         else:
           self.comfort_brake = COMFORT_BRAKE * self.trafficStopAccel
 
-          # ✅ longActiveUser 전환 대신 enabled 상승엣지로 stopDist 확정
           if enabled_now and (not self.prev_enabled):
             self.stopDist = 2.0 if self.xStop < 2.0 else self.xStop
           else:
@@ -665,10 +656,8 @@ class LongitudinalMpc:
 
           self.fakeCruiseDistance = 0.0 if self.stopDist > 10.0 else 10.0
 
-    ## e2eCruisePrepare 일시정지중
     elif self.xState == XState.e2eCruisePrepare:
       self.mpcEvent = 0
-      # ✅ longActiveUser<=0 대신 enabled==False
       if not enabled_now:
         self.xState = XState.e2eCruise
       elif (carstate.brakePressed or cruiseButtonCounterDiff < 0) and self.e2eCruiseCount > 0:
@@ -684,8 +673,7 @@ class LongitudinalMpc:
         self.trafficError = False
         stop_x = 1000.0
 
-    ## 신호감지주행중
-    else:  # e2eCruise, lead, cruise 상태
+    else:
       self.trafficError = False
       if self.status:
         self.xState = XState.lead
@@ -704,7 +692,6 @@ class LongitudinalMpc:
       if self.trafficState in [0, 2]:
         stop_x = 1000.0
 
-    # mode 결정
     if self.trafficStopMode > 0:
       if self.trafficStopMode == 3:
         vision_detected = (radarstate.leadOne.dRel < 90 and radarstate.leadOne.status and not getattr(radarstate.leadOne, "radar", False))
@@ -718,10 +705,7 @@ class LongitudinalMpc:
           mode = 'acc'
 
     self.comfort_brake *= self.mySafeModeFactor
-
-    # ✅ enabled 엣지 감지 업데이트
     self.prev_enabled = enabled_now
-
     self.cruiseButtonCounter = controls.cruiseButtonCounter
 
     self.stopDist -= (v_ego * DT_MDL)
@@ -759,7 +743,6 @@ class LongitudinalMpc:
 
     v_cruise, stop_x, self.mode = self.update_apilot(controls, carstate, radarstate, model, v_cruise, self.mode)
 
-    # ✅ experimentalMode 대신 EndToEndLong가 true면 blended 강제
     self.mode = 'blended' if self.endToEndLong else self.mode
 
     v_lead0 = lead_xv_0[0, 1]
@@ -810,10 +793,6 @@ class LongitudinalMpc:
 
       x[:], v[:], a[:], j[:] = 0.0, 0.0, 0.0, 0.0
 
-      self.debugLongText1 = "A{:3.2f},L0{:5.1f},C{:5.1f},X{:5.1f},S{:5.1f}".format(
-        self.max_a, lead_0_obstacle[0], cruise_obstacle[0], x2[0], self.stopDist
-      )
-
     elif self.mode == 'blended':
       self.params[:, 5] = 1.0
 
@@ -822,10 +801,6 @@ class LongitudinalMpc:
       cruise_target = T_IDXS * np.clip(v_cruise, v_ego - 2.0, 1e3) + x[0]
       xforward = ((v[1:] + v[:-1]) / 2.0) * (T_IDXS[1:] - T_IDXS[:-1])
       x = np.cumsum(np.insert(xforward, 0, x[0]))
-
-      self.debugLongText1 = "A{:3.2f},L0{:5.1f},C{:5.1f},X{:5.1f},F{:5.1f}".format(
-        self.max_a, lead_0_obstacle[0], cruise_target[0], x[0], xforward[0] if len(xforward) > 0 else 0.0
-      )
 
       x_and_cruise = np.column_stack([x, cruise_target])
       x = np.min(x_and_cruise, axis=1)
