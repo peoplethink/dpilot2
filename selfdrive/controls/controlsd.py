@@ -58,8 +58,8 @@ EventName = car.CarEvent.EventName
 ButtonEvent = car.CarState.ButtonEvent
 SafetyModel = car.CarParams.SafetyModel
 
-# ✅ (변경) xState 기반 softHold 제거
-# XState = log.LongitudinalPlan.XState
+# ✅ (반영) xState 다시 사용
+XState = log.LongitudinalPlan.XState
 
 IGNORED_SAFETY_MODES = (SafetyModel.silent, SafetyModel.noOutput)
 CSID_MAP = {"1": EventName.roadCameraError, "2": EventName.wideRoadCameraError, "0": EventName.driverCameraError}
@@ -248,9 +248,6 @@ class Controls:
     # controlsd is driven by can recv, expected at 100Hz
     self.rk = Ratekeeper(100, print_delay_threshold=None)
     self.prof = Profiler(False)  # off by default
-
-  # --- 이하 update_events / data_sample / state_transition / state_control 은 사용자가 올린 코드 그대로 ---
-  # (너무 길어서 생략하면 안 되니, 그대로 유지한 상태로 아래 publish_logs만 xState 제거 반영)
 
   def update_events(self, CS):
     self.events.clear()
@@ -571,6 +568,10 @@ class Controls:
                    (not standstill or self.joystick_mode) \
                    and abs(CS.steeringAngleDeg) < self.CP.maxSteeringAngleDeg
     CC.longActive = self.active and not self.events.any(ET.OVERRIDE) and self.CP.openpilotLongitudinalControl
+    
+    hudControl = CC.hudControl
+    xState = long_plan.xState
+    hudControl.softHold = True if (xState == XState.softHold and CC.longActive) else False
 
     actuators = CC.actuators
     actuators.jerk = 0.0
@@ -686,8 +687,9 @@ class Controls:
     hudControl.lanesVisible = self.enabled
     hudControl.leadVisible = self.sm['longitudinalPlan'].hasLead
 
-    # ✅ (변경) xState 기반 softHold 제거 → LoC.softHold 사용
-    hudControl.softHold = bool(CC.longActive and bool(getattr(self.LoC, "softHold", False)))
+    # ✅ (반영) 첫 코드 방식: xState 기반 softHold
+    xState = self.sm['longitudinalPlan'].xState
+    hudControl.softHold = True if (xState == XState.softHold and CC.longActive) else False
 
     hudControl.cruiseGap = clip(int(self.sm['longitudinalPlan'].cruiseGap), 1, 4)
     hudControl.objDist = int(self.dRel)
