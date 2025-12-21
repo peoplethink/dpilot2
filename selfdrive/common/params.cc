@@ -273,6 +273,8 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"TrafficStopModelSpeed", PERSISTENT},
     {"TrafficStopMode", PERSISTENT},
     {"TrafficStopAdjustRatio", PERSISTENT},
+    {"InitMyDrivingMode", PERSISTENT},
+    {"MyDrivingMode", PERSISTENT},
     {"NNFF", PERSISTENT},
     {"NNFFLite", PERSISTENT},
     {"NNFFModelName", PERSISTENT},
