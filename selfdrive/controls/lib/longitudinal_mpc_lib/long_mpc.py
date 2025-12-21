@@ -239,7 +239,9 @@ class LongitudinalMpc:
     self.x_obstacle_min = 0.0
     self.source = SOURCES[2]
     self.openpilotLongitudinalControl = False
-    self.experimentalMode = False
+
+    # ✅ experimentalMode 제거 → EndToEndLong로 대체
+    self.endToEndLong = False
 
     # ===== e2e/traffic/stop related (이식) =====
     self.debugLongText1 = ""
@@ -420,7 +422,6 @@ class LongitudinalMpc:
       a_lead = 0.0
       a_lead_tau = _LEAD_ACCEL_TAU
 
-    # MPC will not converge if immediate crash is expected; clip to feasible braking distance
     min_x_lead = ((v_ego + v_lead) / 2.0) * (v_ego - v_lead) / (-ACCEL_MIN * 2.0)
     x_lead = clip(x_lead, min_x_lead, 1e8)
     v_lead = clip(v_lead, 0.0, 1e8)
@@ -432,7 +433,7 @@ class LongitudinalMpc:
     self.max_a = float(max_a)
 
   # =========================
-  # Params update (이식 + 유지)
+  # Params update (EndToEndLong 추가)
   # =========================
   def update_params(self):
     self.lo_timer += 1
@@ -482,6 +483,12 @@ class LongitudinalMpc:
         self.trafficStopAdjustRatio = float(int(Params().get("TrafficStopAdjustRatio", encoding="utf8"))) / 100.0
       except Exception:
         pass
+    elif self.lo_timer == 180:
+      # ✅ EndToEndLong: experimentalMode 대체
+      try:
+        self.endToEndLong = Params().get_bool("EndToEndLong")
+      except Exception:
+        self.endToEndLong = False
 
   # =========================
   # Gap -> t_follow (이식 유지)
@@ -505,7 +512,6 @@ class LongitudinalMpc:
           self.applyCruiseGap = 1
         else:
           self.applyCruiseGap = int(interp(a_ego, [-1.5, -0.5], [4, self.applyCruiseGap]))
-      # 항상 계산(원본 이식)
       self.t_follow = max(0.6, cruiseGapRatio * (2.0 - self.mySafeModeFactor))
 
     self.v_ego_kph_prev = v_ego_kph
@@ -556,12 +562,10 @@ class LongitudinalMpc:
     self.fakeCruiseDistance = 0.0
     radar_detected = bool(radarstate.leadOne.status and getattr(radarstate.leadOne, "radar", False))
 
-    # 모델 stop_x 필터링
     stop_x = x[self.applyModelDistOrder] if self.applyModelDistOrder < len(x) else x[-1]
     self.xStop = self.update_stop_dist(stop_x)
     stop_x = self.xStop
 
-    # 신호 정지 판단
     self.check_model_stopping(carstate, v, v_ego, x[-1], y)
 
     cruiseButtonCounterDiff = controls.cruiseButtonCounter - self.cruiseButtonCounter
@@ -574,12 +578,10 @@ class LongitudinalMpc:
     if carstate.gasPressed or carstate.brakePressed or self.longActiveUser <= 0:
       self.mpcEvent = 0
 
-    # longActive 전환시 trafficError
     if self.longActiveUser != controls.longActiveUser:
       if controls.longActiveUser > 10:
         self.trafficError = True
 
-    # SOFT_HOLD 진입
     if carstate.brakePressed and v_ego < 0.1 and self.softHoldMode > 0:
       self.softHoldTimer += 1
       if self.softHoldTimer * DT_MDL >= 0.7:
@@ -588,7 +590,6 @@ class LongitudinalMpc:
     else:
       self.softHoldTimer = 0
 
-    # 소프트홀드중
     if self.xState == XState.softHold:
       stop_x = 0.0
       self.trafficError = False
@@ -604,14 +605,12 @@ class LongitudinalMpc:
           self.xState = XState.e2eCruise
           self.mpcEvent = EventName.trafficSignGreen
 
-    # 고속모드 / 신호감지 끔
     elif getattr(controls, "myDrivingMode", 0) == 4 or self.trafficStopMode == 0:
       self.xState = XState.lead if self.status else XState.cruise
       self.trafficState = 0
       self.trafficError = False
       stop_x = 1000.0
 
-    # 신호 감속 정지중
     elif self.xState == XState.e2eStop:
       if carstate.gasPressed:
         self.xState = XState.e2eCruisePrepare
@@ -644,7 +643,6 @@ class LongitudinalMpc:
           stop_x = 1000.0
 
         else:
-          # 감속중 comfort brake 조정
           self.comfort_brake = COMFORT_BRAKE * self.trafficStopAccel
 
           if controls.longActiveUser > 0 and self.longActiveUser <= 0:
@@ -661,7 +659,6 @@ class LongitudinalMpc:
 
           self.fakeCruiseDistance = 0.0 if self.stopDist > 10.0 else 10.0
 
-    # e2eCruisePrepare
     elif self.xState == XState.e2eCruisePrepare:
       self.mpcEvent = 0
       if controls.longActiveUser <= 0:
@@ -679,7 +676,6 @@ class LongitudinalMpc:
         self.trafficError = False
         stop_x = 1000.0
 
-    # e2eCruise / lead / cruise
     else:
       self.trafficError = False
       if self.status:
@@ -699,7 +695,6 @@ class LongitudinalMpc:
       if self.trafficState in [0, 2]:
         stop_x = 1000.0
 
-    # ===== mode 결정 (이식) =====
     if self.trafficStopMode > 0:
       if self.trafficStopMode == 3:
         vision_detected = (radarstate.leadOne.dRel < 90 and radarstate.leadOne.status and not getattr(radarstate.leadOne, "radar", False))
@@ -712,14 +707,11 @@ class LongitudinalMpc:
         else:
           mode = 'acc'
 
-    # safe mode factor 적용
     self.comfort_brake *= self.mySafeModeFactor
 
-    # counters
     self.longActiveUser = controls.longActiveUser
     self.cruiseButtonCounter = controls.cruiseButtonCounter
 
-    # stopDist 진행
     self.stopDist -= (v_ego * DT_MDL)
     if self.stopDist < 0.0:
       self.stopDist = 0.0
@@ -743,41 +735,34 @@ class LongitudinalMpc:
     v_ego = self.x0[1]
     a_ego = carstate.aEgo
 
-    # 안전계수
     self.mySafeModeFactor = clip(float(getattr(controls, "mySafeModeFactor", 1.0)), 0.5, 1.0)
 
-    # leads
     self.status = radarstate.leadOne.status or radarstate.leadTwo.status
     lead_xv_0 = self.process_lead(radarstate.leadOne)
     lead_xv_1 = self.process_lead(radarstate.leadTwo)
 
-    # gap/t_follow
     self.update_gap_tf(controls, v_ego, a_ego)
 
-    # accel limits
     self.comfort_brake = COMFORT_BRAKE
 
-    # mode / stop_x 결정 (이식)
     v_cruise, stop_x, self.mode = self.update_apilot(controls, carstate, radarstate, model, v_cruise, self.mode)
-    self.mode = 'blended' if self.experimentalMode else self.mode
 
-    # weights
+    # ✅ experimentalMode 대신 EndToEndLong가 true면 blended 강제
+    self.mode = 'blended' if self.endToEndLong else self.mode
+
     v_lead0 = lead_xv_0[0, 1]
     v_lead1 = lead_xv_1[0, 1]
     self.set_weights(prev_accel_constraint=prev_accel_constraint, v_lead0=v_lead0, v_lead1=v_lead1)
 
-    # ntune stop/comfort
     stop_distance = float(ntune_scc_get('stopDistance')) if ntune_scc_get('stopDistance') is not None else self.stopDistance
     comfort_brake = float(ntune_scc_get('comfortBrake')) if ntune_scc_get('comfortBrake') is not None else self.comfort_brake
 
     applyStopDistance = stop_distance * (2.0 - self.mySafeModeFactor)
     comfort_brake_eff = comfort_brake * self.mySafeModeFactor
 
-    # solver params (min/max accel)
     self.params[:, 0] = ACCEL_MIN if not reset_state else a_ego
     self.params[:, 1] = self.max_a if not reset_state else a_ego
 
-    # obstacles: lead -> stopped equivalence
     lead_0_obstacle = lead_xv_0[:, 0] + get_stopped_equivalence_factor_np(
       lead_xv_0[:, 1], self.x_sol[:, 1],
       t_follow=self.t_follow,
@@ -793,7 +778,6 @@ class LongitudinalMpc:
       krkeegan=self.applyLongDynamicCost
     )
 
-    # mode branch
     if self.mode == 'acc':
       self.params[:, 5] = LEAD_DANGER_FACTOR
 
@@ -812,7 +796,6 @@ class LongitudinalMpc:
       x_obstacles = np.column_stack([lead_0_obstacle, lead_1_obstacle, cruise_obstacle, x2])
       self.source = SOURCES[int(np.argmin(x_obstacles[0]))]
 
-      # These are not used in ACC mode
       x[:], v[:], a[:], j[:] = 0.0, 0.0, 0.0, 0.0
 
       self.debugLongText1 = "A{:3.2f},L0{:5.1f},C{:5.1f},X{:5.1f},S{:5.1f}".format(
@@ -840,7 +823,6 @@ class LongitudinalMpc:
     else:
       raise NotImplementedError(f'Planner mode {self.mode} not recognized in planner update')
 
-    # yref
     self.yref[:, 1] = x
     self.yref[:, 2] = v
     self.yref[:, 3] = a
@@ -849,17 +831,14 @@ class LongitudinalMpc:
       self.solver.set(i, "yref", self.yref[i])
     self.solver.set(N, "yref", self.yref[N][:COST_E_DIM])
 
-    # params
     self.params[:, 2] = np.min(x_obstacles, axis=1)
     self.params[:, 3] = np.copy(self.prev_a)
     self.params[:, 4] = self.t_follow
     self.params[:, 6] = comfort_brake_eff
     self.params[:, 7] = applyStopDistance
 
-    # solve
     self.run()
 
-    # fcw crash counter
     if (np.any(lead_xv_0[FCW_IDXS, 0] - self.x_sol[FCW_IDXS, 0] < CRASH_DISTANCE) and
         radarstate.leadOne.modelProb > 0.9):
       self.crash_cnt += 1
