@@ -938,6 +938,16 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
       Priority.MID, VisualAlert.none, AudibleAlert.none, .1),
   },
 
+  EventName.trafficSignGreen: {
+    ET.PERMANENT: Alert("출발합니다","", AlertStatus.normal, AlertSize.small,
+      Priority.MID, VisualAlert.none, AudibleAlert.none, .1),
+  },
+  
+  EventName.trafficSignChanged: {
+    ET.PERMANENT: Alert("신호가 바뀌었어요","", AlertStatus.normal, AlertSize.small,
+      Priority.MID, VisualAlert.none, AudibleAlert.none, .1),
+  },
+  
   EventName.slowingDownSpeed: {
     ET.PERMANENT: Alert("과속카메라 감지 : 감속중","", AlertStatus.normal, AlertSize.small,
       Priority.MID, VisualAlert.none, AudibleAlert.none, .1),
