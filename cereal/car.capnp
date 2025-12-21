@@ -148,6 +148,8 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     visionTurning @119;
     visionleaving @120;
     curvespeedValueChange @121;
+    trafficStopping @124; #ajouatom
+    trafficError @125; #ajouatom
   }
 }
 
