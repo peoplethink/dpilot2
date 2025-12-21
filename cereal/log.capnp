@@ -921,6 +921,8 @@ struct LongitudinalPlan @0xe00b5b3eba12876c {
   cruiseTarget @53 :List(Float64) = [0.];
   xState @50 : XState;
   xStop @54 : Float32;
+  mpcEvent @60 : Int32;
+  mpcMode @61 : Int32;
  
   visionCurrentLatAcc @56 :Float32;
   visionMaxPredLatAcc @57 :Float32;
@@ -933,6 +935,7 @@ struct LongitudinalPlan @0xe00b5b3eba12876c {
     e2eCruise @2;
     e2eStop @3;
     softHold @4;
+    e2eCruisePrepare @5;
   }
  
   enum LongitudinalPlanSource {
