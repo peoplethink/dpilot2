@@ -243,6 +243,9 @@ class LongitudinalMpc:
     # ✅ experimentalMode 제거 → EndToEndLong로 대체
     self.endToEndLong = False
 
+    # ✅ longActiveUser 제거 → enabled 엣지 감지로 대체
+    self.prev_enabled = False
+
     # ===== e2e/traffic/stop related (이식) =====
     self.debugLongText1 = ""
     self.debugLongText2 = ""
@@ -284,7 +287,6 @@ class LongitudinalMpc:
     self.xStop = 0.0
     self.e2ePaused = False
     self.trafficError = False
-    self.longActiveUser = 0
     self.cruiseButtonCounter = 0
 
     # safety factor from controls
@@ -549,11 +551,13 @@ class LongitudinalMpc:
       self.trafficState = 0
 
   # =========================
-  # ✅ MPC mode 결정 방식 + XState 상태기계 (이식 핵심)
+  # ✅ MPC mode 결정 방식 + XState 상태기계 (longActiveUser 제거 버전)
   # =========================
   def update_apilot(self, controls, carstate, radarstate, model, v_cruise, mode):
     v_ego = carstate.vEgo
     v_ego_kph = v_ego * CV.MS_TO_KPH
+
+    enabled_now = bool(getattr(controls, "enabled", True))  # ✅ longActiveUser 대체
 
     x = model.position.x
     y = model.position.y
@@ -575,13 +579,11 @@ class LongitudinalMpc:
     if self.e2eCruiseCount > 0:
       self.e2eCruiseCount -= 1
 
-    if carstate.gasPressed or carstate.brakePressed or self.longActiveUser <= 0:
+    # ✅ longActiveUser 제거
+    if carstate.gasPressed or carstate.brakePressed or (not enabled_now):
       self.mpcEvent = 0
 
-    if self.longActiveUser != controls.longActiveUser:
-      if controls.longActiveUser > 10:
-        self.trafficError = True
-
+    # SOFT_HOLD: 검사
     if carstate.brakePressed and v_ego < 0.1 and self.softHoldMode > 0:
       self.softHoldTimer += 1
       if self.softHoldTimer * DT_MDL >= 0.7:
@@ -590,6 +592,7 @@ class LongitudinalMpc:
     else:
       self.softHoldTimer = 0
 
+    ## 소프트홀드중
     if self.xState == XState.softHold:
       stop_x = 0.0
       self.trafficError = False
@@ -605,12 +608,14 @@ class LongitudinalMpc:
           self.xState = XState.e2eCruise
           self.mpcEvent = EventName.trafficSignGreen
 
+    # 고속모드 또는 신호감지 일시정지: 신호정지 사용안함.
     elif getattr(controls, "myDrivingMode", 0) == 4 or self.trafficStopMode == 0:
       self.xState = XState.lead if self.status else XState.cruise
       self.trafficState = 0
       self.trafficError = False
       stop_x = 1000.0
 
+    ## 신호감속정지중
     elif self.xState == XState.e2eStop:
       if carstate.gasPressed:
         self.xState = XState.e2eCruisePrepare
@@ -645,7 +650,8 @@ class LongitudinalMpc:
         else:
           self.comfort_brake = COMFORT_BRAKE * self.trafficStopAccel
 
-          if controls.longActiveUser > 0 and self.longActiveUser <= 0:
+          # ✅ longActiveUser 전환 대신 enabled 상승엣지로 stopDist 확정
+          if enabled_now and (not self.prev_enabled):
             self.stopDist = 2.0 if self.xStop < 2.0 else self.xStop
           else:
             if self.trafficState == 2:
@@ -659,9 +665,11 @@ class LongitudinalMpc:
 
           self.fakeCruiseDistance = 0.0 if self.stopDist > 10.0 else 10.0
 
+    ## e2eCruisePrepare 일시정지중
     elif self.xState == XState.e2eCruisePrepare:
       self.mpcEvent = 0
-      if controls.longActiveUser <= 0:
+      # ✅ longActiveUser<=0 대신 enabled==False
+      if not enabled_now:
         self.xState = XState.e2eCruise
       elif (carstate.brakePressed or cruiseButtonCounterDiff < 0) and self.e2eCruiseCount > 0:
         self.xState = XState.e2eStop
@@ -676,7 +684,8 @@ class LongitudinalMpc:
         self.trafficError = False
         stop_x = 1000.0
 
-    else:
+    ## 신호감지주행중
+    else:  # e2eCruise, lead, cruise 상태
       self.trafficError = False
       if self.status:
         self.xState = XState.lead
@@ -695,6 +704,7 @@ class LongitudinalMpc:
       if self.trafficState in [0, 2]:
         stop_x = 1000.0
 
+    # mode 결정
     if self.trafficStopMode > 0:
       if self.trafficStopMode == 3:
         vision_detected = (radarstate.leadOne.dRel < 90 and radarstate.leadOne.status and not getattr(radarstate.leadOne, "radar", False))
@@ -709,7 +719,9 @@ class LongitudinalMpc:
 
     self.comfort_brake *= self.mySafeModeFactor
 
-    self.longActiveUser = controls.longActiveUser
+    # ✅ enabled 엣지 감지 업데이트
+    self.prev_enabled = enabled_now
+
     self.cruiseButtonCounter = controls.cruiseButtonCounter
 
     self.stopDist -= (v_ego * DT_MDL)
