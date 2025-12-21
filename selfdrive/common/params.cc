@@ -267,6 +267,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"LongitudinalTuningKiV", PERSISTENT},
     {"LongitudinalTuningKf", PERSISTENT},
     {"SoftHoldMode", PERSISTENT},
+    {"ApplyModelDistOrder", PERSISTENT},
     {"TrafficStopDistanceAdjust", PERSISTENT},
     {"TrafficStopAccel", PERSISTENT},
     {"TrafficStopModelSpeed", PERSISTENT},
