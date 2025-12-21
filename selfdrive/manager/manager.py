@@ -123,6 +123,7 @@ def manager_init() -> None:
     ("LongitudinalActuatorDelayUpperBound", "45"),
     ("LongitudinalActuatorDelayLowerBound", "30"),
     ("SoftHoldMode", "1"),
+    ("ApplyModelDistOrder", "30"),
     ("TrafficStopDistanceAdjust", "400"),
     ("TrafficStopAdjustRatio", "90"),
     ("TrafficStopAccel", "80"),     
