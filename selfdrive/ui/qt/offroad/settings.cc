@@ -850,9 +850,16 @@ TUNINGPanel::TUNINGPanel(QWidget* parent) : QWidget(parent) {
     toggleLayout->addWidget(new CValueControl("TrafficStopAccel", "STOPPING: DECEL. rate (80%)", "신호를 만나면 서서히 감속하여 정지합니다.", "../assets/offroad/icon_road.png", 10, 120, 10));
     toggleLayout->addWidget(new CValueControl("ApplyModelDistOrder", "STOPPING: DECEL. model (30)", "숫자가적을수록 미리감속하고 서서히 정지합니다.", "../assets/offroad/icon_road.png", 1, 32, 1));
     toggleLayout->addWidget(new CValueControl("TrafficStopAdjustRatio", "STOPPING: Stop line adjust ratio (90)", "for Test", "../assets/offroad/icon_road.png", 0, 200, 1));
-   toggleLayout->addWidget(new CValueControl("TrafficStopDistanceAdjust", "TrafficStop Adjust(200cm)", "+값으로 하면 정지선에 다가갑니다.", "../assets/offroad/icon_road.png", -1000, 1000, 10));
+    toggleLayout->addWidget(new CValueControl("TrafficStopDistanceAdjust", "TrafficStop Adjust(200cm)", "+값으로 하면 정지선에 다가갑니다.", "../assets/offroad/icon_road.png", -1000, 1000, 10));
 
     toggleLayout->addWidget(new LabelControl("〓〓〓〓〓〓〓〓【 UI 】〓〓〓〓〓〓〓〓", ""));
+    toggleLayout->addWidget(new CValueControl("CruiseMaxVals1", "CRUISE: MaxAccel1 (x0.01)", "크루즈 가속 상한 1 (160)", "../assets/offroad/icon_road.png", 0, 250, 5));
+    toggleLayout->addWidget(new CValueControl("CruiseMaxVals2", "CRUISE: MaxAccel2 (x0.01)", "크루즈 가속 상한 2 (120)", "../assets/offroad/icon_road.png", 0, 250, 5));
+    toggleLayout->addWidget(new CValueControl("CruiseMaxVals3", "CRUISE: MaxAccel3 (x0.01)", "크루즈 가속 상한 3 (100)", "../assets/offroad/icon_road.png", 0, 250, 5));
+    toggleLayout->addWidget(new CValueControl("CruiseMaxVals4", "CRUISE: MaxAccel4 (x0.01)", "크루즈 가속 상한 4 (80)", "../assets/offroad/icon_road.png", 0, 250, 5));
+    toggleLayout->addWidget(new CValueControl("CruiseMaxVals5", "CRUISE: MaxAccel5 (x0.01)", "크루즈 가속 상한 5 (70)", "../assets/offroad/icon_road.png", 0, 250, 5));
+    toggleLayout->addWidget(new CValueControl("CruiseMaxVals6", "CRUISE: MaxAccel6 (x0.01)", "크루즈 가속 상한 6 (60)", "../assets/offroad/icon_road.png", 0, 250, 5));
+
     toggleLayout->addWidget(new BrightnessControl());
     toggleLayout->addWidget(new ParamControl("CustomRoadUI", "Custom Road UI", "Personalize the road UI of openpilot.", "../assets/offroad/icon_road.png"));
     toggleLayout->addWidget(new LaneLinesWidth());
@@ -932,7 +939,14 @@ CValueControl::CValueControl(const QString& params, const QString& title, const 
   
 void CValueControl::refresh()
 {
-    label.setText(QString::fromStdString(Params().get(m_params.toStdString())));
+    std::string v = Params().get(m_params.toStdString());
+    if (v.empty()) {
+      // 기본값: 0 (또는 네가 원하는 기본값)
+      Params().put(m_params.toStdString(), "0");
+      v = "0";
+    }
+
+    label.setText(QString::fromStdString(v));
     btnminus.setText("－");
     btnplus.setText("＋");
 }
