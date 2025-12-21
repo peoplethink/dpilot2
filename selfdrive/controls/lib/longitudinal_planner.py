@@ -216,11 +216,11 @@ class Planner:
     longitudinalPlan.eventsDEPRECATED = self.events.to_msg()
     longitudinalPlan.fcw = self.fcw
     longitudinalPlan.xState = self.mpc.xState
+    longitudinalPlan.mpcEvent = self.mpc.mpcEvent
+    longitudinalPlan.mpcMode = 1 if self.mpc.mode == 'blended' else 0
 
     longitudinalPlan.solverExecutionTime = self.mpc.solve_time
 
-    # >>> MOD: cruise gap 관련 정식 필드 송출
-    # (cereal에 필드가 있어야 함: longitudinalPlan.tFollow / cruiseGap)
     longitudinalPlan.tFollow = float(self.tFollow)
     longitudinalPlan.cruiseGap = float(self.applyCruiseGap)
 
@@ -230,10 +230,6 @@ class Planner:
     if hasattr(longitudinalPlan, 'xObstacle'):
       xobs = getattr(self.mpc, 'x_obstacle_min', None)
       longitudinalPlan.xObstacle = float(xobs[0]) if isinstance(xobs, (list, tuple, np.ndarray)) and len(xobs) else 0.0
-    if hasattr(longitudinalPlan, 'mpcEvent'):
-      longitudinalPlan.mpcEvent = int(getattr(self.mpc, 'mpcEvent', 0))
-    if hasattr(longitudinalPlan, 'mpcMode'):
-      longitudinalPlan.mpcMode = 1 if getattr(self.mpc, 'mode', 'acc') == 'blended' else 0
 
     pm.send('longitudinalPlan', plan_send)
 
