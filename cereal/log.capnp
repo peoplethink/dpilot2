@@ -624,6 +624,7 @@ struct ControlsState @0x97ff69c53601abf1 {
   totalCameraOffset @78 :Float32;
   myDrivingMode @80 : Int32; #0: Eco, Eco2, Normal, Speed
   mySafeModeFactor @81 : Float32;
+  cruiseButtonCounter @82: Int32;
 
   enum OpenpilotState @0xdbe58b96d2d1ac61 {
     disabled @0;
