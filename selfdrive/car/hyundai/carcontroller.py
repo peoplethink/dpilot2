@@ -230,7 +230,7 @@ class CarController:
         set_speed *= CV.MS_TO_MPH if CS.is_set_speed_in_mph else CV.MS_TO_KPH
 
         apply_accel = clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
-        apply_accel = self.scc_smoother.get_apply_accel(CS, controls.sm, apply_accel, stopping)
+       # apply_accel = self.scc_smoother.get_apply_accel(CS, controls.sm, apply_accel, stopping)
         stopping = (actuators.longControlState == LongCtrlState.stopping)
         self.accel = apply_accel
         controls.apply_accel = apply_accel
