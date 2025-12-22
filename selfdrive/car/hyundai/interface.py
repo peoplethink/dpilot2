@@ -25,7 +25,11 @@ class CarInterface(CarInterfaceBase):
 	  
   @staticmethod
   def _get_params(ret, candidate, fingerprint, car_fw, experimental_long=False):
-	ret.experimentalLongitudinalAvailable =  Params().get_bool('LongControlEnabled')
+	  
+    try:
+      ret.experimentalLongitudinalAvailable = Params().get_bool('LongControlEnabled')
+    except Exception:
+      pass
     ret.openpilotLongitudinalControl = experimental_long and ret.experimentalLongitudinalAvailable
 
     ret.carName = "hyundai"
