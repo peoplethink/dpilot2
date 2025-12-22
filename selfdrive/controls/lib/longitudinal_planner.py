@@ -24,14 +24,7 @@ LON_MPC_STEP = 0.2  # first step is 0.2s
 # =========================
 A_CRUISE_MIN = -1.2
 A_CRUISE_MAX_VALS = [1.5, 1.3, 0.4, 0.2, 0.15, 0.1]
-A_CRUISE_MAX_BP = [
-  0.,
-  40 * CV.KPH_TO_MS,
-  60 * CV.KPH_TO_MS,
-  80 * CV.KPH_TO_MS,
-  110 * CV.KPH_TO_MS,
-  140 * CV.KPH_TO_MS
-]
+A_CRUISE_MAX_BP = [0., 40 * CV.KPH_TO_MS, 60 * CV.KPH_TO_MS, 80 * CV.KPH_TO_MS, 110 * CV.KPH_TO_MS, 140 * CV.KPH_TO_MS]
 
 # Lookup table for turns
 _A_TOTAL_MAX_V = [1.7, 3.2]
@@ -44,8 +37,8 @@ def get_max_accel(v_ego):
 
 def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
   """
-  This function returns a limited long acceleration allowed, depending on the existing lateral acceleration.
-  This should avoid accelerating when losing the target in turns.
+  This function returns a limited long acceleration allowed, depending on the existing lateral acceleration
+  this should avoid accelerating when losing the target in turns
   """
   a_total_max = interp(v_ego, _A_TOTAL_MAX_BP, _A_TOTAL_MAX_V)
   a_y = v_ego ** 2 * angle_steers * CV.DEG_TO_RAD / (CP.steerRatio * CP.wheelbase)
@@ -70,21 +63,19 @@ class Planner:
     self.cruiseMaxVals4 = 1.0
     self.cruiseMaxVals5 = 1.0
     self.cruiseMaxVals6 = 1.0
-    self.autoTurnControl = 0
 
     self.read_param()
 
     self.fcw = False
 
-    self.a_desired = float(init_a)
-    self.v_desired_filter = FirstOrderFilter(float(init_v), 2.0, self.dt)
+    self.a_desired = init_a
+    self.v_desired_filter = FirstOrderFilter(init_v, 2.0, self.dt)
     self.v_model_error = 0.0
 
     self.x_desired_trajectory = np.zeros(CONTROL_N)
     self.v_desired_trajectory = np.zeros(CONTROL_N)
     self.a_desired_trajectory = np.zeros(CONTROL_N)
     self.j_desired_trajectory = np.zeros(CONTROL_N)
-
     self.solverExecutionTime = 0.0
 
     self.use_cluster_speed = Params().get_bool('UseClusterSpeed')
@@ -108,10 +99,10 @@ class Planner:
       try:
         v = self.params.get(key, encoding="utf8")
         if v is None:
-          return float(default) / 100.0
+          return float(default)
         return float(int(v)) / 100.0
       except Exception:
-        return float(default) / 100.0
+        return float(default)
 
     def _read_int(key, default):
       try:
@@ -149,8 +140,8 @@ class Planner:
 
   def parse_model(self, model_msg, model_error):
     if (len(model_msg.position.x) == 33 and
-        len(model_msg.velocity.x) == 33 and
-        len(model_msg.acceleration.x) == 33):
+       len(model_msg.velocity.x) == 33 and
+       len(model_msg.acceleration.x) == 33):
       x = np.interp(T_IDXS_MPC, T_IDXS, model_msg.position.x) - model_error * T_IDXS_MPC
       v = np.interp(T_IDXS_MPC, T_IDXS, model_msg.velocity.x) - model_error
       a = np.interp(T_IDXS_MPC, T_IDXS, model_msg.acceleration.x)
@@ -167,17 +158,17 @@ class Planner:
       self.read_param()
     self.param_read_counter += 1
 
-    v_ego = float(sm['carState'].vEgo)
+    v_ego = sm['carState'].vEgo
 
     v_cruise_kph = min(sm['controlsState'].vCruise, V_CRUISE_MAX)
-    v_cruise = float(v_cruise_kph) * CV.KPH_TO_MS
+    v_cruise = v_cruise_kph * CV.KPH_TO_MS
 
     # neokii: cluster ratio 적용 (ported, 안전하게)
     if not self.use_cluster_speed:
       vCluRatio = getattr(sm['carState'], 'vCluRatio', 1.0)
       if vCluRatio > 0.5:
-        self.vCluRatio = float(vCluRatio)
-        v_cruise *= self.vCluRatio
+        self.vCluRatio = vCluRatio
+        v_cruise *= vCluRatio
         v_cruise = int(v_cruise * CV.MS_TO_KPH + 0.25) * CV.KPH_TO_MS
 
     # myDrivingMode / safe factor (ported)
@@ -186,10 +177,10 @@ class Planner:
     myDrivingMode = int(getattr(sm['controlsState'], 'myDrivingMode', 0))
 
     long_control_off = sm['controlsState'].longControlState == LongCtrlState.off
-    force_slow_decel = bool(sm['controlsState'].forceDecel)
+    force_slow_decel = sm['controlsState'].forceDecel
 
     # Reset current state when not engaged, or user is controlling the speed
-    reset_state = long_control_off if self.CP.openpilotLongitudinalControl else (not sm['controlsState'].enabled)
+    reset_state = long_control_off if self.CP.openpilotLongitudinalControl else not sm['controlsState'].enabled
 
     # No change cost when user is controlling the speed, or when standstill
     prev_accel_constraint = not (reset_state or sm['carState'].standstill)
@@ -207,61 +198,44 @@ class Planner:
       elif myDrivingMode in [3, 4]:  # 일반, 고속
         myMaxAccel = clip(base_max, 0.0, ACCEL_MAX)
       else:
+        # fallback (기본 곡선)
         myMaxAccel = clip(base_max, 0.0, ACCEL_MAX)
 
       accel_limits = [A_CRUISE_MIN, float(myMaxAccel)]
-      accel_limits_turns = limit_accel_in_turns(
-        v_ego, float(sm['carState'].steeringAngleDeg), accel_limits, self.CP
-      )
+      accel_limits_turns = limit_accel_in_turns(v_ego, sm['carState'].steeringAngleDeg, accel_limits, self.CP)
     else:
       accel_limits = [ACCEL_MIN, ACCEL_MAX]
       accel_limits_turns = [ACCEL_MIN, ACCEL_MAX]
 
     if reset_state:
       self.v_desired_filter.x = v_ego
-
       # Clip aEgo to cruise limits to prevent large accelerations when becoming active
-      self.a_desired = float(clip(sm['carState'].aEgo, accel_limits[0], accel_limits[1]))
-
+      self.a_desired = clip(sm['carState'].aEgo, accel_limits[0], accel_limits[1])
       # mpc에서는 prev_a를 참고하여 constraint작동함.... pid off -> on시에는 현재 constraint가 작동하지 않아서 집어넣어봄...
-      self.mpc.prev_a = np.full(N + 1, self.a_desired)
-
-      # ✅ FIX: reset 직후 accel 튐 방지용 bounds 타이트하게
-      accel_limits_turns[0] = float(self.a_desired - 0.2)
-      accel_limits_turns[1] = float(self.a_desired + 0.2)
+      self.mpc.prev_a = np.full(N+1, self.a_desired)
+      accel_limits_turns[0] = accel_limits_turns[0] = 0.0
 
     # Prevent divergence, smooth in current v_ego
-    self.v_desired_filter.x = max(0.0, float(self.v_desired_filter.update(v_ego)))
-    self.v_model_error = float(get_speed_error(sm['modelV2'], v_ego))
+    self.v_desired_filter.x = max(0.0, self.v_desired_filter.update(v_ego))
+    self.v_model_error = get_speed_error(sm['modelV2'], v_ego)
 
     if force_slow_decel:
       v_cruise = 0.0
 
     # Get acceleration and active solutions for custom long mpc.
-    v_cruise = self.cruise_solutions(
-      not reset_state, self.v_desired_filter.x, self.a_desired, v_cruise, sm
-    )
+    v_cruise = self.cruise_solutions(not reset_state, self.v_desired_filter.x,
+                                     self.a_desired, v_cruise, sm)
 
-    # ✅ FIX: bounds 보정 로직 (min/max 뒤집힘 수정)
-    # 현재 a_desired가 bounds 밖에 있지 않도록 보정
-    accel_limits_turns[0] = max(float(accel_limits_turns[0]), float(self.a_desired - 0.05))
-    accel_limits_turns[1] = min(float(accel_limits_turns[1]), float(self.a_desired + 0.05))
-
-    # bounds 역전 방지
-    if accel_limits_turns[1] < accel_limits_turns[0]:
-      mid = 0.5 * (accel_limits_turns[0] + accel_limits_turns[1])
-      accel_limits_turns[0] = mid
-      accel_limits_turns[1] = mid
+    # clip limits, cannot init MPC outside of bounds
+    accel_limits_turns[0] = min(accel_limits_turns[0], self.a_desired + 0.05)
+    accel_limits_turns[1] = max(accel_limits_turns[1], self.a_desired - 0.05)
 
     self.mpc.set_accel_limits(accel_limits_turns[0], accel_limits_turns[1])
     self.mpc.set_cur_state(self.v_desired_filter.x, self.a_desired)
-
     x, v, a, j = self.parse_model(sm['modelV2'], self.v_model_error)
 
-    self.mpc.update(
-      sm['carState'], sm['radarState'], sm['modelV2'], sm['controlsState'],
-      v_cruise, x, v, a, j, prev_accel_constraint, reset_state
-    )
+    self.mpc.update(sm['carState'], sm['radarState'], sm['modelV2'], sm['controlsState'],
+                    v_cruise, x, v, a, j, prev_accel_constraint, reset_state)
 
     self.v_desired_trajectory = np.interp(T_IDXS[:CONTROL_N], T_IDXS_MPC, self.mpc.v_solution)
     self.a_desired_trajectory = np.interp(T_IDXS[:CONTROL_N], T_IDXS_MPC, self.mpc.a_solution)
@@ -288,14 +262,14 @@ class Planner:
       self.tFollow = 0.0
 
     # TODO counter is only needed because radar is glitchy, remove once radar is gone
-    self.fcw = self.mpc.crash_cnt > 2 and (not sm['carState'].standstill) and (not reset_state)
+    self.fcw = self.mpc.crash_cnt > 2 and not sm['carState'].standstill and not reset_state
     if self.fcw:
       cloudlog.info("FCW triggered")
 
     # Interpolate dt seconds and save as starting point for next iteration
-    a_prev = float(self.a_desired)
+    a_prev = self.a_desired
     self.a_desired = float(interp(self.dt, T_IDXS[:CONTROL_N], self.a_desired_trajectory))
-    self.v_desired_filter.x = float(self.v_desired_filter.x + self.dt * (self.a_desired + a_prev) / 2.0)
+    self.v_desired_filter.x = self.v_desired_filter.x + self.dt * (self.a_desired + a_prev) / 2.0
 
   def publish(self, sm, pm):
     plan_send = messaging.new_message('longitudinalPlan')
@@ -317,7 +291,7 @@ class Planner:
     longitudinalPlan.visionCurrentLatAcc = float(self.vision_turn_controller.current_lat_acc)
     longitudinalPlan.visionMaxPredLatAcc = float(self.vision_turn_controller.max_pred_lat_acc)
     longitudinalPlan.eventsDEPRECATED = self.events.to_msg()
-    longitudinalPlan.fcw = bool(self.fcw)
+    longitudinalPlan.fcw = self.fcw
     longitudinalPlan.xState = self.mpc.xState
     longitudinalPlan.mpcEvent = self.mpc.mpcEvent
     longitudinalPlan.mpcMode = 1 if self.mpc.mode == 'blended' else 0
