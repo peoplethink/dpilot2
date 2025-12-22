@@ -239,8 +239,7 @@ class LongitudinalMpc:
     self.source = SOURCES[2]
     self.openpilotLongitudinalControl = False
 
-    # experimentalMode 제거 → EndToEndLong로 대체
-    self.endToEndLong = False
+    self.experimentalMode = False
 
     # longActiveUser 제거 → enabled 엣지 감지로 대체
     self.prev_enabled = False
@@ -444,7 +443,6 @@ class LongitudinalMpc:
       except Exception:
         pass
     elif self.lo_timer == 60:
-      self.endToEndLong = Params().get_bool("EndToEndLong")
       self.applyLongDynamicCost = Params().get_bool("ApplyLongDynamicCost")
       try:
         self.trafficStopAccel = float(int(Params().get("TrafficStopAccel", encoding="utf8"))) / 100.0
@@ -741,8 +739,8 @@ class LongitudinalMpc:
     self.comfort_brake = COMFORT_BRAKE
 
     v_cruise, stop_x, self.mode = self.update_apilot(controls, carstate, radarstate, model, v_cruise, self.mode)
-
-    self.mode = 'blended' if self.endToEndLong else self.mode
+    self.mode = 'blended' if self.experimentalMode else self.mode
+    
 
     v_lead0 = lead_xv_0[0, 1]
     v_lead1 = lead_xv_1[0, 1]
