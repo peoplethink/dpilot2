@@ -451,6 +451,7 @@ struct CarParams {
   enableApgs @6 :Bool;
   enableBsm @56 :Bool;
   flags @64 :UInt32;
+  experimentalLongitudinalAvailable @80 :Bool;
 
   minEnableSpeed @7 :Float32;
   minSteerSpeed @8 :Float32;
