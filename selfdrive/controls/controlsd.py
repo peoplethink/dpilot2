@@ -202,6 +202,7 @@ class Controls:
     self.desired_curvature = 0.0
     self.desired_curvature_rate = 0.0
     self.nn_alert_shown = False
+    self.experimental_mode = False
 
     # ====== longControlState 통일 변수 ======
     self.long_control_state = LongControlState.off
@@ -805,7 +806,7 @@ class Controls:
     controlsState.forceDecel = bool(force_decel)
     controlsState.canErrorCounter = self.can_rcv_error_counter
     controlsState.distanceTraveled = self.distance_traveled
-    controlsState.experimentalMode = self.params.get_bool("ExperimentalMode") and self.CP.openpilotLongitudinalControl
+    controlsState.experimentalMode = self.experimental_mode
 
     controlsState.angleSteers = steer_angle_without_offset * CV.RAD_TO_DEG
     controlsState.applyAccel = self.apply_accel
@@ -876,6 +877,7 @@ class Controls:
 
   def step(self):
     start_time = sec_since_boot()
+    self.experimental_mode = self.params.get_bool("ExperimentalMode") and self.CP.openpilotLongitudinalControl
 
     # Sample data
     CS = self.data_sample()
