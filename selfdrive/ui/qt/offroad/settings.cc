@@ -116,9 +116,15 @@ void TogglesPanel::showEvent(QShowEvent *event) {
 }
 
 void TogglesPanel::updateToggles() {
-  auto e2e_toggle = toggles["EndToEndLong"];
+  auto e2e_toggle = toggles["ExperimentalMode"];
   auto op_long_toggle = toggles["ExperimentalLongitudinalEnabled"];
-  const QString e2e_description = tr("Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would. Super experimental.");
+  const QString e2e_description = tr("\
+    openpilot defaults to driving in <b>chill mode</b>.\
+    Experimental mode enables <b>alpha-level features</b> that aren't ready for chill mode. \
+    Experimental features are listed below:\
+    <br> \
+    <h4>🌮 End-to-End Longitudinal Control 🌮</h4> \
+    Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs.");
 
   auto cp_bytes = params.get("CarParamsPersistent");
   if (!cp_bytes.empty()) {
@@ -140,7 +146,7 @@ void TogglesPanel::updateToggles() {
     } else {
       // no long for now
       e2e_toggle->setEnabled(false);
-      params.remove("EndToEndLong");
+      params.remove("ExperimentalMode");
 
       const QString no_long = "openpilot longitudinal control is not currently available for this car.";
       const QString exp_long = "Enable experimental longitudinal control to enable this.";
