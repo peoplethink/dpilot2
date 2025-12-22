@@ -24,7 +24,7 @@ class CarInterface(CarInterfaceBase):
     self.mad_mode_enabled = Params().get_bool('MadModeEnabled')
 	  
   @staticmethod
-  def _get_params(ret, candidate, fingerprint, car_fw, disable_radar):
+  def _get_params(ret, candidate, fingerprint, car_fw, disable_radar=False):
     ret.openpilotLongitudinalControl = Params().get_bool('LongControlEnabled')
 
     ret.carName = "hyundai"
