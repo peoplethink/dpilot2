@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import sys
 
+from cereal import car
 from common.params import Params
 from tools.lib.route import Route
 from tools.lib.logreader import LogReader
@@ -13,6 +14,8 @@ if __name__ == "__main__":
     CP = cps[0].carParams.as_builder()
   else:
     CP = car.CarParams.new_message()
+    CP.openpilotLongitudinalControl = True
+    CP.experimentalLongitudinalAvailable = False
 
   cp_bytes = CP.to_bytes()
   for p in ("CarParams", "CarParamsCache", "CarParamsPersistent"):
