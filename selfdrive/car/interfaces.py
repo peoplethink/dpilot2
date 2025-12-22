@@ -246,7 +246,7 @@ class CarInterfaceBase(ABC):
     return cls.get_params(candidate, gen_empty_fingerprint(), list(), False)
 
   @classmethod
-  def get_params(cls, candidate: str, fingerprint: Dict[int, Dict[int, int]], car_fw: List[car.CarParams.CarFw], disable_radar: bool):
+  def get_params(cls, candidate: str, fingerprint: Dict[int, Dict[int, int]], car_fw: List[car.CarParams.CarFw], disable_radar=False: bool):
 
     ret = CarInterfaceBase.get_std_params(candidate)
     ret = cls._get_params(ret, candidate, fingerprint, car_fw, disable_radar)
