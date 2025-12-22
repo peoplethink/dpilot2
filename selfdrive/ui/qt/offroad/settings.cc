@@ -47,23 +47,25 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       "../assets/offroad/icon_openpilot.png",
     },
     {
+      "ExperimentalMode",
+      "Experimental mode",
+      "",
+      "../assets/offroad/icon_road.png",
+    },
+    {
+      "ExperimentalLongitudinalEnabled",
+      "Experimental openpilot longitudinal control",
+      "<b>WARNING: openpilot longitudinal control is experimental for this car and will disable AEB.</b><br>\
+          openpilot defaults to the car's built-in ACC instead of openpilot's longitudinal control on this car. Enable this to switch to openpilot longitudinal control.",
+      "../assets/offroad/icon_speed_limit.png",
+    },
+    {
       "IsMetric",
       "미터법 사용",
       "mi/h 대신 km/h 단위로 속도를 표시합니다.",
       "../assets/offroad/icon_metric.png",
     },
-    {
-      "EndToEndLong",
-      "System: End-to-End ACC (Alpha)",
-      "Let the driving model control the gas and brakes, openpilot will drive as it thinks a human would. Super experimental.",
-      "../assets/offroad/icon_road.png",
-    },
-    {
-      "ExperimentalLongitudinalEnabled",
-      tr("Experimental openpilot longitudinal control"),
-      tr("<b>WARNING: openpilot longitudinal control is experimental for this car and will disable AEB.</b>"),
-      "../assets/offroad/icon_speed_limit.png",
-    },
+    
     {
       "EndToEndToggle",
       "\U0001f96c AUTO LANE 활성화 \U0001f96c",
