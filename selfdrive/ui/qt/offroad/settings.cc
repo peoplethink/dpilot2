@@ -39,7 +39,7 @@
 
 TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
   // param, title, desc, icon
-  std::vector<std::tuple<QString, QString, QString, QString>> toggles{
+  std::vector<std::tuple<QString, QString, QString, QString>> toggle_defs{
     {
       "OpenpilotEnabledToggle",
       "오픈파일럿 사용",
@@ -94,7 +94,7 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
 
   };
 
-  for (auto &[param, title, desc, icon] : toggle_defs{
+  for (auto &[param, title, desc, icon] : toggle_defs) {
     auto toggle = new ParamControl(param, title, desc, icon, this);
   
     bool locked = params.getBool((param + "Lock").toStdString());
