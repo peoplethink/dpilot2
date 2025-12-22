@@ -33,7 +33,7 @@ class CarInterface(CarInterfaceBase):
     return accel
 
   @staticmethod
-  def _get_params(ret, candidate, fingerprint, car_fw, disable_radar):
+  def _get_params(ret, candidate, fingerprint, car_fw, disable_radar=False):
     ret.carName = "mock"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.noOutput)]
     ret.mass = 1700.
