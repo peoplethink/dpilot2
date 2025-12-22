@@ -2,6 +2,7 @@
 import os
 import math
 from typing import SupportsFloat
+from decimal import Decimal
 
 from cereal import car, log
 from common.numpy_fast import clip, interp
@@ -31,7 +32,7 @@ from selfdrive.hardware import HARDWARE, TICI, EON
 from selfdrive.manager.process_config import managed_processes
 from selfdrive.car.hyundai.scc_smoother import SccSmoother
 from selfdrive.controls.ntune import ntune_common_get, ntune_common_enabled, ntune_scc_get
-from decimal import Decimal
+
 
 SR_SCALE_BP = [0., 40., 60., 80., 100.]
 SR_SCALE_V = [16.0, 15.9, 15.6, 14.8, 13.5]
@@ -74,6 +75,10 @@ class Controls:
   def __init__(self, sm=None, pm=None, can_sock=None, CI=None):
     config_realtime_process(4 if TICI else 3, Priority.CTRL_HIGH)
 
+    # ✅ Params 통일 (크래시 방지 핵심)
+    self.params = Params()
+    params = self.params
+
     # Setup sockets
     self.pm = pm
     if self.pm is None:
@@ -99,7 +104,6 @@ class Controls:
     else:
       self.CI, self.CP = CI, CI.CP
 
-    params = Params()
     self.joystick_mode = params.get_bool("JoystickDebugMode") or (self.CP.notCar and sm is None)
     joystick_packet = ['testJoystick'] if self.joystick_mode else []
 
@@ -225,7 +229,7 @@ class Controls:
 
     self.wide_camera = TICI and params.get_bool('EnableWideCamera')
     self.disable_op_fcw = params.get_bool('DisableOpFcw')
-    self.mad_mode_enabled = Params().get_bool('MadModeEnabled')
+    self.mad_mode_enabled = params.get_bool('MadModeEnabled')
 
     # 롱크루즈갭 + lead 정보 보관
     self.longCruiseGap = 1
@@ -280,7 +284,7 @@ class Controls:
 
     if EON and (self.sm['peripheralState'].pandaType != PandaType.uno) and \
        self.sm['deviceState'].batteryPercent < 1 and self.sm['deviceState'].chargingError \
-       and not Params().get_bool("IsChargerFaultIgnored"):
+       and not self.params.get_bool("IsChargerFaultIgnored"):
       self.events.add(EventName.lowBattery)
     if self.sm['deviceState'].thermalStatus >= ThermalStatus.red:
       self.events.add(EventName.overheat)
@@ -437,7 +441,7 @@ class Controls:
         if REPLAY and self.sm['pandaStates'][0].controlsAllowed:
           self.state = State.enabled
 
-        Params().put_bool("ControlsReady", True)
+        self.params.put_bool("ControlsReady", True)
 
     if not can_strs:
       self.can_rcv_error_counter += 1
@@ -467,10 +471,10 @@ class Controls:
       else:
         self.v_cruise_kph = 0
 
-    # SCC smoother (여기서 myDrivingMode/mySafeModeFactor가 갱신되는 구조면 그대로 타고감)
+    # SCC smoother
     SccSmoother.update_cruise_buttons(self, CS, self.CP.openpilotLongitudinalControl)
 
-    # ✅✅ (이식) myDrivingMode / mySafeModeFactor sanitize (capnp 존재 전제)
+    # ✅✅ myDrivingMode / mySafeModeFactor sanitize
     try:
       self.myDrivingMode = int(self.myDrivingMode)
     except Exception:
@@ -565,8 +569,8 @@ class Controls:
     else:
       sr = max(ntune_common_get('steerRatio'), 0.1)
 
-    if Params().get_bool('Steer_SRTune'):
-      sr_v = float(int(Params().get("Steer_SRTune_v", encoding="utf8"))) * 0.01
+    if self.params.get_bool('Steer_SRTune'):
+      sr_v = float(int(self.params.get("Steer_SRTune_v", encoding="utf8"))) * 0.01
       sr = interp(CS.vEgo * 3.6, SR_SCALE_BP, SR_SCALE_V) * sr_v
 
     self.VM.update_params(x, sr)
@@ -826,7 +830,7 @@ class Controls:
 
     controlsState.longCruiseGap = clip(int(self.longCruiseGap), 1, 4)
 
-    # ✅✅ (이식) planner에서 읽는 필드 publish (capnp 존재 전제)
+    # ✅✅ planner에서 읽는 필드 publish
     controlsState.myDrivingMode = int(self.myDrivingMode)
     controlsState.mySafeModeFactor = float(self.mySafeModeFactor)
 
@@ -860,7 +864,7 @@ class Controls:
       self.pm.send('carEvents', ce_send)
     self.events_prev = self.events.names.copy()
 
-    # carParams - logged every 50 seconds (> 1 per segment)
+    # carParams - logged every 50 seconds
     if (self.sm.frame % int(50. / DT_CTRL) == 0):
       cp_send = messaging.new_message('carParams')
       cp_send.carParams = self.CP
