@@ -91,10 +91,9 @@ class Planner:
   # Params read (ported safely)
   # =========================
   def read_param(self):
-    # mode
-    self.mpc.mode = 'blended' if self.params.get_bool('EndToEndLong') else 'acc'
+    e2e = self.params.get_bool('EndToEndLong') and self.CP.openpilotLongitudinalControl
+    self.mpc.mode = 'blended' if e2e else 'acc'
 
-    # safe reads with fallback
     def _read_float100(key, default):
       try:
         v = self.params.get(key, encoding="utf8")
