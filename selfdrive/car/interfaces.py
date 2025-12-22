@@ -273,7 +273,7 @@ class CarInterfaceBase(ABC):
     
   @staticmethod
   @abstractmethod
-  def _get_params(ret: car.CarParams, candidate: str, fingerprint: Dict[int, Dict[int, int]], car_fw: List[car.CarParams.CarFw], disable_radar: bool):
+  def _get_params(ret: car.CarParams, candidate: str, fingerprint: Dict[int, Dict[int, int]], car_fw: List[car.CarParams.CarFw], experimental_long=False: bool):
     raise NotImplementedError
 
   @staticmethod
