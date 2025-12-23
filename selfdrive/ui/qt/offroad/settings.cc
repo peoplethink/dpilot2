@@ -49,7 +49,7 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
     {
       "ExperimentalMode",
       "Experimental mode",
-      "",
+      "알파 수준 기능을 활성화합니다. (실험 기능/안전 경고를 확인하세요)",
       "../assets/img_experimental_white.svg",
     },
     {
