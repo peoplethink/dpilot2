@@ -171,7 +171,7 @@ void TogglesPanel::updateToggles() {
     e2e_toggle->refresh();
   } else {
     e2e_toggle->setDescription(e2e_description);
-    op_long_toggle->setVisible(false);
+    op_long_toggle->setVisible(true);
   }
 }
 
