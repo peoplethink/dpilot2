@@ -731,33 +731,29 @@ void NvgWindow::drawLaneLines(QPainter &painter, const UIState *s) {
 	
   // paint path
   QLinearGradient bg(0, height(), 0, height() / 4);
-  const auto &acceleration = sm["modelV2"].getModelV2().getAcceleration();
-  float start_hue, end_hue, acceleration_future = 0;
-
-  if (acceleration.getZ().size() > 16) {
-    acceleration_future = acceleration.getX()[16];  // 2.5 seconds
-  }
-  start_hue = 60;
-  // speed up: 120, slow down: 0
-  end_hue = fmax(fmin(start_hue + acceleration_future * 45, 148), 0);
-
-  // FIXME: painter.drawPolygon can be slow if hue is not rounded
-  end_hue = int(end_hue * 100 + 0.5) / 100;
-	
-  if ((*s->sm)["controlsState"].getControlsState().getEnabled()) {
-  if (scene.end_to_end_long) {
-      bg.setColorAt(0, QColor(0xf7, 0x8f, 0x66, 128));
-      bg.setColorAt(1, QColor(0xff, 0xad, 0x00, 0));
-    } else {
-      bg.setColorAt(0.0, scene.lateralPlan.dynamicLaneProfileStatus ? QColor::fromHslF(start_hue / 360., 0.97, 0.56, 0.35) : QColor::fromHslF(216 / 360., 0.94, 0.51, 0.35));
-      bg.setColorAt(0.5, scene.lateralPlan.dynamicLaneProfileStatus ? QColor::fromHslF(end_hue / 360., 1.0, 0.68, 0.3) : QColor::fromHslF(190 / 360., 1.0, 0.68, 0.3));
-      bg.setColorAt(1.0, scene.lateralPlan.dynamicLaneProfileStatus ? QColor::fromHslF(end_hue / 360., 1.0, 0.68, 0.0) : QColor::fromHslF(190 / 360., 1.0, 0.68, 0.0));
+  float start_hue, end_hue;
+  if (sm["controlsState"].getControlsState().getExperimentalMode()) {
+    const auto &acceleration = sm["modelV2"].getModelV2().getAcceleration();
+    float acceleration_future = 0;
+    if (acceleration.getZ().size() > 16) {
+      acceleration_future = acceleration.getX()[16];  // 2.5 seconds
     }
+    start_hue = 60;
+    // speed up: 120, slow down: 0
+    end_hue = fmax(fmin(start_hue + acceleration_future * 45, 148), 0);
+
+    // FIXME: painter.drawPolygon can be slow if hue is not rounded
+    end_hue = int(end_hue * 100 + 0.5) / 100;
+
+    bg.setColorAt(0.0, QColor::fromHslF(start_hue / 360., 0.97, 0.56, 0.4));
+    bg.setColorAt(0.5, QColor::fromHslF(end_hue / 360., 1.0, 0.68, 0.35));
+    bg.setColorAt(1.0, QColor::fromHslF(end_hue / 360., 1.0, 0.68, 0.0));
   } else {
-    bg.setColorAt(0.0, whiteColor(100));
-    bg.setColorAt(0.5, whiteColor(50));  
-    bg.setColorAt(1.0, whiteColor(0));
+    bg.setColorAt(0.0, QColor::fromHslF(148 / 360., 0.94, 0.51, 0.4));
+    bg.setColorAt(0.5, QColor::fromHslF(112 / 360., 1.0, 0.68, 0.35));
+    bg.setColorAt(1.0, QColor::fromHslF(112 / 360., 1.0, 0.68, 0.0));
   }
+	  
   painter.setBrush(bg);
   ui_draw_line( painter, scene.track_vertices );
 	
