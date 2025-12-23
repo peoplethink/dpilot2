@@ -50,7 +50,7 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       "ExperimentalMode",
       "Experimental mode",
       "",
-      "../assets/offroad/icon_road.png",
+      "../assets/img_experimental_white.svg",
     },
     {
       "ExperimentalLongitudinalEnabled",
@@ -107,12 +107,17 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
   }
 
   // Toggles with confirmation dialogs
+  toggles["ExperimentalMode"]->setActiveIcon("../assets/img_experimental.svg");
   toggles["ExperimentalMode"]->setConfirmation(true, true);
   toggles["ExperimentalLongitudinalEnabled"]->setConfirmation(true, false);
   
   connect(toggles["ExperimentalLongitudinalEnabled"], &ToggleControl::toggleFlipped, [=]() {
     updateToggles();
   });
+}
+
+void TogglesPanel::expandToggleDescription(const QString &param) {
+  toggles[param.toStdString()]->showDescription();
 }
 
 void TogglesPanel::showEvent(QShowEvent *event) {
@@ -559,8 +564,15 @@ static QStringList get_list(const char* path)
 }
 
 void SettingsWindow::showEvent(QShowEvent *event) {
-  panel_widget->setCurrentIndex(0);
-  nav_btns->buttons()[0]->setChecked(true);
+  setCurrentPanel(0);
+}
+
+void SettingsWindow::setCurrentPanel(int index, const QString &param) {
+  panel_widget->setCurrentIndex(index);
+  nav_btns->buttons()[index]->setChecked(true);
+  if (!param.isEmpty()) {
+    emit expandToggleDescription(param);
+  }
 }
 
 SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
@@ -604,12 +616,15 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   QObject::connect(device, &DevicePanel::showDriverView, this, &SettingsWindow::showDriverView);
   QObject::connect(device, &DevicePanel::closeSettings, this, &SettingsWindow::closeSettings);
 
+  TogglesPanel *toggles = new TogglesPanel(this);
+  QObject::connect(this, &SettingsWindow::expandToggleDescription, toggles, &TogglesPanel::expandToggleDescription);
+  
   QList<QPair<QString, QWidget *>> panels = {
     {"장치", device},
     {"VIP메뉴", new VIPPanel(this)},
     {"TUNING", new TUNINGPanel(this)},
     {"네트워크", network_panel(this)},
-    {"토글메뉴", new TogglesPanel(this)},
+    {"토글메뉴", toggles},
     {"소프트웨어", new SoftwarePanel(this)},
     {"커뮤니티", new CommunityPanel(this)},
   };
