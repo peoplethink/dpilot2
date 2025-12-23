@@ -24,7 +24,7 @@ cdef extern from "selfdrive/common/params.h":
 
 
 def ensure_bytes(v):
-  return v.encode() if isinstance(v, str) else v
+  return v.encode() if isinstance(v, str) else v;
 
 
 class UnknownKeyName(Exception):
@@ -89,11 +89,9 @@ cdef class Params:
     with nogil:
       self.p.putBool(k, val)
 
-  # ✅ 추가: controlsd.py가 호출하는 API (Python 호환)
   def remove(self, key):
     self.delete(key)
 
-  # 기존 delete는 그대로 C++ remove로 연결
   def delete(self, key):
     cdef string k = self.check_key(key)
     with nogil:
