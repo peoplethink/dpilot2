@@ -3,11 +3,13 @@ from typing import List
 
 from cereal import car
 from common.numpy_fast import interp
+from panda import Panda
 from common.conversions import Conversions as CV
 from selfdrive.car.hyundai.values import (
   CAR, DBC, Buttons, CarControllerParams, FEATURES, LEGACY_SAFETY_MODE_CAR
 )
 from selfdrive.car import STD_CARGO_KG, scale_tire_stiffness, get_safety_config
+from selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR
 from selfdrive.car.interfaces import CarInterfaceBase
 from common.params import Params
 from selfdrive.controls.ntune import ntune_scc_get
@@ -37,10 +39,8 @@ class CarInterface(CarInterfaceBase):
 
     ret.carName = "hyundai"
 
-    # 기본 safety
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hyundaiLegacy, 0)]
 
-    # ---- (원래 있던 LongControlEnabled: "가능여부"만 결정) ----
     try:
       ret.experimentalLongitudinalAvailable = params.get_bool('LongControlEnabled')
     except Exception:
@@ -334,7 +334,6 @@ class CarInterface(CarInterfaceBase):
     ret.hasEms = 608 in fingerprint[0] and 809 in fingerprint[0]
     ret.hasLfaHda = 1157 in fingerprint[0]
 
-    # --- SCC BUS 조건 (RadarTracks/CameraSCCCar 조건 제거 버전) ---
     experimental_long = (ret.sccBus == 2)
 
     ret.openpilotLongitudinalControl = experimental_long and ret.experimentalLongitudinalAvailable
