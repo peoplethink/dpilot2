@@ -3,13 +3,10 @@ from typing import List
 
 from cereal import car
 from common.numpy_fast import interp
-from panda import Panda
 from common.conversions import Conversions as CV
 from selfdrive.car.hyundai.values import (
-  CAR, DBC, Buttons, CarControllerParams, FEATURES, LEGACY_SAFETY_MODE_CAR,
-  CAMERA_SCC_CAR
+  CAR, DBC, Buttons, CarControllerParams, FEATURES, LEGACY_SAFETY_MODE_CAR
 )
-from selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR
 from selfdrive.car import STD_CARGO_KG, scale_tire_stiffness, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
 from common.params import Params
@@ -337,13 +334,8 @@ class CarInterface(CarInterfaceBase):
     ret.hasEms = 608 in fingerprint[0] and 809 in fingerprint[0]
     ret.hasLfaHda = 1157 in fingerprint[0]
 
-    # --- 요청하신 "SCC BUS 조건" (experimental_long 결정) ---
-    if ret.sccBus == 2 and candidate not in CAMERA_SCC_CAR:
-      experimental_long = True
-    elif ret.sccBus == 0 and params.get_bool("EnableRadarTracks"):
-      experimental_long = True
-    else:
-      experimental_long = False
+    # --- SCC BUS 조건 (RadarTracks/CameraSCCCar 조건 제거 버전) ---
+    experimental_long = (ret.sccBus == 2)
 
     ret.openpilotLongitudinalControl = experimental_long and ret.experimentalLongitudinalAvailable
 
@@ -384,17 +376,14 @@ class CarInterface(CarInterfaceBase):
     elif self.CC.scc_live and not self.CP.pcmCruise:
       self.CP.pcmCruise = True
 
-    # most HKG cars has no long control, it is safer and easier to engage by main on
     if self.mad_mode_enabled:
       ret.cruiseState.enabled = ret.cruiseState.available
 
-    # turning indicator alert logic
     if not self.CC.keep_steering_turn_signals and (ret.leftBlinker or ret.rightBlinker or self.CC.turning_signal_timer) and ret.vEgo < LANE_CHANGE_SPEED_MIN - 1.2:
       self.CC.turning_indicator_alert = True
     else:
       self.CC.turning_indicator_alert = False
 
-    # low speed steer alert hysteresis logic
     if ret.vEgo < (self.CP.minSteerSpeed + 0.2) and self.CP.minSteerSpeed > 10.:
       self.low_speed_alert = True
     if ret.vEgo > (self.CP.minSteerSpeed + 0.7):
@@ -432,7 +421,6 @@ class CarInterface(CarInterfaceBase):
     if self.CC.turning_indicator_alert:
       events.add(EventName.turningIndicatorOn)
 
-    # handle button presses
     for b in ret.buttonEvents:
       if b.type == ButtonType.cancel and b.pressed:
         events.add(EventName.buttonCancel)
@@ -447,7 +435,6 @@ class CarInterface(CarInterfaceBase):
         if b.type == ButtonType.decelCruise and not b.pressed:
           events.add(EventName.buttonEnable)
 
-    # scc smoother
     if self.CC.scc_smoother is not None:
       self.CC.scc_smoother.inject_events(events)
 
@@ -456,6 +443,5 @@ class CarInterface(CarInterfaceBase):
     self.CS.out = ret.as_reader()
     return self.CS.out
 
-  # scc smoother - hyundai only
   def apply(self, c, controls):
     return self.CC.update(c, self.CS, controls)
