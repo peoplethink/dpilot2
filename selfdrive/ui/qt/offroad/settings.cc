@@ -97,7 +97,7 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
   };
 
   for (auto &[param, title, desc, icon] : toggle_defs) {
-    auto toggle = new ParamControl(param, title, desc, icon, false, this);
+    auto toggle = new ParamControl(param, title, desc, icon, this);
   
     bool locked = params.getBool((param + "Lock").toStdString());
     toggle->setEnabled(!locked);
@@ -106,10 +106,9 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
     toggles[param.toStdString()] = toggle;
   }
 
-   // Toggles with confirmation dialogs
-  toggles["ExperimentalMode"]->confirm = true;
-  toggles["ExperimentalMode"]->store_confirm = true;
-  toggles["ExperimentalLongitudinalEnabled"]->confirm = true;
+  // Toggles with confirmation dialogs
+  toggles["ExperimentalMode"]->setConfirmation(true, true);
+  toggles["ExperimentalLongitudinalEnabled"]->setConfirmation(true, false);
   
   connect(toggles["ExperimentalLongitudinalEnabled"], &ToggleControl::toggleFlipped, [=]() {
     updateToggles();
