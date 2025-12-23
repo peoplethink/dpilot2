@@ -58,6 +58,7 @@ private:
                                   int alpha);
   
   QPixmap engage_img;
+  QPixmap experimental_img;
   QPixmap compass_inner_img;
   QPixmap compass_outer_img;
   QString vtcSpeed;
