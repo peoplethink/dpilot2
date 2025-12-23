@@ -5,7 +5,10 @@ from cereal import car
 from common.numpy_fast import interp
 from panda import Panda
 from common.conversions import Conversions as CV
-from selfdrive.car.hyundai.values import CAR, DBC, Buttons, CarControllerParams, FEATURES, LEGACY_SAFETY_MODE_CAR
+from selfdrive.car.hyundai.values import (
+  CAR, DBC, Buttons, CarControllerParams, FEATURES, LEGACY_SAFETY_MODE_CAR,
+  CAMERA_SCC_CAR
+)
 from selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR
 from selfdrive.car import STD_CARGO_KG, scale_tire_stiffness, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
@@ -17,6 +20,7 @@ GearShifter = car.CarState.GearShifter
 EventName = car.CarEvent.EventName
 ButtonType = car.CarState.ButtonEvent.Type
 
+
 class CarInterface(CarInterfaceBase):
   def __init__(self, CP, CarController, CarState):
     super().__init__(CP, CarController, CarState)
@@ -25,36 +29,36 @@ class CarInterface(CarInterfaceBase):
 
   @staticmethod
   def get_pid_accel_limits(CP, current_speed, cruise_speed):
-
     v_current_kph = current_speed * CV.MS_TO_KPH
-
     gas_max_bp = [10., 20., 50., 70., 130., 150.]
     gas_max_v = [1.45, 1.15, 0.5, 0.32, 0.17, 0.1]
-
     return CarControllerParams.ACCEL_MIN, interp(v_current_kph, gas_max_bp, gas_max_v)
-	  
+
   @staticmethod
   def _get_params(ret, candidate, fingerprint, car_fw, experimental_long=False):
-	  
-    try:
-      ret.experimentalLongitudinalAvailable = Params().get_bool('LongControlEnabled')
-    except Exception:
-      pass
-    ret.openpilotLongitudinalControl = experimental_long and ret.experimentalLongitudinalAvailable
+    params = Params()
 
     ret.carName = "hyundai"
+
+    # 기본 safety
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hyundaiLegacy, 0)]
 
+    # ---- (원래 있던 LongControlEnabled: "가능여부"만 결정) ----
+    try:
+      ret.experimentalLongitudinalAvailable = params.get_bool('LongControlEnabled')
+    except Exception:
+      ret.experimentalLongitudinalAvailable = True
+
     tire_stiffness_factor = 0.85
-    if Params().get_bool('SteerLockout'):
+    if params.get_bool('SteerLockout'):
       ret.maxSteeringAngleDeg = 1080
     else:
       ret.maxSteeringAngleDeg = 90
-	
+
     ret.disableLateralLiveTuning = False
 
     # -------------PID
-    if Params().get("LateralControlSelect", encoding='utf8') == "0":
+    if params.get("LateralControlSelect", encoding='utf8') == "0":
       if candidate in [CAR.HYUNDAI_GENESIS, CAR.GENESIS_G80]:
         ret.lateralTuning.pid.kf = 0.00007
         ret.lateralTuning.pid.kpBP = [0., 10., 30.]
@@ -64,9 +68,9 @@ class CarInterface(CarInterfaceBase):
         ret.lateralTuning.pid.kdBP = [0.]
         ret.lateralTuning.pid.kdV = [0.6]
         ret.lateralTuning.pid.newKfTuned = True
-          
+
     # -------------INDI
-    elif Params().get("LateralControlSelect", encoding='utf8') == "1":
+    elif params.get("LateralControlSelect", encoding='utf8') == "1":
       ret.lateralTuning.init('indi')
       ret.lateralTuning.indi.innerLoopGainBP = [0.]
       ret.lateralTuning.indi.innerLoopGainV = [3.5]
@@ -76,9 +80,9 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.indi.timeConstantV = [1.4]
       ret.lateralTuning.indi.actuatorEffectivenessBP = [0.]
       ret.lateralTuning.indi.actuatorEffectivenessV = [1.3]
-          
+
     # --------------LQR
-    elif Params().get("LateralControlSelect", encoding='utf8') == "2":
+    elif params.get("LateralControlSelect", encoding='utf8') == "2":
       ret.lateralTuning.init('lqr')
       ret.lateralTuning.lqr.scale = 1600.
       ret.lateralTuning.lqr.ki = 0.01
@@ -88,19 +92,17 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.lqr.c = [1., 0.]
       ret.lateralTuning.lqr.k = [-110, 451]
       ret.lateralTuning.lqr.l = [0.33, 0.318]
-    
+
     # --------------Torque
-    elif Params().get("LateralControlSelect", encoding='utf8') == "3":
+    elif params.get("LateralControlSelect", encoding='utf8') == "3":
       if candidate in [CAR.HYUNDAI_GENESIS, CAR.GENESIS_G80, CAR.GENESIS_G90]:
         CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
-
 
     ret.steerActuatorDelay = 0.3
     ret.steerLimitTimer = 0.4
     ret.steerRatio = 15.3
 
-    params = Params()
-	  
+    # ---------------- 차량별 제원(원본 그대로) ----------------
     # genesis
     if candidate == CAR.HYUNDAI_GENESIS:
       ret.mass = 2060. + STD_CARGO_KG
@@ -130,6 +132,7 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 2150
       ret.wheelbase = 3.16
       ret.centerToFront = ret.wheelbase * 0.4
+
     # hyundai
     elif candidate in [CAR.SANTA_FE]:
       ret.mass = 1694 + STD_CARGO_KG
@@ -165,13 +168,13 @@ class CarInterface(CarInterfaceBase):
     elif candidate == CAR.ELANTRA_2021:
       ret.mass = (2800. * CV.LB_TO_KG) + STD_CARGO_KG
       ret.wheelbase = 2.72
-      ret.steerRatio = 13.27 * 1.15   # 15% higher at the center seems reasonable
+      ret.steerRatio = 13.27 * 1.15
       tire_stiffness_factor = 0.65
       ret.centerToFront = ret.wheelbase * 0.4
     elif candidate == CAR.ELANTRA_HEV_2021:
       ret.mass = (3017. * CV.LB_TO_KG) + STD_CARGO_KG
       ret.wheelbase = 2.72
-      ret.steerRatio = 13.27 * 1.15  # 15% higher at the center seems reasonable
+      ret.steerRatio = 13.27 * 1.15
       tire_stiffness_factor = 0.65
       ret.centerToFront = ret.wheelbase * 0.4
     elif candidate == CAR.KONA:
@@ -188,8 +191,6 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 1490. + STD_CARGO_KG
       ret.wheelbase = 2.7
       tire_stiffness_factor = 0.385
-      #if candidate not in [CAR.IONIQ_EV_2020, CAR.IONIQ_PHEV]:
-      #  ret.minSteerSpeed = 32 * CV.MPH_TO_MS
       ret.centerToFront = ret.wheelbase * 0.4
     elif candidate in [CAR.GRANDEUR_IG, CAR.GRANDEUR_IG_HEV]:
       tire_stiffness_factor = 0.8
@@ -197,7 +198,6 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.845
       ret.centerToFront = ret.wheelbase * 0.385
       ret.steerRatio = 16.
-
     elif candidate in [CAR.GRANDEUR_IG_FL, CAR.GRANDEUR_IG_FL_HEV]:
       tire_stiffness_factor = 0.8
       ret.mass = 1600. + STD_CARGO_KG
@@ -210,10 +210,11 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.9
       ret.centerToFront = ret.wheelbase * 0.4
     elif candidate == CAR.TUCSON_TL_SCC:
-      ret.mass = 1594. + STD_CARGO_KG #1730
+      ret.mass = 1594. + STD_CARGO_KG
       ret.wheelbase = 2.67
       tire_stiffness_factor = 0.7
       ret.centerToFront = ret.wheelbase * 0.4
+
     # kia
     elif candidate == CAR.SORENTO:
       ret.mass = 1985. + STD_CARGO_KG
@@ -230,7 +231,7 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.85
       tire_stiffness_factor = 0.7
     elif candidate == CAR.STINGER:
-      tire_stiffness_factor = 1.125 # LiveParameters (Tunder's 2020)
+      tire_stiffness_factor = 1.125
       ret.mass = 1825.0 + STD_CARGO_KG
       ret.wheelbase = 2.906
       ret.centerToFront = ret.wheelbase * 0.4
@@ -288,66 +289,80 @@ class CarInterface(CarInterfaceBase):
         ret.lateralTuning.torque.friction = 0.01
         ret.lateralTuning.torque.kd = 0.0
 
-
     if ret.centerToFront == 0:
       ret.centerToFront = ret.wheelbase * 0.4
 
+    ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(
+      ret.mass, ret.wheelbase, ret.centerToFront,
+      tire_stiffness_factor=tire_stiffness_factor
+    )
 
-    # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
-    # mass and CG position, so all cars will have approximately similar dyn behaviors
-    ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront,
-                                                                         tire_stiffness_factor=tire_stiffness_factor)
-
-    # no rear steering, at least on the listed cars above
+    # no rear steering
     ret.steerRatioRear = 0.
     ret.steerControlType = car.CarParams.SteerControlType.torque
 
-    # longitudinal
+    # longitudinal tuning
     ret.longitudinalTuning.kpV = [0.5]
     ret.longitudinalTuning.kiV = [0.0]
 
-    # 기본적으로 정지/출발 상태 머신 사용
     ret.stoppingControl = True
     ret.startingState = False
-
     ret.vEgoStarting = 0.2
     ret.vEgoStopping = 0.3
     ret.stoppingDecelRate = 1.2
-
     ret.startAccel = 2.0
-
     ret.longitudinalActuatorDelayLowerBound = 0.5
     ret.longitudinalActuatorDelayUpperBound = 0.5
-	  
+
+    # feature
     ret.enableBsm = 0x58b in fingerprint[0]
     ret.enableAutoHold = 1151 in fingerprint[0]
 
     # ignore CAN2 address if L-CAN on the same BUS
-    ret.mdpsBus = 1 if 593 in fingerprint[1] and 1296 not in fingerprint[1] else 0    
-    ret.sasBus = 1 if 688 in fingerprint[1] and 1296 not in fingerprint[1] else 0
+    ret.mdpsBus = 1 if 593 in fingerprint[1] and 1296 not in fingerprint[1] else 0
+    ret.sasBus  = 1 if 688 in fingerprint[1] and 1296 not in fingerprint[1] else 0
+
+    # SCC BUS 탐지
     ret.sccBus = 0 if 1056 in fingerprint[0] else 1 if 1056 in fingerprint[1] and 1296 not in fingerprint[1] \
-                                                                     else 2 if 1056 in fingerprint[2] else -1
-    
+                                                 else 2 if 1056 in fingerprint[2] else -1
+
+    # (옵션) BUS2 강제 파라미터
+    if params.get_bool("SccConnectedBus2"):
+      ret.sccBus = 2
+
     if ret.sccBus >= 0:
       ret.hasScc13 = 1290 in fingerprint[ret.sccBus]
       ret.hasScc14 = 905 in fingerprint[ret.sccBus]
-	
+
     ret.hasEms = 608 in fingerprint[0] and 809 in fingerprint[0]
     ret.hasLfaHda = 1157 in fingerprint[0]
 
+    # --- 요청하신 "SCC BUS 조건" (experimental_long 결정) ---
+    if ret.sccBus == 2 and candidate not in CAMERA_SCC_CAR:
+      experimental_long = True
+    elif ret.sccBus == 0 and params.get_bool("EnableRadarTracks"):
+      experimental_long = True
+    else:
+      experimental_long = False
+
+    ret.openpilotLongitudinalControl = experimental_long and ret.experimentalLongitudinalAvailable
+
+    # radarOffCan / pcmCruise
     ret.radarOffCan = ret.sccBus == -1
-    ret.pcmCruise = not ret.radarOffCan
+    if ret.radarOffCan:
+      ret.pcmCruise = False
+    else:
+      ret.pcmCruise = not ret.openpilotLongitudinalControl
 
     ret.radarTimeStep = (1.0 / 50)
-	  
-    # Detect smartMDPS: the smartMDPS allows openpilot to continue lateral actuation past the lateral low speed lockout by intercepting CF_Clu_Vanz from the MDPS
-    smartMdps = 0x2AA in fingerprint[0]
-    # If the smartMDPS is detected, openpilot can send lateral actuation when lower than minSteerSpeed without faulting
-    if smartMdps:
-      ret.minSteerSpeed = 0	
 
-    # set safety_hyundai_community only for non-SCC, MDPS harrness or SCC harrness cars or cars that have unknown issue
-    if ret.radarOffCan or ret.mdpsBus == 1 or ret.openpilotLongitudinalControl or ret.sccBus == 1 or Params().get_bool('MadModeEnabled'):
+    # smartMDPS
+    smartMdps = 0x2AA in fingerprint[0]
+    if smartMdps:
+      ret.minSteerSpeed = 0
+
+    # safety_hyundai_community 조건(원본 유지)
+    if ret.radarOffCan or ret.mdpsBus == 1 or ret.openpilotLongitudinalControl or ret.sccBus == 1 or params.get_bool('MadModeEnabled'):
       ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hyundaiCommunity, 0)]
 
     return ret
@@ -370,7 +385,6 @@ class CarInterface(CarInterfaceBase):
       self.CP.pcmCruise = True
 
     # most HKG cars has no long control, it is safer and easier to engage by main on
-
     if self.mad_mode_enabled:
       ret.cruiseState.enabled = ret.cruiseState.available
 
@@ -380,7 +394,7 @@ class CarInterface(CarInterfaceBase):
     else:
       self.CC.turning_indicator_alert = False
 
-    # low speed steer alert hysteresis logic (only for cars with steer cut off above 10 m/s)
+    # low speed steer alert hysteresis logic
     if ret.vEgo < (self.CP.minSteerSpeed + 0.2) and self.CP.minSteerSpeed > 10.:
       self.low_speed_alert = True
     if ret.vEgo > (self.CP.minSteerSpeed + 0.7):
@@ -397,36 +411,32 @@ class CarInterface(CarInterfaceBase):
         be.type = ButtonType.decelCruise
       elif but == Buttons.GAP_DIST:
         be.type = ButtonType.gapAdjustCruise
-      #elif but == Buttons.CANCEL:
-      #  be.type = ButtonType.cancel
       else:
         be.type = ButtonType.unknown
       buttonEvents.append(be)
+
     if self.CS.cruise_main_button != self.CS.prev_cruise_main_button:
       be = car.CarState.ButtonEvent.new_message()
       be.type = ButtonType.altButton3
       be.pressed = bool(self.CS.cruise_main_button)
       buttonEvents.append(be)
+
     ret.buttonEvents = buttonEvents
 
     events = self.create_common_events(ret)
 
     if self.CC.longcontrol and self.CS.cruise_unavail:
       events.add(EventName.brakeUnavailable)
-    #if abs(ret.steeringAngleDeg) > 90. and EventName.steerTempUnavailable not in events.events:
-    #  events.add(EventName.steerTempUnavailable)
     if self.low_speed_alert and not self.CS.mdps_bus:
       events.add(EventName.belowSteerSpeed)
     if self.CC.turning_indicator_alert:
       events.add(EventName.turningIndicatorOn)
 
-  # handle button presses
+    # handle button presses
     for b in ret.buttonEvents:
-      # do disable on button down
       if b.type == ButtonType.cancel and b.pressed:
         events.add(EventName.buttonCancel)
       if self.CC.longcontrol and not self.CC.scc_live:
-        # do enable on both accel and decel buttons
         if b.type in [ButtonType.accelCruise, ButtonType.decelCruise] and not b.pressed:
           events.add(EventName.buttonEnable)
         if EventName.wrongCarMode in events.events:
@@ -434,7 +444,6 @@ class CarInterface(CarInterfaceBase):
         if EventName.pcmDisable in events.events:
           events.events.remove(EventName.pcmDisable)
       elif not self.CC.longcontrol and ret.cruiseState.enabled:
-        # do enable on decel button only
         if b.type == ButtonType.decelCruise and not b.pressed:
           events.add(EventName.buttonEnable)
 
