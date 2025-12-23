@@ -409,6 +409,7 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
 // OnroadHud
 OnroadHud::OnroadHud(QWidget *parent) : QWidget(parent) {
   engage_img = QPixmap("../assets/img_chffr_wheel.png").scaled(img_size, img_size, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+  experimental_img = QPixmap("../assets/img_experimental.svg", {img_size - 5, img_size - 5});
   //dm_img = QPixmap("../assets/img_driver_face.png").scaled(img_size, img_size, Qt::KeepAspectRatio, Qt::SmoothTransformation);
   compass_inner_img = QPixmap("../assets/images/compass_inner.png").scaled(img_size, img_size, Qt::KeepAspectRatio, Qt::SmoothTransformation);
   compass_outer_img = QPixmap("../assets/images/compass_outer.png").scaled(img_size, img_size, Qt::KeepAspectRatio, Qt::SmoothTransformation);
@@ -464,8 +465,9 @@ void OnroadHud::paintEvent(QPaintEvent *event) {
   if (showVTC) {
       drawVisionTurnControllerUI(p, rect().right() - 184 - bdr_s, bdr_s, 184, vtcColor, vtcSpeed, 100);
   } else if (true) {
+	SubMaster &sm = *(uiState()->sm);
     drawIcon(p, rect().right() - radius / 2 - bdr_s * 2, radius / 2 + bdr_s,
-             engage_img, bg_colors[status], 5.0, true, ang_str );
+             sm["controlsState"].getControlsState().getExperimentalMode() ? experimental_img : engage_img, blackColor(166), 1.0, true, ang_str );
   }
   // compass
   if (compass && bearingAccuracyDeg != 180.00) {
@@ -586,7 +588,7 @@ void OnroadHud::drawIcon(QPainter &p, int x, int y, QPixmap &img, QBrush bg, flo
     p.setBrush(bg);
     p.drawEllipse(x - radius / 2, y - radius / 2, radius, radius);
     p.setOpacity(opacity);
-    p.drawPixmap(x - img_size / 2, y - img_size / 2, img);
+    p.drawPixmap(x - img.size().width() / 2, y - img.size().height() / 2, img);
   }
 }
 
