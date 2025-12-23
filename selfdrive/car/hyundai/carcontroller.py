@@ -93,7 +93,7 @@ class CarController:
     self.jerk_count = 0.0
 
     # ===== softHold =====
-    self.softHoldMode = 1  # (첫 코드와 동일) 0이면 무시, 1이면 사용
+    self.softHoldMode = 1  # 0이면 무시, 1이면 사용(기본), 2는 mix-scc 보정모드에서 의미있음
 
   def update(self, CC, CS, controls):
     actuators = CC.actuators
@@ -127,6 +127,7 @@ class CarController:
       CC.enabled, self.car_fingerprint, hud_control
     )
 
+    # 과속카메라 햅틱(차선이탈 경고로 진동 대용)
     if self.haptic_feedback_speed_camera:
       if self.prev_active_cam != self.scc_smoother.active_cam:
         self.prev_active_cam = self.scc_smoother.active_cam
@@ -152,11 +153,9 @@ class CarController:
     if self.frame % 100 == 0:
       self.maxAngleFrames = int(Params().get("MaxAngleFrames", encoding="utf8"))
       self.jerkStartLimit = float(int(Params().get("JerkStartLimit", encoding="utf8"))) * 0.1
-      # softHoldMode도 같이 로드 (첫 코드와 동일 주기)
       try:
         self.softHoldMode = int(Params().get("SoftHoldMode", encoding="utf8"))
       except Exception:
-        # 파람이 없으면 기본값 유지
         pass
 
     can_sends = []
@@ -230,7 +229,6 @@ class CarController:
         set_speed *= CV.MS_TO_MPH if CS.is_set_speed_in_mph else CV.MS_TO_KPH
 
         apply_accel = clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
-       # apply_accel = self.scc_smoother.get_apply_accel(CS, controls.sm, apply_accel, stopping)
         stopping = (actuators.longControlState == LongCtrlState.stopping)
         self.accel = apply_accel
         controls.apply_accel = apply_accel
@@ -251,14 +249,18 @@ class CarController:
           controls.sccStockCamStatus = 0
           stock_cam = False
 
-        # ===== softHold 반영 (핵심) =====
-        # hud_control에 softHold 필드가 없는 브랜치도 있을 수 있어서 getattr로 안전하게.
+        # ===== mix-scc 입력(softHold / radarAlarm / longActive) =====
         soft_hold = bool(getattr(hud_control, "softHold", False)) and (self.softHoldMode > 0)
+        radarAlarm = bool(getattr(hud_control, "radarAlarm", False))
+        longActive = bool(getattr(CC, "longActive", False))
 
         low_speed = CS.out.vEgo < 1.0
         near_stop = stopping or soft_hold or low_speed or CS.out.brakePressed
         if near_stop:
           self.jerk_count = 0.0
+
+        # ✅ SCC12의 standstill은 resume가 아니라 "실제 정지"로 넣어야 함
+        standstill = (CS.out.vEgo < 0.3) or stopping or soft_hold
 
         if self.scc12_cnt < 0:
           self.scc12_cnt = CS.scc12["CR_VSM_Alive"] if not CS.no_radar else 0
@@ -266,20 +268,21 @@ class CarController:
 
         can_sends.append(create_scc12(
           self.packer, apply_accel, CC.enabled, self.scc12_cnt, self.scc_live, CS.scc12,
-          CC.cruiseControl.override, CS.out.brakePressed, CC.cruiseControl.resume,
-          self.car_fingerprint
+          CC.cruiseControl.override, CS.out.brakePressed, standstill,   # ✅ standstill
+          self.car_fingerprint,
+          softHold=soft_hold, softHoldMode=self.softHoldMode
         ))
 
         can_sends.append(create_scc11(
           self.packer, self.frame, CC.enabled, set_speed, hud_control.leadVisible,
-          self.scc_live, CS.scc11, self.scc_smoother.active_cam, stock_cam
+          self.scc_live, CS.scc11, self.scc_smoother.active_cam, stock_cam,
+          longActive=longActive, radarAlarm=radarAlarm, softHoldInfo=soft_hold
         ))
 
         if self.frame % 20 == 0 and CS.has_scc13:
           can_sends.append(create_scc13(self.packer, CS.scc13))
 
         if CS.has_scc14:
-          # 여기에도 softHold를 standstill 판단에 포함(첫 코드의 stopping/hud_control.softHold 취지)
           acc_standstill = (CS.out.vEgo < 0.3) or stopping or soft_hold
 
           jerk = getattr(actuators, "jerk", 0.0)
@@ -298,12 +301,10 @@ class CarController:
             lower_jerk = jerkLimit
             self.jerk_count = 0.0
           elif long_state == LongCtrlState.stopping or soft_hold:
-            # 첫 코드와 동일: stopping 또는 softHold면 upper_jerk를 0.5로 눌러주고 카운트 리셋
             upper_jerk = 0.5
             lower_jerk = jerkLimit
             self.jerk_count = 0.0
           elif near_stop:
-            # softHold가 없더라도 near_stop(저속/브레이크)면 stopping과 유사하게 처리
             upper_jerk = 0.5
             lower_jerk = jerkLimit
             self.jerk_count = 0.0
@@ -336,7 +337,8 @@ class CarController:
             CC.cruiseControl.override,
             obj_gap,
             obj_gap2,
-            CS.scc14
+            CS.scc14,
+            softHold=soft_hold, softHoldMode=self.softHoldMode, brakePressed=CS.out.brakePressed
           ))
 
     else:
