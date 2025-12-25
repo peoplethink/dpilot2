@@ -4,6 +4,8 @@ import numpy as np
 from common.numpy_fast import clip, interp
 
 import cereal.messaging as messaging
+from cereal import log
+
 from common.conversions import Conversions as CV
 from common.filter_simple import FirstOrderFilter
 from common.realtime import DT_MDL
@@ -270,7 +272,32 @@ class Planner:
     self.a_desired = float(interp(self.dt, T_IDXS[:CONTROL_N], self.a_desired_trajectory))
     self.v_desired_filter.x = self.v_desired_filter.x + self.dt * (self.a_desired + a_prev) / 2.0
 
-  def publish(self, sm, pm):
+  def _lp_source_from_mpc(self):
+    """
+    self.mpc.source: 'lead0','lead1','cruise','e2e' 문자열을
+    log.LongitudinalPlan.LongitudinalPlanSource enum으로 변환
+    """
+    src = self.mpc.source if self.mpc.source != 'cruise' else self.cruise_source
+
+    if src == 'lead0':
+      return log.LongitudinalPlan.LongitudinalPlanSource.lead0
+    if src == 'lead1':
+      return log.LongitudinalPlan.LongitudinalPlanSource.lead1
+    if src == 'e2e':
+      return log.LongitudinalPlan.LongitudinalPlanSource.e2e
+
+    return log.LongitudinalPlan.LongitudinalPlanSource.cruise
+
+  @staticmethod
+  def _is_e2e_xstate(xstate):
+    # e2eCruise(2), e2eStop(3), softHold(4), e2eCruisePrepare(5)
+    try:
+      xs = int(xstate)
+    except Exception:
+      xs = xstate
+    return int(xs) in (2, 3, 4, 5)
+
+  def publish(self, sm, pm, return_msg=False):
     plan_send = messaging.new_message('longitudinalPlan')
     plan_send.valid = sm.all_checks(service_list=['carState', 'controlsState'])
 
@@ -284,27 +311,31 @@ class Planner:
     longitudinalPlan.jerks = self.j_desired_trajectory.tolist()
 
     longitudinalPlan.hasLead = sm['radarState'].leadOne.status
-    longitudinalPlan.longitudinalPlanSource = self.mpc.source if self.mpc.source != 'cruise' else self.cruise_source
+
+    # ✅ enum으로 세팅
+    longitudinalPlan.longitudinalPlanSource = self._lp_source_from_mpc()
+
     longitudinalPlan.visionTurnControllerState = self.vision_turn_controller.state
     longitudinalPlan.visionTurnSpeed = float(self.vision_turn_controller.v_target)
     longitudinalPlan.visionCurrentLatAcc = float(self.vision_turn_controller.current_lat_acc)
     longitudinalPlan.visionMaxPredLatAcc = float(self.vision_turn_controller.max_pred_lat_acc)
     longitudinalPlan.eventsDEPRECATED = self.events.to_msg()
     longitudinalPlan.fcw = self.fcw
-    longitudinalPlan.xState = self.mpc.xState
-    longitudinalPlan.mpcEvent = self.mpc.mpcEvent
+
+    longitudinalPlan.xState = int(self.mpc.xState)
+    longitudinalPlan.mpcEvent = int(self.mpc.mpcEvent)
     longitudinalPlan.mpcMode = 1 if self.mpc.mode == 'blended' else 0
 
-    longitudinalPlan.solverExecutionTime = self.mpc.solve_time
+    longitudinalPlan.solverExecutionTime = float(self.mpc.solve_time)
 
     longitudinalPlan.tFollow = float(self.tFollow)
     longitudinalPlan.cruiseGap = float(self.applyCruiseGap)
 
     if hasattr(longitudinalPlan, 'xStop'):
       longitudinalPlan.xStop = float(getattr(self.mpc, 'stopDist', 0.0))
-    if hasattr(longitudinalPlan, 'xObstacle'):
-      xobs = getattr(self.mpc, 'x_obstacle_min', None)
-      longitudinalPlan.xObstacle = float(xobs[0]) if isinstance(xobs, (list, tuple, np.ndarray)) and len(xobs) else 0.0
+
+    if return_msg:
+      return plan_send
 
     pm.send('longitudinalPlan', plan_send)
 
