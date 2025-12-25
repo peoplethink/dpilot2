@@ -490,38 +490,47 @@ void OnroadHud::paintEvent(QPaintEvent *event) {
 
       const int r = radius;
       p.setPen(Qt::NoPen);
-      p.setBrush(QColor(0, 0, 0, 180));
+
+      // ✅ 빨간색 원 배경 (기존 검은색 -> 빨간색)
+      p.setBrush(QColor(220, 0, 0, 200));   // R,G,B,Alpha (알파는 취향대로 180~220)
       p.drawEllipse(cx - r / 2, cy - r / 2, r, r);
 
-      const QColor blue(0, 80, 200, 255);
-      const QColor shadow(0, 0, 0, 200);
+      // 글자 색/그림자
+      const QColor textColor(255, 255, 255, 255);   // ✅ 가독성 좋게 흰색 추천
+      const QColor shadow(0, 0, 0, 220);
 
-      configFont(p, "Open Sans", 26, "Bold");
+      // ✅ 글자 더 크고 더 두껍게
+      // 폰트가 Bold까지만 있으면 "Black"/"ExtraBold"가 무시될 수 있어서 weight도 같이 올림
+      configFont(p, "Open Sans", 34, "Black");       // 기존 26 -> 34, Bold -> Black
+      QFont f = p.font();
+      f.setWeight(QFont::Black);                     // ✅ 더 두껍게 강제
+      p.setFont(f);
+
       QFontMetrics fm(p.font());
 
       const QString line1 = "SOFT";
       const QString line2 = "HOLD";
 
-      const int line_gap = fm.height() - 6;   // 줄 간격(필요하면 -4~-10 사이 조절)
+      const int line_gap = fm.height() - 4;          // 글자 커졌으니 간격도 살짝 조정
       const int total_h = line_gap * 2;
       const int y_start = cy - total_h / 2 + fm.ascent();
 
       // SOFT
       const int w1 = fm.horizontalAdvance(line1);
       p.setPen(shadow);
-      p.drawText(cx - w1 / 2 + 2, y_start + 2, line1);
-      p.setPen(blue);
+      p.drawText(cx - w1 / 2 + 3, y_start + 3, line1);   // ✅ 그림자도 조금 더 두껍게(오프셋 증가)
+      p.setPen(textColor);
       p.drawText(cx - w1 / 2, y_start, line1);
 
       // HOLD
       const int w2 = fm.horizontalAdvance(line2);
       p.setPen(shadow);
-      p.drawText(cx - w2 / 2 + 2, y_start + line_gap + 2, line2);
-      p.setPen(blue);
+      p.drawText(cx - w2 / 2 + 3, y_start + line_gap + 3, line2);
+      p.setPen(textColor);
       p.drawText(cx - w2 / 2, y_start + line_gap, line2);
 
       p.restore();
-    }
+	}
   }
 
   if (traffic_state >= 0) {
