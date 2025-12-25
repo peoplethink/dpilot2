@@ -934,18 +934,27 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
   },
 
   EventName.trafficStopping: {
-    ET.PERMANENT: Alert("신호 감지 : 감속중","", AlertStatus.normal, AlertSize.small,
-      Priority.MID, VisualAlert.none, AudibleAlert.none, .1),
+    ET.WARNING: Alert(
+      "신호 감지",
+      "감속/정지 중입니다",
+      AlertStatus.normal, AlertSize.small,
+      Priority.LOW, VisualAlert.none, AudibleAlert.none, 2.0),
   },
 
   EventName.trafficSignGreen: {
-    ET.PERMANENT: Alert("출발합니다","", AlertStatus.normal, AlertSize.small,
-      Priority.MID, VisualAlert.none, AudibleAlert.none, .1),
+    ET.WARNING: Alert(
+      "출발합니다",
+      "",
+      AlertStatus.normal, AlertSize.small,
+      Priority.LOW, VisualAlert.none, AudibleAlert.none, 2.0),
   },
   
   EventName.trafficSignChanged: {
-    ET.PERMANENT: Alert("신호가 바뀌었어요","", AlertStatus.normal, AlertSize.small,
-      Priority.MID, VisualAlert.none, AudibleAlert.none, .1),
+    ET.WARNING: Alert(
+      "신호가 바뀌었어요",
+      "",
+      AlertStatus.normal, AlertSize.small,
+      Priority.LOW, VisualAlert.none, AudibleAlert.none, 2.0),
   },
   
   EventName.slowingDownSpeed: {
