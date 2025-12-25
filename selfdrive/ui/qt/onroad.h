@@ -25,6 +25,7 @@ public:
 
 private:
   QPushButton *dlpBtn;
+  QPushButton *modeBtn;   // ✅ 추가
 
   //int dlpStatus = -1;
   const QStringList dlpBtnColors = {"#87ceeb", "#00ff16", "#808080"};
