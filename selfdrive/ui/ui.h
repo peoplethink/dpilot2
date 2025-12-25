@@ -114,7 +114,7 @@ typedef struct {
 
 typedef struct UIScene {
   mat3 view_from_calib;
-  
+
   int lateralControlSelect;
   int brightness;
   float output_scale;
@@ -125,9 +125,9 @@ typedef struct UIScene {
   float distanceTraveled;
   int cpuUsagePercent;
   float radarDistance;
-  
+
   cereal::PandaState::PandaType pandaType;
-  
+
   int dynamic_lane_profile;
 
   cereal::LateralPlan::Reader lateral_plan;
@@ -135,7 +135,7 @@ typedef struct UIScene {
   cereal::CarControl::Reader car_control;
   cereal::CarState::Reader car_state;
   cereal::DeviceState::Reader deviceState;
-  
+
   // modelV2
   float lane_line_probs[4];
   float road_edge_stds[2];
@@ -157,9 +157,18 @@ typedef struct UIScene {
   int prev_blinkerstatus = 0;
   int blinkerframe = 0;
   bool compass;
-  
-  struct _LateralPlan
-  {
+
+  // =========================
+  // ✅ LongitudinalPlan UI cache (NEW)
+  // =========================
+  cereal::LongitudinalPlan::LongitudinalPlanSource longitudinal_plan_source =
+      cereal::LongitudinalPlan::LongitudinalPlanSource::CRUISE;
+  int longitudinal_xstate = 0;     // (int)LongitudinalPlan.XState
+  int longitudinal_mpc_mode = 0;   // 0=acc, 1=blended(e2e)
+  float longitudinal_cruise_gap = 1.0f;
+  float longitudinal_tfollow = 0.0f;
+
+  struct _LateralPlan {
     bool dynamicLaneProfileStatus;
   } lateralPlan;
 } UIScene;
