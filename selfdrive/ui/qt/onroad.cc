@@ -518,7 +518,7 @@ void OnroadHud::paintEvent(QPaintEvent *event) {
   } else if (true) {
 	SubMaster &sm = *(uiState()->sm);
     drawIcon(p, rect().right() - radius / 2 - bdr_s * 2, radius / 2 + bdr_s,
-             sm["controlsState"].getControlsState().getExperimentalMode() ? experimental_img : engage_img, blackColor(166), 1.0, true, ang_str );
+             sm["controlsState"].getControlsState().getExperimentalMode() ? experimental_img : engage_img, bg_colors[status], 5.0, true, ang_str );
   }
   // compass
   if (compass && bearingAccuracyDeg != 180.00) {
