@@ -900,10 +900,11 @@ TUNINGPanel::TUNINGPanel(QWidget* parent) : QWidget(parent) {
     toggleLayout->addWidget(new ParamControl("Steer_SRTune", "SR가변 사용", "SR속도 가변사용(반드시 활성화할것)", "../assets/offroad/icon_road.png", this));
     toggleLayout->addWidget(new CValueControl("Steer_SRTune_v", "SR가변 비율", "SR가변시 비율값(추천:95)", "../assets/offroad/icon_road.png", 80, 120, 1));
     toggleLayout->addWidget(new CValueControl("MaxAngleFrames", "MaxAngleFrames(89)", "89:기본, lkas fault 발생시 87:사용", "../assets/offroad/icon_road.png", 80, 100, 1));
-    toggleLayout->addWidget(new CValueControl("InitMyDrivingMode", "DRIVEMODE: On boot(3)", "1:ECO,2:SAFE,3:NORMAL,4:HIGH(non E2E mode,5:AUTO)", "../assets/offroad/icon_road.png", 1, 5, 1));
 
     toggleLayout->addWidget(new LabelControl("〓〓〓〓〓〓〓〓【 롱컨메뉴 】〓〓〓〓〓〓〓〓", ""));
+    toggleLayout->addWidget(new CValueControl("InitMyDrivingMode", "DRIVEMODE: On boot(3)", "1:ECO,2:SAFE,3:NORMAL,4:HIGH(non E2E mode,5:AUTO)", "../assets/offroad/icon_road.png", 1, 5, 1));
     toggleLayout->addWidget(new CValueControl("SoftHoldMode", "SoftHold(1)", "0:Not used,1:Use,2: with SCC(단,사이드가 걸리는 차량이 있음)", "../assets/offroad/icon_road.png", 0, 2, 1));
+    toggleLayout->addWidget(new CValueControl("TrafficStopMode", "STOPPING: Traffice Stop Mode (1)", "0:사용안함,1:사용함,2:APilot모드", "../assets/offroad/icon_road.png", 0, 2, 1));
     toggleLayout->addWidget(new CValueControl("MixRadarInfo", "MixRadarInfo for SCC Rardar", "0:Not used,1:Use", "../assets/offroad/icon_shell.png", 0, 1, 1));
     toggleLayout->addWidget(new CValueControl("LongitudinalTuningKpV", "LONG: P Gain(100)", "(시험용) ", "../assets/offroad/icon_road.png", 50, 150, 1));
     toggleLayout->addWidget(new CValueControl("LongitudinalTuningKiV", "LONG: I Gain(0)", "(시험용) ", "../assets/offroad/icon_road.png", 0, 2000, 5));
@@ -920,7 +921,6 @@ TUNINGPanel::TUNINGPanel(QWidget* parent) : QWidget(parent) {
     toggleLayout->addWidget(new CValueControl("TFollowGap2", "GAP2: Apply TFollow (120)x0.01s", "선행차와의 간격2단계, 속도x시간", "../assets/offroad/icon_road.png", 90, 300, 5));
     toggleLayout->addWidget(new CValueControl("TFollowGap3", "GAP3: Apply TFollow (140)x0.01s", "선행차와의 간격3단계, 속도x시간", "../assets/offroad/icon_road.png", 90, 300, 5));
     toggleLayout->addWidget(new CValueControl("TFollowGap4", "GAP4: Apply TFollow (160)x0.01s", "선행차와의 간격4단계, 속도x시간", "../assets/offroad/icon_road.png", 90, 300, 5));
-    toggleLayout->addWidget(new CValueControl("TrafficStopMode", "STOPPING: Traffice Stop Mode (1)", "0:사용안함,1:사용함,2:APilot모드", "../assets/offroad/icon_road.png", 0, 2, 1));
     toggleLayout->addWidget(new CValueControl("TrafficStopAccel", "STOPPING: DECEL. rate (80%)", "신호를 만나면 서서히 감속하여 정지합니다.", "../assets/offroad/icon_road.png", 10, 120, 10));
     toggleLayout->addWidget(new CValueControl("ApplyModelDistOrder", "STOPPING: DECEL. model (30)", "숫자가적을수록 미리감속하고 서서히 정지합니다.", "../assets/offroad/icon_road.png", 1, 32, 1));
     toggleLayout->addWidget(new CValueControl("TrafficStopAdjustRatio", "STOPPING: Stop line adjust ratio (90)", "for Test", "../assets/offroad/icon_road.png", 0, 200, 1));
