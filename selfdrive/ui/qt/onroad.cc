@@ -297,7 +297,9 @@ ButtonsWindow::ButtonsWindow(QWidget *parent) : QWidget(parent) {
   btns_layout->setContentsMargins(0, 770, 30, 30);
   main_layout->addWidget(btns_wrapper, 0, Qt::AlignTop);
 
-  // Dynamic lane profile button
+  // ==========================
+  // 1) Dynamic lane profile button (기존)
+  // ==========================
   QString initDlpBtn = "";
   dlpBtn = new QPushButton(initDlpBtn);
   QObject::connect(dlpBtn, &QPushButton::clicked, [=]() {
@@ -321,10 +323,17 @@ ButtonsWindow::ButtonsWindow(QWidget *parent) : QWidget(parent) {
   btns_layout->addWidget(dlpBtn, 0, Qt::AlignLeft);
   btns_layout->addSpacing(0);
 
-  if (uiState()->scene.end_to_end) {
-    dlpBtn->hide();
-  }
+  // ==========================
+  // 2) ✅ E2E/ACC 표시 박스 (토글X, 항상 보임)
+  // ==========================
+  modeBtn = new QPushButton("ACC");     // 초기값
+  modeBtn->setFixedWidth(186);
+  modeBtn->setFixedHeight(140);
+  modeBtn->setEnabled(false);          // 클릭 불가(표시전용)
+  modeBtn->setFocusPolicy(Qt::NoFocus);
+  btns_layout->addWidget(modeBtn, 0, Qt::AlignLeft);
 
+  // ✅ 공통 스타일 (두 버튼 모두)
   setStyleSheet(R"(
     QPushButton {
       color: white;
@@ -338,6 +347,9 @@ ButtonsWindow::ButtonsWindow(QWidget *parent) : QWidget(parent) {
 }
 
 void ButtonsWindow::updateState(const UIState &s) {
+  // ==========================
+  // dlpBtn 기존 업데이트
+  // ==========================
   if (uiState()->scene.dynamic_lane_profile == 0) {
     dlpBtn->setStyleSheet(QString("font-size: 45px; border-radius: 100px; border-color: %1").arg(dlpBtnColors.at(0)));
     dlpBtn->setText("Lane\nonly");
@@ -347,6 +359,45 @@ void ButtonsWindow::updateState(const UIState &s) {
   } else if (uiState()->scene.dynamic_lane_profile == 2) {
     dlpBtn->setStyleSheet(QString("font-size: 45px; border-radius: 100px; border-color: %1").arg(dlpBtnColors.at(2)));
     dlpBtn->setText("Auto\nLane");
+  }
+
+  // ==========================
+  // ✅ E2E / ACC 상황에 맞게 표시
+  // 기준: longitudinalPlan.mpcMode
+  //   1 => E2E
+  //   0 => ACC
+  // ==========================
+  bool is_e2e = false;
+
+  // SubMaster가 있고, longPlan 살아있으면 그걸 사용
+  if (s.sm && s.sm->alive("longitudinalPlan")) {
+    const auto lp = (*s.sm)["longitudinalPlan"].getLongitudinalPlan();
+    // 네가 이전에 mpcMode를 넣었다고 했으니 이걸 쓰는 게 제일 확실
+    is_e2e = (lp.getMpcMode() == 1);
+  }
+
+  if (is_e2e) {
+    modeBtn->setText("E2E");
+    modeBtn->setStyleSheet(
+      "font-size: 54px;"
+      "border-radius: 100px;"
+      "border-width: 9px;"
+      "border-style: solid;"
+      "border-color: rgba(0,160,255,0.90);"   // E2E: 파란 테두리
+      "color: white;"
+      "background-color: rgba(0,0,0,0.30);"
+    );
+  } else {
+    modeBtn->setText("ACC");
+    modeBtn->setStyleSheet(
+      "font-size: 54px;"
+      "border-radius: 100px;"
+      "border-width: 9px;"
+      "border-style: solid;"
+      "border-color: rgba(0,220,0,0.85);"    // ACC: 초록 테두리
+      "color: white;"
+      "background-color: rgba(0,0,0,0.30);"
+    );
   }
 }
 
