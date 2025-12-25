@@ -52,16 +52,16 @@ static void update_leads(UIState *s, const cereal::RadarState::Reader &radar_sta
       float z = line.getZ()[get_path_length_idx(line, lead_data.getDRel())];
       calib_frame_to_full_frame(s, lead_data.getDRel(), -lead_data.getYRel(), z + 1.22, &s->scene.lead_vertices[i]);
       s->scene.lead_radar[i] = lead_data.getRadar();
-    }
-    else
+    } else {
       s->scene.lead_radar[i] = false;
+    }
   }
 }
 
 static void update_line_data(const UIState *s, const cereal::ModelDataV2::XYZTData::Reader &line,
                              float y_off, float z_off, line_vertices_data *pvd, int max_idx, bool allow_invert=true) {
   const auto line_x = line.getX(), line_y = line.getY(), line_z = line.getZ();
-  
+
   std::vector<QPointF> left_points, right_points;
   for (int i = 0; i <= max_idx; i++) {
     QPointF left, right;
@@ -81,7 +81,7 @@ static void update_line_data(const UIState *s, const cereal::ModelDataV2::XYZTDa
   assert(left_points.size() == right_points.size());
   assert(pvd->cnt <= std::size(pvd->v));
 
-  for (int left_idx = 0; left_idx < left_points.size(); left_idx++){
+  for (int left_idx = 0; left_idx < (int)left_points.size(); left_idx++) {
     int right_idx = 2 * left_points.size() - left_idx - 1;
     pvd->v[left_idx] = left_points[left_idx];
     pvd->v[right_idx] = right_points[left_idx];
@@ -89,26 +89,22 @@ static void update_line_data(const UIState *s, const cereal::ModelDataV2::XYZTDa
 }
 
 static void update_blindspot_data(const UIState *s, int lr, const cereal::ModelDataV2::XYZTData::Reader &line,
-                             float y_off,  line_vertices_data *pvd, int max_idx ) {
-  float  y_off1, y_off2;
+                                  float y_off, line_vertices_data *pvd, int max_idx) {
+  float y_off1, y_off2;
 
-  float z_off_left = 0;  //def:0.0
+  float z_off_left = 0;
   float z_off_right = 0;
 
-  if( lr == 0 ) // left
-  {
+  if (lr == 0) { // left
     y_off1 = y_off;
     y_off2 = 0;
+  } else { // right
+    y_off1 = 0;
+    y_off2 = y_off;
   }
-  else  // left
-  {
-      y_off1 = 0;
-      y_off2 = y_off;  
-  }
-
 
   const auto line_x = line.getX(), line_y = line.getY(), line_z = line.getZ();
-  QPointF *v = &pvd->v[0]; // *v = &pvd->v[0];
+  QPointF *v = &pvd->v[0];
   for (int i = 0; i <= max_idx; i++) {
     v += calib_frame_to_full_frame(s, line_x[i], line_y[i] - y_off1, line_z[i] + z_off_left, v);
   }
@@ -118,7 +114,6 @@ static void update_blindspot_data(const UIState *s, int lr, const cereal::ModelD
 
   pvd->cnt = v - pvd->v;
   assert(pvd->cnt <= std::size(pvd->v));
-
 }
 
 static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
@@ -126,8 +121,9 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
   bool isCustomRoadUI = Params().getBool("CustomRoadUI");
   bool isUlimitedLength = isCustomRoadUI && Params().getBool("UnlimitedLength");
   auto model_position = model.getPosition();
-  float max_distance = isUlimitedLength ? model_position.getX()[TRAJECTORY_SIZE - 1] : std::clamp(model_position.getX()[TRAJECTORY_SIZE - 1],
-                                  MIN_DRAW_DISTANCE, MAX_DRAW_DISTANCE);
+  float max_distance = isUlimitedLength ? model_position.getX()[TRAJECTORY_SIZE - 1]
+    : std::clamp(model_position.getX()[TRAJECTORY_SIZE - 1], MIN_DRAW_DISTANCE, MAX_DRAW_DISTANCE);
+
   const float pwidth = std::stof(Params().get("PathWidth")) / 10 * 0.1524;
   const float llwidth = std::stof(Params().get("LaneLinesWidth")) / 12 * 0.1524;
   const float rewidth = std::stof(Params().get("RoadEdgesWidth")) / 12 * 0.1524;
@@ -137,21 +133,23 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
   const auto lane_lines = model.getLaneLines();
   const auto lane_line_probs = model.getLaneLineProbs();
   int max_idx = get_path_length_idx(lane_lines[0], max_distance);
-  for (int i = 0; i < std::size(scene.lane_line_vertices); i++) {
+  for (int i = 0; i < (int)std::size(scene.lane_line_vertices); i++) {
     scene.lane_line_probs[i] = lane_line_probs[i];
-    update_line_data(s, lane_lines[i], isCustomRoadUI ? llwidth * scene.lane_line_probs[i] : 0.025 * scene.lane_line_probs[i], 0, &scene.lane_line_vertices[i], max_idx);
+    update_line_data(s, lane_lines[i],
+                     isCustomRoadUI ? llwidth * scene.lane_line_probs[i] : 0.025 * scene.lane_line_probs[i],
+                     0, &scene.lane_line_vertices[i], max_idx);
   }
 
   // lane barriers for blind spot
-  int max_distance_barrier =  100;
+  int max_distance_barrier = 100;
   int max_idx_barrier = std::min(max_idx, get_path_length_idx(lane_lines[0], max_distance_barrier));
   update_blindspot_data(s, 0, lane_lines[1], isCustomRoadUI ? blwidth : 0.5, &scene.lane_blindspot_vertices[0], max_idx_barrier);
   update_blindspot_data(s, 1, lane_lines[2], isCustomRoadUI ? blwidth : 0.5, &scene.lane_blindspot_vertices[1], max_idx_barrier);
-  
+
   // update road edges
   const auto road_edges = model.getRoadEdges();
   const auto road_edge_stds = model.getRoadEdgeStds();
-  for (int i = 0; i < std::size(scene.road_edge_vertices); i++) {
+  for (int i = 0; i < (int)std::size(scene.road_edge_vertices); i++) {
     scene.road_edge_stds[i] = road_edge_stds[i];
     update_line_data(s, road_edges[i], isCustomRoadUI ? rewidth : 0.025, 0, &scene.road_edge_vertices[i], max_idx);
   }
@@ -159,8 +157,8 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
   // update path
   auto lead_one = (*s->sm)["radarState"].getRadarState().getLeadOne();
   if (lead_one.getStatus()) {
-    const float lead_d = lead_one.getDRel() * 2.;
-    max_distance = std::clamp((float)(lead_d - fmin(lead_d * 0.35, 10.)), 0.0f, max_distance);
+    const float lead_d = lead_one.getDRel() * 2.f;
+    max_distance = std::clamp((float)(lead_d - fmin(lead_d * 0.35f, 10.f)), 0.0f, max_distance);
   }
   max_idx = get_path_length_idx(model_position, max_distance);
   update_line_data(s, model_position, isCustomRoadUI ? pwidth : 0.9, 1.22, &scene.track_vertices, max_idx, false);
@@ -173,17 +171,17 @@ static void update_sockets(UIState *s) {
 static void update_state(UIState *s) {
   SubMaster &sm = *(s->sm);
   UIScene &scene = s->scene;
-  
-  if (sm.updated("carState")){
+
+  if (sm.updated("carState")) {
     scene.car_state = sm["carState"].getCarState();
     auto cs_data = sm["carState"].getCarState();
     scene.angleSteers = cs_data.getSteeringAngleDeg();
     scene.radarDistance = cs_data.getRadarDistance();
     scene.leftblindspot = scene.car_state.getLeftBlindspot();
     scene.rightblindspot = scene.car_state.getRightBlindspot();
-    scene.blinkerstatus = cs_data.getLeftBlinker()? 1 : cs_data.getRightBlinker()? 2 : 0;
+    scene.blinkerstatus = cs_data.getLeftBlinker() ? 1 : cs_data.getRightBlinker() ? 2 : 0;
   }
-  
+
   if (scene.started && sm.updated("controlsState")) {
     scene.controls_state = sm["controlsState"].getControlsState();
     scene.lateralControlSelect = scene.controls_state.getLateralControlSelect();
@@ -195,8 +193,9 @@ static void update_state(UIState *s) {
       scene.output_scale = scene.controls_state.getLateralControlState().getLqrState().getOutput();
     } else if (scene.lateralControlSelect == 3) {
       scene.output_scale = scene.controls_state.getLateralControlState().getTorqueState().getOutput();
-    }  
+    }
   }
+
   if (sm.updated("liveCalibration")) {
     auto rpy_list = sm["liveCalibration"].getLiveCalibration().getRpyCalib();
     Eigen::Vector3d rpy;
@@ -213,6 +212,7 @@ static void update_state(UIState *s) {
       }
     }
   }
+
   if (s->worldObjectsVisible()) {
     if (sm.updated("modelV2")) {
       update_model(s, sm["modelV2"].getModelV2());
@@ -221,6 +221,7 @@ static void update_state(UIState *s) {
       update_leads(s, sm["radarState"].getRadarState(), sm["modelV2"].getModelV2().getPosition());
     }
   }
+
   if (sm.updated("pandaStates")) {
     auto pandaStates = sm["pandaStates"].getPandaStates();
     if (pandaStates.size() > 0) {
@@ -228,7 +229,7 @@ static void update_state(UIState *s) {
 
       if (scene.pandaType != cereal::PandaState::PandaType::UNKNOWN) {
         scene.ignition = false;
-        for (const auto& pandaState : pandaStates) {
+        for (const auto &pandaState : pandaStates) {
           scene.ignition |= pandaState.getIgnitionLine() || pandaState.getIgnitionCan();
         }
       }
@@ -236,14 +237,16 @@ static void update_state(UIState *s) {
   } else if ((s->sm->frame - s->sm->rcv_frame("pandaStates")) > 5*UI_FREQ) {
     scene.pandaType = cereal::PandaState::PandaType::UNKNOWN;
   }
+
   if (sm.updated("carParams")) {
     scene.longitudinal_control = sm["carParams"].getCarParams().getOpenpilotLongitudinalControl();
   }
+
   if (!scene.started && sm.updated("sensorEvents")) {
     for (auto sensor : sm["sensorEvents"].getSensorEvents()) {
       if (sensor.which() == cereal::SensorEventData::ACCELERATION) {
         auto accel = sensor.getAcceleration().getV();
-        if (accel.totalSize().wordCount) { // TODO: sometimes empty lists are received. Figure out why
+        if (accel.totalSize().wordCount) {
           scene.accel_sensor = accel[2];
         }
       } else if (sensor.which() == cereal::SensorEventData::GYRO_UNCALIBRATED) {
@@ -254,32 +257,48 @@ static void update_state(UIState *s) {
       }
     }
   }
+
   if (!Hardware::TICI() && sm.updated("roadCameraState")) {
     auto camera_state = sm["roadCameraState"].getRoadCameraState();
 
     float max_lines = Hardware::EON() ? 5408 : 1904;
-    float max_gain = Hardware::EON() ? 1.0: 10.0;
+    float max_gain = Hardware::EON() ? 1.0f : 10.0f;
     float max_ev = max_lines * max_gain;
 
     float ev = camera_state.getGain() * float(camera_state.getIntegLines());
-
-    scene.light_sensor = std::clamp<float>(1.0 - (ev / max_ev), 0.0, 1.0);
+    scene.light_sensor = std::clamp<float>(1.0f - (ev / max_ev), 0.0f, 1.0f);
   } else if (Hardware::TICI() && sm.updated("wideRoadCameraState")) {
     auto camera_state = sm["wideRoadCameraState"].getWideRoadCameraState();
 
     float max_lines = 1618;
-    float max_gain = 10.0;
+    float max_gain = 10.0f;
     float max_ev = max_lines * max_gain / 6;
 
     float ev = camera_state.getGain() * float(camera_state.getIntegLines());
-
-    scene.light_sensor = std::clamp<float>(1.0 - (ev / max_ev), 0.0, 1.0);
+    scene.light_sensor = std::clamp<float>(1.0f - (ev / max_ev), 0.0f, 1.0f);
   }
+
+  // ✅ started 상태 갱신
   scene.started = sm["deviceState"].getDeviceState().getStarted() && scene.ignition;
+
   if (sm.updated("lateralPlan")) {
     auto data = sm["lateralPlan"].getLateralPlan();
-
     scene.lateralPlan.dynamicLaneProfileStatus = data.getDynamicLaneProfile();
+  }
+
+  // =========================
+  // ✅ LongitudinalPlan (NEW)
+  // =========================
+  if (sm.updated("longitudinalPlan")) {
+    const auto lp = sm["longitudinalPlan"].getLongitudinalPlan();
+
+    scene.longitudinal_plan_source = lp.getLongitudinalPlanSource();
+    scene.longitudinal_xstate = (int)lp.getXState();
+    scene.longitudinal_mpc_mode = (int)lp.getMpcMode();
+
+    // planner에서 publish 중인 값
+    scene.longitudinal_cruise_gap = lp.getCruiseGap();
+    scene.longitudinal_tfollow = lp.getTFollow();
   }
 }
 
@@ -319,7 +338,6 @@ void UIState::updateStatus() {
     }
     started_prev = scene.started;
     emit offroadTransition(!scene.started);
-    //emit offroadTransition(false);
   }
   ui_update_params(uiState());
 }
@@ -328,8 +346,8 @@ UIState::UIState(QObject *parent) : QObject(parent) {
   sm = std::make_unique<SubMaster, const std::initializer_list<const char *>>({
     "modelV2", "controlsState", "lateralPlan", "liveCalibration", "radarState", "deviceState", "roadCameraState",
     "pandaStates", "carParams", "driverMonitoringState", "sensorEvents", "carState", "liveLocationKalman",
-    "wideRoadCameraState","liveTorqueParameters", 
-    "gpsLocationExternal", "carControl", "liveParameters", "lateralPlan", "roadLimitSpeed", "longitudinalPlan",
+    "wideRoadCameraState", "liveTorqueParameters",
+    "gpsLocationExternal", "carControl", "liveParameters", "roadLimitSpeed", "longitudinalPlan",
   });
 
   Params params;
@@ -386,13 +404,13 @@ void Device::updateBrightness(const UIState &s) {
   float clipped_brightness = BACKLIGHT_OFFROAD;
   if (s.scene.started) {
     // Scale to 0% to 100%
-    clipped_brightness = 100.0 * s.scene.light_sensor;
+    clipped_brightness = 100.0f * s.scene.light_sensor;
 
-    // CIE 1931 - https://www.photonstophotos.net/GeneralTopics/Exposure/Psychometric_Lightness_and_Gamma.htm
+    // CIE 1931
     if (clipped_brightness <= 8) {
-      clipped_brightness = (clipped_brightness / 903.3);
+      clipped_brightness = (clipped_brightness / 903.3f);
     } else {
-      clipped_brightness = std::pow((clipped_brightness + 16.0) / 116.0, 3.0);
+      clipped_brightness = std::pow((clipped_brightness + 16.0f) / 116.0f, 3.0f);
     }
 
     // Scale back to 10% to 100%
@@ -402,8 +420,8 @@ void Device::updateBrightness(const UIState &s) {
   int brightness = brightness_filter.update(clipped_brightness);
   if (!awake) {
     brightness = 0;
-  } else if( s.scene.brightness ) {
-    brightness = s.scene.brightness * 0.99;
+  } else if (s.scene.brightness) {
+    brightness = (int)(s.scene.brightness * 0.99f);
   }
 
   if (brightness != last_brightness) {
@@ -418,8 +436,8 @@ bool Device::motionTriggered(const UIState &s) {
   static float accel_prev = 0;
   static float gyro_prev = 0;
 
-  bool accel_trigger = abs(s.scene.accel_sensor - accel_prev) > 0.2;
-  bool gyro_trigger = abs(s.scene.gyro_sensor - gyro_prev) > 0.15;
+  bool accel_trigger = abs(s.scene.accel_sensor - accel_prev) > 0.2f;
+  bool gyro_trigger = abs(s.scene.gyro_sensor - gyro_prev) > 0.15f;
 
   gyro_prev = s.scene.gyro_sensor;
   accel_prev = (accel_prev * (accel_samples - 1) + s.scene.accel_sensor) / accel_samples;
