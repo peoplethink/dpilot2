@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+#!/usr/bin/env python3
+from typing import Any, Union
+
 from cereal import car, log
 from common.params import Params
 from common.realtime import Priority, config_realtime_process
@@ -9,9 +12,26 @@ from selfdrive.hardware import TICI
 import cereal.messaging as messaging
 
 
-def _is_e2e_xstate(xs: int) -> bool:
+def _xstate_to_int(xs: Any) -> int:
+  """
+  lp.xState can be a capnp enum (capnp.lib.capnp._DynamicEnum).
+  Convert safely to int for comparisons.
+  """
+  # capnp enum has .raw
+  if hasattr(xs, "raw"):
+    return int(xs.raw)
+  # already numeric
+  if isinstance(xs, (int, float)):
+    return int(xs)
+  # fallback (may still fail, but better error context)
+  return int(xs)
+
+
+def _is_e2e_xstate(xs: Any) -> bool:
   # e2eCruise(2), e2eStop(3), softHold(4), e2eCruisePrepare(5)
-  return int(xs) in (2, 3, 4, 5)
+  # NOTE: these numeric values must match your log.LongitudinalPlan.XState enum order.
+  xs_i = _xstate_to_int(xs)
+  return xs_i in (2, 3, 4, 5)
 
 
 def plannerd_thread(sm=None, pm=None):
@@ -55,8 +75,8 @@ def plannerd_thread(sm=None, pm=None):
       msg = longitudinal_planner.publish(sm, pm, return_msg=True)
       lp = msg.longitudinalPlan
 
-      # ✅ 요청사항: "첫번째" = ACC/E2E만 구분해서 UI 표시용 source 강제
-      if _is_e2e_xstate(int(lp.xState)):
+      # ✅ UI 표시용 source 강제 (ACC/E2E만 구분)
+      if _is_e2e_xstate(lp.xState):   # ✅ int() 제거
         lp.longitudinalPlanSource = log.LongitudinalPlan.LongitudinalPlanSource.e2e
       else:
         lp.longitudinalPlanSource = log.LongitudinalPlan.LongitudinalPlanSource.cruise
