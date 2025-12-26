@@ -955,15 +955,14 @@ void NvgWindow::drawCommunity(QPainter &p) {
 	
   const auto leads = model.getLeadsV3();
   size_t leads_num = leads.size();
-  for(size_t i=0; i<leads_num && i < LeadcarLockon_MAX; i++){
-   auto lead_one = radar_state.getLeadOne();
-   auto lead_two = radar_state.getLeadTwo();
-   if (lead_one.getStatus()) {
-     drawLead(p, lead_one, s->scene.lead_vertices[0], 0);
-   }
-   if (lead_two.getStatus() && (std::abs(lead_one.getDRel() - lead_two.getDRel()) > 3.0)) {
-     drawLead(p, lead_two, s->scene.lead_vertices[1], 1);
-   }  
+  auto lead_one = radar_state.getLeadOne();
+  auto lead_two = radar_state.getLeadTwo();
+
+  if (lead_one.getStatus()) {
+    drawLead(p, lead_one, s->scene.lead_vertices[0], 0);
+  }
+  if (lead_two.getStatus() && (!lead_one.getStatus() || std::abs(lead_one.getDRel() - lead_two.getDRel()) > 3.0)) {
+    drawLead(p, lead_two, s->scene.lead_vertices[1], 1);
   }
 	
   drawMaxSpeed(p);
