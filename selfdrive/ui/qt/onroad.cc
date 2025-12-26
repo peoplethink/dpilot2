@@ -846,7 +846,7 @@ void NvgWindow::drawLead(QPainter &painter,
   const float d_rel = lead_data.getDRel();
   const float v_rel = lead_data.getVRel();
 
-  // === 기존 alpha 계산(가까울수록 진하게) ===
+  // === alpha: 가까울수록 진하게 ===
   float fillAlpha = 0.f;
   if (d_rel < leadBuff) {
     fillAlpha = 255.f * (1.0f - (d_rel / leadBuff));
@@ -856,40 +856,45 @@ void NvgWindow::drawLead(QPainter &painter,
     fillAlpha = std::clamp(fillAlpha, 0.f, 255.f);
   }
 
+  // === 위치/크기 ===
   float sz = std::clamp((25.f * 30.f) / (d_rel / 3.f + 30.f), 15.0f, 30.0f) * 2.35f;
   float x = std::clamp((float)vd.x(), 0.f, width() - sz / 2.f);
   float y = std::fmin(height() - sz * 0.6f, (float)vd.y());
 
-  UIState *s = uiState();
+  // ✅ 레이더/비전 판별(안정적): update_leads()에서 캐싱한 값 사용
+  const bool is_radar = uiState()->scene.lead_radar[num];
 
-  const bool is_radar = lead_data.getRadar();
-
+  // ✅ 레이더=녹색, 비전=파랑
   QColor circleColor = is_radar ? QColor(0, 255, 0) : QColor(0, 160, 255);
 
   int a = (int)fillAlpha;
-  a = std::clamp(a, 110, 255);
+  a = std::clamp(a, 110, 255);     // 최소 알파 보장
   circleColor.setAlpha(a);
 
-  const float r = sz * 0.85f;          // 원 크기(취향: 0.75~0.95)
+  // === 원 ===
+  const float r = sz * 0.85f;
   QRectF circleRect(x - r, y - r, r * 2.f, r * 2.f);
 
-  painter.setPen(QPen(QColor(0, 0, 0, 160), 3));
+  painter.setPen(QPen(QColor(0, 0, 0, 160), 3));   // 외곽선(가독성)
   painter.setBrush(circleColor);
   painter.drawEllipse(circleRect);
 
+  // === 원 안 숫자(거리) ===
   const int dist_i = (int)std::nearbyint(d_rel);
-  const QString dist_txt = QString::number(dist_i);   // "m" 제거, 숫자만
+  const QString dist_txt = QString::number(dist_i);   // 숫자만 (m 제거)
 
   int font_px = std::clamp((int)(r * 0.95f), 26, 46);
   configFont(painter, FONT_OPEN_SANS, font_px, "ExtraBold");
 
-  painter.setPen(QColor(0, 0, 0, 210));
+  painter.setPen(QColor(0, 0, 0, 210)); // 그림자
   painter.drawText(circleRect.translated(2, 2), Qt::AlignCenter, dist_txt);
-  painter.setPen(QColor(255, 255, 255, 255));
+
+  painter.setPen(QColor(255, 255, 255, 255)); // 흰색
   painter.drawText(circleRect, Qt::AlignCenter, dist_txt);
 
   painter.restore();
 }
+
 
 void NvgWindow::paintGL() {
   CameraViewWidget::paintGL();
