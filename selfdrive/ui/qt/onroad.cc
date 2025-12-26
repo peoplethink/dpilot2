@@ -731,8 +731,6 @@ void NvgWindow::initializeGL() {
   ic_scc2 = QPixmap("../assets/images/img_scc2.png");
   ic_radar = QPixmap("../assets/images/radar.png");
   ic_radar_vision = QPixmap("../assets/images/radar_vision.png");
-  ic_lane_change_left_img = QPixmap("../assets/images/lane_change_left.png");
-  ic_lane_change_right_img = QPixmap("../assets/images/lane_change_right.png");
   ic_safety_speed_bump = QPixmap("../assets/images/safety_speed_bump.png");
 }
 
