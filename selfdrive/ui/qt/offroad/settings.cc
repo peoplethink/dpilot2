@@ -484,11 +484,6 @@ VIPPanel::VIPPanel(QWidget* parent) : QWidget(parent) {
   QVBoxLayout *layout = new QVBoxLayout(this);
   layout->addWidget(new LabelControl("〓〓〓〓〓〓〓〓【 UI메뉴 】〓〓〓〓〓〓〓〓", ""));
   
-  layout->addWidget(new ParamControl("ShowDebugUI",
-                                            "디버그 내용 활성화",
-                                            "가감속 등 디버그 내용을 화면에 띄웁니다.",
-                                            "../assets/offroad/icon_shell.png",
-                                            this));
   layout->addWidget(new ParamControl("ShowDateTime", 
                                             "시간정보표시",
                                             "",
