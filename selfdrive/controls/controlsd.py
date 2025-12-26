@@ -230,6 +230,10 @@ class Controls:
     self.disable_op_fcw = params.get_bool('DisableOpFcw')
     self.mad_mode_enabled = params.get_bool('MadModeEnabled')
 
+    # mpcEvent UI pulse용
+    self._mpc_event_last = 0
+    self._mpc_event_pulse_frames = 0
+    
     # 롱크루즈갭 + lead 정보 보관
     self.longCruiseGap = 1
     self.dRel = 0.0
@@ -393,6 +397,30 @@ class Controls:
     if not self.disable_op_fcw and (planner_fcw or model_fcw):
       self.events.add(EventName.fcw)
 
+    # ===== MPC event -> UI Event (trafficStopping/trafficSignGreen/trafficSignChanged 등) =====
+    try:
+      mpc_evt = int(self.sm['longitudinalPlan'].mpcEvent)
+    except Exception:
+      mpc_evt = 0
+
+    if mpc_evt != 0:
+      # 순간 알림은 2초만 띄우기 (스팸 방지)
+      if mpc_evt != self._mpc_event_last:
+        self._mpc_event_last = mpc_evt
+        self._mpc_event_pulse_frames = int(2.0 / DT_CTRL)
+
+      if self._mpc_event_pulse_frames > 0:
+        self._mpc_event_pulse_frames -= 1
+        try:
+          self.events.add(EventName(mpc_evt))
+        except Exception:
+          # 혹시 enum 변환 실패하면 무시
+          pass
+    else:
+      # 상태가 0이면 리셋
+      self._mpc_event_last = 0
+      self._mpc_event_pulse_frames = 0
+      
     if TICI:
       for m in messaging.drain_sock(self.log_sock, wait_for_one=False):
         try:
