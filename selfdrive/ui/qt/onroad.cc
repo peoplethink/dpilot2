@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <QDebug>
 #include <QSound>
+#include <numeric>
 
 #include "selfdrive/common/timing.h"
 #include "selfdrive/ui/qt/util.h"
@@ -180,7 +181,7 @@ void OnroadWindow::mouseReleaseEvent(QMouseEvent* e) {
       if(dx < 0) { // right to left
         if(recorder)
           recorder->toggle();  
-  }
+        }
       }
       else { // left to right
         if(recorder)
@@ -196,7 +197,7 @@ void OnroadWindow::mouseReleaseEvent(QMouseEvent* e) {
   }
 
   // propagation event to parent(HomeWindow)
-  QWidget::mouseReleaseEvent(e);
+  QWidget::mousePressEvent(e);
 #endif
 }
 
@@ -629,7 +630,7 @@ void OnroadHud::drawVisionTurnControllerUI(QPainter &p, int x, int y, int size, 
   p.drawRoundedRect(rvtc, 20, 20);
   p.setPen(Qt::NoPen);
 
-  configFont(p, "FONT_OPEN_SANS", 56, "SemiBold");
+  configFont(p, FONT_OPEN_SANS, 56, "SemiBold");
   drawCenteredText(p, rvtc.center().x(), rvtc.center().y(), vision_speed, color);
 }
 
@@ -1508,6 +1509,8 @@ void NvgWindow::drawBrake(QPainter &p) {
 }
 	  
 void NvgWindow::drawTpms(QPainter &p) {
+  p.save();
+	
   UIState *s = uiState();
   const SubMaster &sm = *(uiState()->sm);	
   auto car_state = sm["carState"].getCarState();
