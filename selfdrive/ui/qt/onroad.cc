@@ -1213,7 +1213,6 @@ void NvgWindow::drawCommunity(QPainter &p) {
   drawGpsStatus(p);
   drawBrake(p);
   drawMisc(p);
-  drawLaneChangeIndicator(p, uiState());	
 	
   if(s->show_steer)
     drawSteer(p);	
@@ -2024,41 +2023,5 @@ void NvgWindow::drawEngRpm(QPainter &p) {
    drawTextWithColor(p, x, y, rpm, textColor2);
   } else if (eng_rpm > 3000) {
    drawTextWithColor(p, x, y, rpm, textColor2);
-  }
-}
-
-void NvgWindow::drawLaneChangeIndicator(QPainter &painter, const UIState *s) {
-  typedef cereal::LateralPlan::LaneChangeDirection Direction;
-  typedef cereal::LateralPlan::LaneChangeState State;
-
-  auto draw_indicator_lambda = [this](QPainter &painter, Direction direction, QColor color) {
-    QPixmap img = direction == Direction::LEFT ? ic_lane_change_left_img : ic_lane_change_right_img;
-    QRect img_rc{0, (rect().height() - img.height()) / 2, img.width() + 20, img.height() + 20};
-    //QRect ellipse_rc = img_rc.adjusted(-img_rc.width(), -img_rc.height() / 2, 20, img_rc.height() / 2);
-    if (direction == Direction::RIGHT) {
-      img_rc.moveRight(rect().right() -400);
-      //ellipse_rc.moveRight(rect().right() + img_rc.width() - 400);
-    } else if (direction == Direction::LEFT) {
-      img_rc.moveLeft(rect().left() + 400);
-      //ellipse_rc.moveLeft(rect().left() + img_rc.width() + 400);
-    }
-    painter.setPen(Qt::NoPen);
-    painter.setBrush(color);
-    //painter.drawEllipse(ellipse_rc);
-    painter.drawPixmap(img_rc, img);
-  };
-
-  auto lateralPlan = (*(s->sm))["lateralPlan"].getLateralPlan();
-  auto laneChangeState = lateralPlan.getLaneChangeState();
-  auto direction = lateralPlan.getLaneChangeDirection();
-
-  if (laneChangeState == State::PRE_LANE_CHANGE) {
-    auto carState = (*(s->sm))["carState"].getCarState();
-    bool blocked = (direction == Direction::LEFT && carState.getLeftBlindspot()) ||
-                   (direction == Direction::RIGHT && carState.getRightBlindspot());
-    draw_indicator_lambda(painter, direction, blocked ? redColor(200) : blackColor(200));
-  } else if (laneChangeState == State::LANE_CHANGE_STARTING ||
-             laneChangeState == State::LANE_CHANGE_FINISHING) {
-    draw_indicator_lambda(painter, direction, bg_colors[s->status]);
   }
 }
