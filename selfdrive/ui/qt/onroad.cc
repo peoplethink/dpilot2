@@ -835,10 +835,6 @@ void NvgWindow::drawLaneLines(QPainter &painter, const UIState *s) {
   painter.restore();
 }
 
-static float global_a_rel;
-static float global_a_rel_col;
-static float vc_speed;
-
 void NvgWindow::drawLead(QPainter &painter,
                          const cereal::RadarState::LeadData::Reader &lead_data,
                          const QPointF &vd, int num) {
@@ -860,49 +856,37 @@ void NvgWindow::drawLead(QPainter &painter,
     fillAlpha = std::clamp(fillAlpha, 0.f, 255.f);
   }
 
-  // === 위치/크기(기존 유지) ===
   float sz = std::clamp((25.f * 30.f) / (d_rel / 3.f + 30.f), 15.0f, 30.0f) * 2.35f;
   float x = std::clamp((float)vd.x(), 0.f, width() - sz / 2.f);
   float y = std::fmin(height() - sz * 0.6f, (float)vd.y());
 
   UIState *s = uiState();
 
-  // ✅ 구분(기존 코드 흐름 유지): radarDistance < 149 를 "레이더"로 간주
-  const bool is_radar = (s->scene.radarDistance < 149);
+  const bool is_radar = lead_data.getRadar();
 
-  // ✅ 원 색상: 레이더=녹색, 비전=파랑
   QColor circleColor = is_radar ? QColor(0, 255, 0) : QColor(0, 160, 255);
 
-  // 너무 투명하면 안 보이니 최소 알파 보장
   int a = (int)fillAlpha;
   a = std::clamp(a, 110, 255);
   circleColor.setAlpha(a);
 
-  // === 원(서클) ===
   const float r = sz * 0.85f;          // 원 크기(취향: 0.75~0.95)
   QRectF circleRect(x - r, y - r, r * 2.f, r * 2.f);
 
-  // 외곽선(가독성)
   painter.setPen(QPen(QColor(0, 0, 0, 160), 3));
   painter.setBrush(circleColor);
   painter.drawEllipse(circleRect);
 
-  // === 원 안 텍스트: 남은거리 숫자만(흰색) ===
   const int dist_i = (int)std::nearbyint(d_rel);
   const QString dist_txt = QString::number(dist_i);   // "m" 제거, 숫자만
 
-  // 원 크기에 맞춰 폰트 자동 조절
   int font_px = std::clamp((int)(r * 0.95f), 26, 46);
   configFont(painter, FONT_OPEN_SANS, font_px, "ExtraBold");
 
-  // 그림자 + 흰색
   painter.setPen(QColor(0, 0, 0, 210));
   painter.drawText(circleRect.translated(2, 2), Qt::AlignCenter, dist_txt);
   painter.setPen(QColor(255, 255, 255, 255));
   painter.drawText(circleRect, Qt::AlignCenter, dist_txt);
-
-  // ✅ 기존 num==0 거리 텍스트(옆에 "xxm")는 요청대로 제거(원 안 숫자로 대체)
-  // 기존 global_a_rel_col 관련 표시도 drawLead에서는 사용하지 않으므로 제거
 
   painter.restore();
 }
