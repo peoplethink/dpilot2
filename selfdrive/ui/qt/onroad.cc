@@ -838,82 +838,71 @@ void NvgWindow::drawLaneLines(QPainter &painter, const UIState *s) {
 static float global_a_rel;
 static float global_a_rel_col;
 static float vc_speed;
-void NvgWindow::drawLead(QPainter &painter, const cereal::RadarState::LeadData::Reader &lead_data, const QPointF &vd, int num ) {
+
+void NvgWindow::drawLead(QPainter &painter,
+                         const cereal::RadarState::LeadData::Reader &lead_data,
+                         const QPointF &vd, int num) {
   painter.save();
-  const float speedBuff = 10.;
-  const float leadBuff = 40.;
+  painter.setRenderHint(QPainter::Antialiasing);
+
+  const float speedBuff = 10.f;
+  const float leadBuff  = 40.f;
   const float d_rel = lead_data.getDRel();
   const float v_rel = lead_data.getVRel();
 
-  float fillAlpha = 0;
+  // === 기존 alpha 계산(가까울수록 진하게) ===
+  float fillAlpha = 0.f;
   if (d_rel < leadBuff) {
-    fillAlpha = 255 * (1.0 - (d_rel / leadBuff));
-    if (v_rel < 0) {
-      fillAlpha += 255 * (-1 * (v_rel / speedBuff));
+    fillAlpha = 255.f * (1.0f - (d_rel / leadBuff));
+    if (v_rel < 0.f) {
+      fillAlpha += 255.f * (-v_rel / speedBuff);
     }
-    fillAlpha = (int)(fmin(fillAlpha, 255));
+    fillAlpha = std::clamp(fillAlpha, 0.f, 255.f);
   }
-	
-  float sz = std::clamp((25 * 30) / (d_rel / 3 + 30), 15.0f, 30.0f) * 2.35;
-  float x = std::clamp((float)vd.x(), 0.f, width() - sz / 2);
-  float y = std::fmin(height() - sz * .6, (float)vd.y());
-	
-  float g_xo = sz / 5;
-  float g_yo = sz / 10;
+
+  // === 위치/크기(기존 유지) ===
+  float sz = std::clamp((25.f * 30.f) / (d_rel / 3.f + 30.f), 15.0f, 30.0f) * 2.35f;
+  float x = std::clamp((float)vd.x(), 0.f, width() - sz / 2.f);
+  float y = std::fmin(height() - sz * 0.6f, (float)vd.y());
 
   UIState *s = uiState();
 
-  if (s->scene.radarDistance < 149) {
-    float homebase_h = 12;
-    QPointF glow[] = {{x + (sz * 1.35) + g_xo, y + sz + g_yo + homebase_h},{x + (sz * 1.35) + g_xo, y + sz + g_yo}, {x, y - g_yo}, {x - (sz * 1.35) - g_xo, y + sz + g_yo},{x - (sz * 1.35) - g_xo, y + sz + g_yo + homebase_h}, {x, y + sz + homebase_h + g_yo + 10}};
-    painter.setBrush(QColor(218, 202, 37, 210));
-    painter.drawPolygon(glow, std::size(glow));
+  // ✅ 구분(기존 코드 흐름 유지): radarDistance < 149 를 "레이더"로 간주
+  const bool is_radar = (s->scene.radarDistance < 149);
 
-    // chevron
-    QPointF chevron[] = {{x + (sz * 1.25), y + sz + homebase_h},{x + (sz * 1.25), y + sz}, {x, y}, {x - (sz * 1.25), y + sz},{x - (sz * 1.25), y + sz + homebase_h}, {x, y + sz + homebase_h - 7}};
-    painter.setBrush(redColor(fillAlpha));
-    painter.drawPolygon(chevron, std::size(chevron));
-    configFont(painter, FONT_OPEN_SANS, 36, "ExtraBold");  
-    painter.setPen(QColor(0x0, 0x0, 0xff));
-    painter.drawText(QRect(x - (sz * 1.25), y, 2 * (sz * 1.25), sz * 1.25), Qt::AlignCenter, QString("R"));
-  } else {
-    float homebase_h = 12;  
-    QPointF glow[] = {{x + (sz * 1.35) + g_xo, y + sz + g_yo + homebase_h},{x + (sz * 1.35) + g_xo, y + sz + g_yo}, {x, y - g_yo}, {x - (sz * 1.35) - g_xo, y + sz + g_yo},{x - (sz * 1.35) - g_xo, y + sz + g_yo + homebase_h}, {x, y + sz + homebase_h + g_yo + 10}};
-    painter.setBrush(QColor(0, 255, 0, 255));
-    painter.drawPolygon(glow, std::size(glow));
+  // ✅ 원 색상: 레이더=녹색, 비전=파랑
+  QColor circleColor = is_radar ? QColor(0, 255, 0) : QColor(0, 160, 255);
 
-    // chevron
-    QPointF chevron[] = {{x + (sz * 1.25), y + sz + homebase_h},{x + (sz * 1.25), y + sz}, {x, y}, {x - (sz * 1.25), y + sz},{x - (sz * 1.25), y + sz + homebase_h}, {x, y + sz + homebase_h - 7}};
-    painter.setBrush(greenColor(fillAlpha));
-    painter.drawPolygon(chevron, std::size(chevron));
-    configFont(painter, FONT_OPEN_SANS, 36, "ExtraBold");  
-    painter.setPen(QColor(0x0, 0x0, 0x0));
-    painter.drawText(QRect(x - (sz * 1.25), y, 2 * (sz * 1.25), sz * 1.25), Qt::AlignCenter, QString("V"));
-  }	
-  
-  if(num == 0){
-    QString dist = QString::number(d_rel,'f',0) + "m";
-    int str_w = 200;
-    //QString kmph = QString::number((v_rel + vc_speed)*3.6,'f',0) + "k";
-    //int str_w2 = 200;
+  // 너무 투명하면 안 보이니 최소 알파 보장
+  int a = (int)fillAlpha;
+  a = std::clamp(a, 110, 255);
+  circleColor.setAlpha(a);
 
-    configFont(painter, FONT_OPEN_SANS, 40, "SemiBold");
-    painter.setPen(QColor(0x0, 0x0, 0x0 , 200));
-    float lock_indicator_dx = 2;
-    painter.drawText(QRect(x+2+lock_indicator_dx+90, y-50+65, str_w, 50), Qt::AlignBottom | Qt::AlignLeft, dist);
-    //painter.drawText(QRect(x+2-lock_indicator_dx-str_w2-2, y-50+2, str_w2, 50), Qt::AlignBottom | Qt::AlignRight, kmph);
-    painter.setPen(QColor(0xff, 0xff, 0xff));
-    painter.drawText(QRect(x+lock_indicator_dx+90, y-50+65, str_w, 50), Qt::AlignBottom | Qt::AlignLeft, dist);
-    if(global_a_rel >= global_a_rel_col){
-      global_a_rel_col = -0.1;
-      painter.setPen(QColor(0.09*255, 0.945*255, 0.26*255, 255));
-    } else {
-      global_a_rel_col = 0;
-      painter.setPen(QColor(245, 0, 0, 255));
-    }
-    //painter.drawText(QRect(x-lock_indicator_dx-str_w2-2, y-50, str_w2, 50), Qt::AlignBottom | Qt::AlignRight, kmph);
-    painter.setPen(Qt::NoPen);
-  }
+  // === 원(서클) ===
+  const float r = sz * 0.85f;          // 원 크기(취향: 0.75~0.95)
+  QRectF circleRect(x - r, y - r, r * 2.f, r * 2.f);
+
+  // 외곽선(가독성)
+  painter.setPen(QPen(QColor(0, 0, 0, 160), 3));
+  painter.setBrush(circleColor);
+  painter.drawEllipse(circleRect);
+
+  // === 원 안 텍스트: 남은거리 숫자만(흰색) ===
+  const int dist_i = (int)std::nearbyint(d_rel);
+  const QString dist_txt = QString::number(dist_i);   // "m" 제거, 숫자만
+
+  // 원 크기에 맞춰 폰트 자동 조절
+  int font_px = std::clamp((int)(r * 0.95f), 26, 46);
+  configFont(painter, FONT_OPEN_SANS, font_px, "ExtraBold");
+
+  // 그림자 + 흰색
+  painter.setPen(QColor(0, 0, 0, 210));
+  painter.drawText(circleRect.translated(2, 2), Qt::AlignCenter, dist_txt);
+  painter.setPen(QColor(255, 255, 255, 255));
+  painter.drawText(circleRect, Qt::AlignCenter, dist_txt);
+
+  // ✅ 기존 num==0 거리 텍스트(옆에 "xxm")는 요청대로 제거(원 안 숫자로 대체)
+  // 기존 global_a_rel_col 관련 표시도 drawLead에서는 사용하지 않으므로 제거
 
   painter.restore();
 }
