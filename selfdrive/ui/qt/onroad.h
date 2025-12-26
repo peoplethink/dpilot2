@@ -159,7 +159,6 @@ protected:
   void drawMaxSpeed(QPainter &p);
   void drawSpeed(QPainter &p);
   void drawBottomIcons(QPainter &p);
-  void drawDebugText(QPainter &p);
   void drawCgear(QPainter &p);//기어
   void drawTpms(QPainter &p);
   void drawBrake(QPainter &p);
