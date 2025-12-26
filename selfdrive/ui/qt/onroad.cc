@@ -288,25 +288,30 @@ void OnroadWindow::paintEvent(QPaintEvent *event) {
 }
 
 // ***** onroad widgets *****
+// ***** onroad widgets *****
 
 ButtonsWindow::ButtonsWindow(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout  = new QVBoxLayout(this);
-  QWidget *btns_wrapper = new QWidget;
-  QHBoxLayout *btns_layout  = new QHBoxLayout(btns_wrapper);
-  btns_layout->setSpacing(0);
-  btns_layout->setContentsMargins(0, 770, 30, 30);
-  main_layout->addWidget(btns_wrapper, 0, Qt::AlignTop);
 
-  // ==========================
-  // 1) Dynamic lane profile button (기존)
-  // ==========================
-  QString initDlpBtn = "";
-  dlpBtn = new QPushButton(initDlpBtn);
+  QWidget *btns_wrapper = new QWidget(this);
+  QHBoxLayout *btns_layout  = new QHBoxLayout(btns_wrapper);
+
+  // ===== 레이아웃 기본 =====
+  btns_layout->setContentsMargins(0, 770, 30, 30);
+  btns_layout->setSpacing(14);
+  btns_layout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+  main_layout->addWidget(btns_wrapper, 0, Qt::AlignTop | Qt::AlignLeft);
+
+  dlpBtn = new QPushButton("");
+  dlpBtn->setFixedWidth(186);
+  dlpBtn->setFixedHeight(140);
+
   QObject::connect(dlpBtn, &QPushButton::clicked, [=]() {
     uiState()->scene.dynamic_lane_profile = uiState()->scene.dynamic_lane_profile + 1;
     if (uiState()->scene.dynamic_lane_profile > 2) {
       uiState()->scene.dynamic_lane_profile = 0;
     }
+
     if (uiState()->scene.dynamic_lane_profile == 0) {
       Params().put("DynamicLaneProfile", "0", 1);
       dlpBtn->setText("Lane\nonly");
@@ -318,22 +323,19 @@ ButtonsWindow::ButtonsWindow(QWidget *parent) : QWidget(parent) {
       dlpBtn->setText("Auto\nLane");
     }
   });
-  dlpBtn->setFixedWidth(186);
-  dlpBtn->setFixedHeight(140);
-  btns_layout->addWidget(dlpBtn, 0, Qt::AlignLeft);
-  btns_layout->addSpacing(0);
 
-  // ==========================
-  // 2) ✅ E2E/ACC 표시 박스 (토글X, 항상 보임)
-  // ==========================
-  modeBtn = new QPushButton("ACC");     // 초기값
+  btns_layout->addWidget(dlpBtn, 0, Qt::AlignLeft);
+
+  // 2) E2E/ACC 표시 박스 (표시 전용)
+  modeBtn = new QPushButton("ACC");
   modeBtn->setFixedWidth(186);
   modeBtn->setFixedHeight(140);
-  modeBtn->setEnabled(false);          // 클릭 불가(표시전용)
+  modeBtn->setEnabled(false);
   modeBtn->setFocusPolicy(Qt::NoFocus);
-  btns_layout->addWidget(modeBtn, 0, Qt::AlignLeft);
 
-  // ✅ 공통 스타일 (두 버튼 모두)
+  btns_layout->addWidget(modeBtn, 0, Qt::AlignLeft);
+  btns_layout->addStretch(1);
+
   setStyleSheet(R"(
     QPushButton {
       color: white;
@@ -347,32 +349,48 @@ ButtonsWindow::ButtonsWindow(QWidget *parent) : QWidget(parent) {
 }
 
 void ButtonsWindow::updateState(const UIState &s) {
-  // ==========================
-  // dlpBtn 기존 업데이트
-  // ==========================
   if (uiState()->scene.dynamic_lane_profile == 0) {
-    dlpBtn->setStyleSheet(QString("font-size: 45px; border-radius: 100px; border-color: %1").arg(dlpBtnColors.at(0)));
+    dlpBtn->setStyleSheet(QString(
+      "font-size: 45px;"
+      "border-radius: 100px;"
+      "border-width: 9px;"
+      "border-style: solid;"
+      "border-color: %1;"
+      "color: white;"
+      "background-color: rgba(0,0,0,0.30);"
+    ).arg(dlpBtnColors.at(0)));
     dlpBtn->setText("Lane\nonly");
+
   } else if (uiState()->scene.dynamic_lane_profile == 1) {
-    dlpBtn->setStyleSheet(QString("font-size: 45px; border-radius: 100px; border-color: %1").arg(dlpBtnColors.at(1)));
+    dlpBtn->setStyleSheet(QString(
+      "font-size: 45px;"
+      "border-radius: 100px;"
+      "border-width: 9px;"
+      "border-style: solid;"
+      "border-color: %1;"
+      "color: white;"
+      "background-color: rgba(0,0,0,0.30);"
+    ).arg(dlpBtnColors.at(1)));
     dlpBtn->setText("Lane\nless");
+
   } else if (uiState()->scene.dynamic_lane_profile == 2) {
-    dlpBtn->setStyleSheet(QString("font-size: 45px; border-radius: 100px; border-color: %1").arg(dlpBtnColors.at(2)));
+    dlpBtn->setStyleSheet(QString(
+      "font-size: 45px;"
+      "border-radius: 100px;"
+      "border-width: 9px;"
+      "border-style: solid;"
+      "border-color: %1;"
+      "color: white;"
+      "background-color: rgba(0,0,0,0.30);"
+    ).arg(dlpBtnColors.at(2)));
     dlpBtn->setText("Auto\nLane");
   }
 
-  // ==========================
-  // ✅ E2E / ACC 상황에 맞게 표시
-  // 기준: longitudinalPlan.mpcMode
-  //   1 => E2E
-  //   0 => ACC
-  // ==========================
+  // 2) E2E / ACC 표시 업데이트
   bool is_e2e = false;
 
-  // SubMaster가 있고, longPlan 살아있으면 그걸 사용
   if (s.sm && s.sm->alive("longitudinalPlan")) {
     const auto lp = (*s.sm)["longitudinalPlan"].getLongitudinalPlan();
-    // 네가 이전에 mpcMode를 넣었다고 했으니 이걸 쓰는 게 제일 확실
     is_e2e = (lp.getMpcMode() == 1);
   }
 
@@ -542,16 +560,12 @@ void OnroadHud::paintEvent(QPaintEvent *event) {
       const int r = radius;
       p.setPen(Qt::NoPen);
 
-      // ✅ 빨간색 원 배경 (기존 검은색 -> 빨간색)
       p.setBrush(QColor(220, 0, 0, 200));   // R,G,B,Alpha (알파는 취향대로 180~220)
       p.drawEllipse(cx - r / 2, cy - r / 2, r, r);
 
-      // 글자 색/그림자
       const QColor textColor(255, 255, 255, 255);   // ✅ 가독성 좋게 흰색 추천
       const QColor shadow(0, 0, 0, 220);
 
-      // ✅ 글자 더 크고 더 두껍게
-      // 폰트가 Bold까지만 있으면 "Black"/"ExtraBold"가 무시될 수 있어서 weight도 같이 올림
       configFont(p, "Open Sans", 34, "Black");       // 기존 26 -> 34, Bold -> Black
       QFont f = p.font();
       f.setWeight(QFont::Black);                     // ✅ 더 두껍게 강제
