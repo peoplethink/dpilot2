@@ -1,7 +1,4 @@
 #!/usr/bin/env python3
-#!/usr/bin/env python3
-from typing import Any, Union
-
 from cereal import car, log
 from common.params import Params
 from common.realtime import Priority, config_realtime_process
@@ -11,27 +8,14 @@ from selfdrive.controls.lib.lateral_planner import LateralPlanner
 from selfdrive.hardware import TICI
 import cereal.messaging as messaging
 
-
-def _xstate_to_int(xs: Any) -> int:
-  """
-  lp.xState can be a capnp enum (capnp.lib.capnp._DynamicEnum).
-  Convert safely to int for comparisons.
-  """
-  # capnp enum has .raw
-  if hasattr(xs, "raw"):
-    return int(xs.raw)
-  # already numeric
-  if isinstance(xs, (int, float)):
-    return int(xs)
-  # fallback (may still fail, but better error context)
-  return int(xs)
+# capnp enum을 이름으로 비교 (가장 안전)
+XState = log.LongitudinalPlan.XState
+LPSrc = log.LongitudinalPlan.LongitudinalPlanSource
 
 
-def _is_e2e_xstate(xs: Any) -> bool:
+def _is_e2e_xstate(xs) -> bool:
   # e2eCruise(2), e2eStop(3), softHold(4), e2eCruisePrepare(5)
-  # NOTE: these numeric values must match your log.LongitudinalPlan.XState enum order.
-  xs_i = _xstate_to_int(xs)
-  return xs_i in (2, 3, 4, 5)
+  return xs in (XState.e2eCruise, XState.e2eStop, XState.softHold, XState.e2eCruisePrepare)
 
 
 def plannerd_thread(sm=None, pm=None):
@@ -76,10 +60,10 @@ def plannerd_thread(sm=None, pm=None):
       lp = msg.longitudinalPlan
 
       # ✅ UI 표시용 source 강제 (ACC/E2E만 구분)
-      if _is_e2e_xstate(lp.xState):   # ✅ int() 제거
-        lp.longitudinalPlanSource = log.LongitudinalPlan.LongitudinalPlanSource.e2e
+      if _is_e2e_xstate(lp.xState):   # ✅ int() 제거 (크래시 원인 제거)
+        lp.longitudinalPlanSource = LPSrc.e2e
       else:
-        lp.longitudinalPlanSource = log.LongitudinalPlan.LongitudinalPlanSource.cruise
+        lp.longitudinalPlanSource = LPSrc.cruise
 
       pm.send('longitudinalPlan', msg)
 
