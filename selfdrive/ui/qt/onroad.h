@@ -149,8 +149,6 @@ protected:
   QPixmap ic_scc2;
   QPixmap ic_radar;
   QPixmap ic_radar_vision;
-  QPixmap ic_lane_change_left_img;
-  QPixmap ic_lane_change_right_img;
   
   QPixmap ic_safety_speed_bump;
   QMap<QString, QPixmap> ic_oil_com;
@@ -158,7 +156,6 @@ protected:
   void drawText(QPainter &p, int x, int y, const QString &text, int alpha = 255);
   void drawTextWithColor(QPainter &p, int x, int y, const QString &text, const QColor &color);
   void drawText2(QPainter &p, int x, int y, int flags, const QString &text, const QColor& color);
-  void drawLaneChangeIndicator(QPainter &p, const UIState *s);
   void drawMaxSpeed(QPainter &p);
   void drawSpeed(QPainter &p);
   void drawBottomIcons(QPainter &p);
