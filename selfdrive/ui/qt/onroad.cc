@@ -5,7 +5,6 @@
 #include <numeric>
 #include <cmath>
 #include <algorithm>
-#include "selfdrive/common/realtime.h"
 #include "selfdrive/common/timing.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/common/params.h"
@@ -13,6 +12,7 @@
 #include "selfdrive/ui/qt/maps/map.h"
 #include "selfdrive/ui/qt/maps/map_helpers.h"
 #endif
+from common.realtime import sec_since_boot
 
 static void drawGapBars(QPainter &p, int x, int y, int gap, bool active_long) {
   p.save();
