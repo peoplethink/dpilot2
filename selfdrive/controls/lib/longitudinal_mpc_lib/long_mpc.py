@@ -604,7 +604,9 @@ class LongitudinalMpc:
         self.xState = XState.e2eCruisePrepare
 
       elif self.trafficState == 2:
-        new_event = EventName.trafficSignChanged
+        self.xState = XState.e2eCruisePrepare
+        self.e2eCruiseCount = int(3 / DT_MDL)
+        new_event = EventName.trafficSignGreen
 
       if cruiseButtonCounterDiff > 0:
         if self.trafficState == 1:
