@@ -189,7 +189,7 @@ class Controls:
     self.active = False
     self.can_rcv_error = False
     self.soft_disable_timer = 0
-    self.v_cruise_kph = V_CRUISE_INITIAL
+    self.v_cruise_kph = V_CRUISE_UNSET
     self.v_cruise_kph_last = 0
     self.mismatch_counter = 0
     self.cruise_mismatch_counter = 0
@@ -502,7 +502,7 @@ class Controls:
       else:
         self.v_cruise_kph = CS.cruiseState.speed * CV.MS_TO_KPH
     else:
-      self.v_cruise_kph = V_CRUISE_INITIAL
+      self.v_cruise_kph = V_CRUISE_UNSET
 
     # SCC smoother
     SccSmoother.update_cruise_buttons(self, CS, self.CP.openpilotLongitudinalControl)
