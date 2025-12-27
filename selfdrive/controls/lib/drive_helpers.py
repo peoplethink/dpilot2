@@ -10,12 +10,13 @@ from selfdrive.controls.ntune import ntune_common_get
 # WARNING: this value was determined based on the model's training distribution,
 #          model predictions above this speed can be unpredictable
 # kph
-V_CRUISE_MAX = 180
-V_CRUISE_MIN = 10  # kph
-V_CRUISE_DELTA_MI = 5 * CV.MPH_TO_KPH
+V_CRUISE_MAX = 145
+V_CRUISE_MIN = 8
+V_CRUISE_DELTA_MI = 5
 V_CRUISE_DELTA_KM = 10
-V_CRUISE_ENABLE_MIN = 30
-V_CRUISE_INITIAL = 255  # kph
+V_CRUISE_UNSET = 255
+V_CRUISE_INITIAL = 40
+V_CRUISE_INITIAL_EXPERIMENTAL_MODE = 105
 IMPERIAL_INCREMENT = 1.6
 
 MIN_DIST = 0.001
