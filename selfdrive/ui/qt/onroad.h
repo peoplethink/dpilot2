@@ -3,7 +3,7 @@
 #include <QStackedLayout>
 #include <QWidget>
 #include <QPushButton>
-
+#include <QElapsedTimer>
 #include "selfdrive/common/util.h"
 #include "selfdrive/ui/qt/widgets/cameraview.h"
 #include "selfdrive/ui/ui.h"
@@ -135,6 +135,7 @@ protected:
   FirstOrderFilter fps_filter;
   
   uint64_t last_update_params;
+  QElapsedTimer leadPulseTimer;
   
   // neokii
   QPixmap ic_brake;
