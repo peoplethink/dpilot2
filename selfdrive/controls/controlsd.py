@@ -582,7 +582,7 @@ class Controls:
           self.current_alert_types.append(ET.ENABLE)
 
           # ✅ commaai#26472: enable 시 helper 초기 set speed
-          self.v_cruise_helper.initialize_v_cruise(CS)
+          self.v_cruise_helper.initialize_v_cruise(CS, self.experimental_mode)
 
     self.enabled = self.state in ENABLED_STATES
     self.active = self.state in ACTIVE_STATES
