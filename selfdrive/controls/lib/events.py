@@ -151,8 +151,7 @@ class SoftDisableAlert(Alert):
     super().__init__("", alert_text_2,
                      AlertStatus.userPrompt, AlertSize.full,
                      Priority.MID, VisualAlert.steerRequired,
-                     AudibleAlert.none, 0.),
-
+                     AudibleAlert.none, 0.)
 
 # less harsh version of SoftDisable, where the condition is user-triggered
 class UserSoftDisableAlert(SoftDisableAlert):
@@ -934,27 +933,33 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
   },
 
   EventName.trafficStopping: {
-    ET.WARNING: Alert(
+    ET.ENABLE: Alert(
       "신호 감지",
       "감속/정지 중입니다",
       AlertStatus.normal, AlertSize.small,
-      Priority.LOW, VisualAlert.none, AudibleAlert.none, 2.0),
+      Priority.LOW, VisualAlert.none, AudibleAlert.none,
+      2.0,
+      alert_rate=1.0),   # (선택) 1초에 1번 이하로 제한
   },
 
   EventName.trafficSignGreen: {
-    ET.WARNING: Alert(
+    ET.ENABLE: Alert(
       "출발합니다",
       "",
       AlertStatus.normal, AlertSize.small,
-      Priority.LOW, VisualAlert.none, AudibleAlert.none, 2.0),
+      Priority.LOW, VisualAlert.none, AudibleAlert.none,
+      2.0,
+      alert_rate=0.5),   # (선택) 연타 방지
   },
-  
+
   EventName.trafficSignChanged: {
-    ET.WARNING: Alert(
+    ET.ENABLE: Alert(
       "신호가 바뀌었어요",
       "",
       AlertStatus.normal, AlertSize.small,
-      Priority.LOW, VisualAlert.none, AudibleAlert.none, 2.0),
+      Priority.LOW, VisualAlert.none, AudibleAlert.none,
+      2.0,
+      alert_rate=0.5),   # (선택)
   },
   
   EventName.slowingDownSpeed: {
