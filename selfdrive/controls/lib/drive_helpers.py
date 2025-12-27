@@ -61,15 +61,15 @@ class MPC_COST_LAT:
 class VCruiseHelper:
   def __init__(self, CP):
     self.CP = CP
-    self.v_cruise_kph = V_CRUISE_INITIAL
-    self.v_cruise_cluster_kph = V_CRUISE_INITIAL
+    self.v_cruise_kph = V_CRUISE_UNSET
+    self.v_cruise_cluster_kph = V_CRUISE_UNSET
     self.v_cruise_kph_last = 0
     self.button_timers = {ButtonType.decelCruise: 0, ButtonType.accelCruise: 0}
     self.button_change_states = {btn: {"standstill": False, "enabled": False} for btn in self.button_timers}
 
   @property
   def v_cruise_initialized(self):
-    return self.v_cruise_kph != V_CRUISE_INITIAL
+    return self.v_cruise_kph != V_CRUISE_UNSET
 
   def update_v_cruise(self, CS, enabled, is_metric):
     self.v_cruise_kph_last = self.v_cruise_kph
@@ -84,8 +84,8 @@ class VCruiseHelper:
         self.v_cruise_kph = CS.cruiseState.speed * CV.MS_TO_KPH
         self.v_cruise_cluster_kph = CS.cruiseState.speedCluster * CV.MS_TO_KPH
     else:
-      self.v_cruise_kph = V_CRUISE_INITIAL
-      self.v_cruise_cluster_kph = V_CRUISE_INITIAL
+      self.v_cruise_kph = V_CRUISE_UNSET
+      self.v_cruise_cluster_kph = V_CRUISE_UNSET
 
   def _update_v_cruise_non_pcm(self, CS, enabled, is_metric):
     # NOTE: enable 되기 전에는 속도 변경하지 않음
@@ -148,16 +148,18 @@ class VCruiseHelper:
         self.button_timers[b.type.raw] = 1 if b.pressed else 0
         self.button_change_states[b.type.raw] = {"standstill": CS.cruiseState.standstill, "enabled": enabled}
 
-  def initialize_v_cruise(self, CS):
+  def initialize_v_cruise(self, CS, experimental_mode: bool) -> None:
     # initializing is handled by the PCM
     if self.CP.pcmCruise:
       return
 
+    initial = V_CRUISE_INITIAL_EXPERIMENTAL_MODE if experimental_mode else V_CRUISE_INITIAL
+    
     # 250kph or above probably means we never had a set speed
     if any(b.type in (ButtonType.accelCruise, ButtonType.resumeCruise) for b in CS.buttonEvents) and self.v_cruise_kph_last < 250:
       self.v_cruise_kph = self.v_cruise_kph_last
     else:
-      self.v_cruise_kph = int(round(clip(CS.vEgo * CV.MS_TO_KPH, V_CRUISE_ENABLE_MIN, V_CRUISE_MAX)))
+      self.v_cruise_kph = int(round(clip(CS.vEgo * CV.MS_TO_KPH, initial, V_CRUISE_MAX)))
 
     self.v_cruise_cluster_kph = self.v_cruise_kph
 
