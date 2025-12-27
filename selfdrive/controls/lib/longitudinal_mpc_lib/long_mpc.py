@@ -540,13 +540,13 @@ class LongitudinalMpc:
     else:
       self.trafficState = 0
 
+  # =======================
   # =========================
-  # MPC mode 결정 + XState 상태기계 (longActiveUser 제거 버전)
+  # MPC mode 결정 + XState 상태기계 (알럿팝업 1회 트리거)
   # =========================
   def update_apilot(self, controls, carstate, radarstate, model, v_cruise, mode):
     v_ego = carstate.vEgo
     v_ego_kph = v_ego * CV.MS_TO_KPH
-
     enabled_now = bool(getattr(controls, "enabled", True))
 
     x = model.position.x
@@ -556,10 +556,12 @@ class LongitudinalMpc:
     self.fakeCruiseDistance = 0.0
     radar_detected = bool(radarstate.leadOne.status and getattr(radarstate.leadOne, "radar", False))
 
+    # stop dist (model)
     stop_x = x[self.applyModelDistOrder] if self.applyModelDistOrder < len(x) else x[-1]
     self.xStop = self.update_stop_dist(stop_x)
     stop_x = self.xStop
 
+    # traffic stopping 판단
     self.check_model_stopping(carstate, v, v_ego, x[-1], y)
 
     cruiseButtonCounterDiff = controls.cruiseButtonCounter - self.cruiseButtonCounter
@@ -569,39 +571,56 @@ class LongitudinalMpc:
     if self.e2eCruiseCount > 0:
       self.e2eCruiseCount -= 1
 
+    # 알럿 이벤트는 "새로" 생길 때만 1회 트리거
+    # (없으면 스팸처럼 계속 뜰 수 있음)
+    if not hasattr(self, "_last_popup_event"):
+      self._last_popup_event = 0
+
+    new_event = 0
+
+    # 운전자 개입/해제시 이벤트 클리어
     if carstate.gasPressed or carstate.brakePressed or (not enabled_now):
-      self.mpcEvent = 0
+      new_event = 0
 
     # SOFT_HOLD
     if carstate.brakePressed and v_ego < 0.1 and self.softHoldMode > 0:
       self.softHoldTimer += 1
       if self.softHoldTimer * DT_MDL >= 0.7:
         self.xState = XState.softHold
-        self.mpcEvent = EventName.autoHold
+        new_event = EventName.autoHold
     else:
       self.softHoldTimer = 0
 
+    # =========================
+    # 상태 머신
+    # =========================
+
+    # --- softHold ---
     if self.xState == XState.softHold:
       stop_x = 0.0
       self.trafficError = False
+
       if carstate.gasPressed:
         self.xState = XState.e2eCruisePrepare
+
       elif self.trafficState == 2:
-        self.mpcEvent = EventName.trafficSignChanged
+        new_event = EventName.trafficSignChanged
 
       if cruiseButtonCounterDiff > 0:
         if self.trafficState == 1:
           self.xState = XState.e2eStop
         else:
           self.xState = XState.e2eCruise
-          self.mpcEvent = EventName.trafficSignGreen
+          new_event = EventName.trafficSignGreen
 
+    # --- 고속모드 / 신호정지 비활성 ---
     elif getattr(controls, "myDrivingMode", 0) == 4 or self.trafficStopMode == 0:
       self.xState = XState.lead if self.status else XState.cruise
       self.trafficState = 0
       self.trafficError = False
       stop_x = 1000.0
 
+    # --- 신호 감속/정지 중 ---
     elif self.xState == XState.e2eStop:
       if carstate.gasPressed:
         self.xState = XState.e2eCruisePrepare
@@ -611,10 +630,10 @@ class LongitudinalMpc:
           if self.trafficState == 2 and (not self.trafficError or (self.trafficError and cruiseButtonCounterDiff > 0)):
             self.xState = XState.e2eCruisePrepare
             self.e2eCruiseCount = int(3 / DT_MDL)
-            self.mpcEvent = EventName.trafficSignGreen
+            new_event = EventName.trafficSignGreen
           else:
             if self.trafficState == 2 and self.trafficError:
-              self.mpcEvent = EventName.trafficSignChanged
+              new_event = EventName.trafficSignChanged
 
             if self.trafficError and cruiseButtonCounterDiff > 0:
               self.trafficError = False
@@ -625,10 +644,12 @@ class LongitudinalMpc:
             v_cruise = 0.0
             stop_x = 0.0
 
+        # 레이더 리드가 정지선보다 더 가까우면 리드 추종으로 전환
         elif radar_detected and (radarstate.leadOne.dRel - stop_x) < 2.0:
           self.xState = XState.lead
           stop_x = 1000.0
 
+        # 운전자 크루즈버튼(+)으로 출발 준비
         elif cruiseButtonCounterDiff > 0:
           self.xState = XState.e2eCruisePrepare
           stop_x = 1000.0
@@ -636,10 +657,12 @@ class LongitudinalMpc:
         else:
           self.comfort_brake = COMFORT_BRAKE * self.trafficStopAccel
 
+          # engage 에지에서 stopDist 초기화 (기존 longActiveUser 대체)
           if enabled_now and (not self.prev_enabled):
             self.stopDist = 2.0 if self.xStop < 2.0 else self.xStop
           else:
             if self.trafficState == 2:
+              # 감속 중 파란불이면 출발 준비
               self.xState = XState.e2eCruisePrepare
               stop_x = 1000.0
             else:
@@ -650,61 +673,100 @@ class LongitudinalMpc:
 
           self.fakeCruiseDistance = 0.0 if self.stopDist > 10.0 else 10.0
 
+    # --- e2eCruisePrepare (일시정지/출발 준비) ---
     elif self.xState == XState.e2eCruisePrepare:
-      self.mpcEvent = 0
       if not enabled_now:
         self.xState = XState.e2eCruise
+
+      # 잘못된 출발 신호 대응: 브레이크/(-) 입력 + 잠깐동안 e2eCruiseCount 유지 시 재정지
       elif (carstate.brakePressed or cruiseButtonCounterDiff < 0) and self.e2eCruiseCount > 0:
         self.xState = XState.e2eStop
         self.stopDist = 2.0
         self.trafficError = True
+
+      # 저속 + 신호출발이 아니거나(또는 버튼으로 확인) -> 다시 정지로
       elif v_ego_kph < 2.0 and (self.trafficState != 2 or cruiseButtonCounterDiff > 0):
         self.xState = XState.e2eStop
         self.stopDist = 2.0
+
+      # 충분히 움직이고(stop_x 멀어짐) -> 일반 주행
       elif v_ego_kph > 5.0 and stop_x > 60.0:
         self.xState = XState.e2eCruise
+
       else:
         self.trafficError = False
         stop_x = 1000.0
 
+    # --- e2eCruise / lead / cruise ---
     else:
       self.trafficError = False
+
       if self.status:
         self.xState = XState.lead
         stop_x = 1000.0
+
       elif abs(carstate.steeringAngleDeg) > 5.0:
         pass
+
       elif self.trafficState == 1 and not carstate.gasPressed:
         self.xState = XState.e2eStop
-        self.mpcEvent = EventName.trafficStopping
+        new_event = EventName.trafficStopping
         self.stopDist = self.xStop
+
       else:
         self.xState = XState.e2eCruise
         if carstate.brakePressed and v_ego_kph < 1.0 and self.softHoldMode > 0:
           self.xState = XState.softHold
 
+      # stop 신호가 아니면 stop_x 무효화
       if self.trafficState in [0, 2]:
         stop_x = 1000.0
 
+    # =========================
+    # ✅ ACC / E2E(blended) 전환 조건 (첫번째 코드 + leadOne/leadTwo 비전리드 확장)
+    # =========================
     if self.trafficStopMode > 0:
       if self.trafficStopMode == 3:
-        vision_detected = (radarstate.leadOne.dRel < 90 and radarstate.leadOne.status and not getattr(radarstate.leadOne, "radar", False))
+        leads = [getattr(radarstate, "leadOne", None), getattr(radarstate, "leadTwo", None)]
+        vision_detected = False
+        for ld in leads:
+          if ld is None:
+            continue
+          if bool(getattr(ld, "status", False)) and (not bool(getattr(ld, "radar", False))) and (float(getattr(ld, "dRel", 1e9)) < 90.0):
+            vision_detected = True
+            break
+
         mode = 'blended' if (self.xState in [XState.e2eCruisePrepare] or vision_detected) else 'acc'
+
       elif self.trafficStopMode == 2:
         mode = 'blended' if (self.xState in [XState.e2eCruisePrepare]) else 'acc'
+
       else:
-        if self.xState == XState.e2eCruisePrepare or (self.xState == XState.e2eStop and self.stopDist > 40.0):
+        if (self.xState == XState.e2eCruisePrepare) or (self.xState == XState.e2eStop and self.stopDist > 40.0):
           mode = 'blended'
         else:
           mode = 'acc'
-          
-    #if self.xState in [XState.e2eStop, XState.e2eCruisePrepare]:
-     # mode = 'blended'
-      
+
+    # comfort 적용
     self.comfort_brake *= self.mySafeModeFactor
+
+    # =========================
+    # ✅ Alerts popup: 새 이벤트만 1회 트리거
+    # =========================
+    if new_event != 0 and new_event != self._last_popup_event:
+      self.mpcEvent = new_event
+      self._last_popup_event = new_event
+    else:
+      # 평상시에는 이벤트 없음(팝업 안 뜸)
+      self.mpcEvent = 0
+      if new_event == 0:
+        self._last_popup_event = 0
+
+    # housekeeping
     self.prev_enabled = enabled_now
     self.cruiseButtonCounter = controls.cruiseButtonCounter
 
+    # stopDist countdown / clamp
     self.stopDist -= (v_ego * DT_MDL)
     if self.stopDist < 0.0:
       self.stopDist = 0.0
