@@ -577,6 +577,7 @@ class Controls:
       if self.events.any(ET.ENABLE):
         if self.events.any(ET.NO_ENTRY):
           self.current_alert_types.append(ET.NO_ENTRY)
+          
         else:
           if self.events.any(ET.PRE_ENABLE):
             self.state = State.preEnabled
@@ -586,7 +587,7 @@ class Controls:
             self.state = State.enabled
           self.current_alert_types.append(ET.ENABLE)
           if not self.CP.pcmCruise:
-            self.v_cruise_kph = initialize_v_cruise(CS.vEgo, CS.buttonEvents, self.button_timers, self.v_cruise_kph_last)
+            self.v_cruise_kph = initialize_v_cruise(CS.vEgo, self.experimental_mode, CS.buttonEvents, self.button_timers, self.v_cruise_kph_last)
 
     self.enabled = self.state in ENABLED_STATES
     self.active = self.state in ACTIVE_STATES
