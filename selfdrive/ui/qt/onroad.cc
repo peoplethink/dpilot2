@@ -12,7 +12,6 @@
 #include "selfdrive/ui/qt/maps/map.h"
 #include "selfdrive/ui/qt/maps/map_helpers.h"
 #endif
-from common.realtime import sec_since_boot
 
 static void drawGapBars(QPainter &p, int x, int y, int gap, bool active_long) {
   p.save();
@@ -707,7 +706,7 @@ void OnroadHud::drawCompass(QPainter &p, int x, int y, QPixmap &img, QBrush bg, 
 // NvgWindow
 
 NvgWindow::NvgWindow(VisionStreamType type, QWidget* parent) : last_update_params(0), fps_filter(UI_FREQ, 3, 1. / UI_FREQ), CameraViewWidget("camerad", type, true, parent) {
-
+  leadPulseTimer.start();
 }
 
 void NvgWindow::initializeGL() {
@@ -867,7 +866,7 @@ void NvgWindow::drawLead(QPainter &painter,
 
   QColor circleColor = is_radar ? QColor(0, 255, 0) : QColor(0, 160, 255);
 
-  const float t = (float)sec_since_boot();
+  const float t = leadPulseTimer.elapsed() * 0.001f;
   const float pulse_speed = 2.6f;          // 속도(클수록 빠름)
   const float pulse = std::sin(t * pulse_speed);
 
