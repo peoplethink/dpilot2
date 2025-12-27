@@ -1,11 +1,11 @@
 #include "selfdrive/ui/qt/onroad.h"
 
-#include <cmath>
-#include <algorithm>
 #include <QDebug>
 #include <QSound>
 #include <numeric>
-
+#include <cmath>
+#include <algorithm>
+#include "selfdrive/common/realtime.h"
 #include "selfdrive/common/timing.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/common/params.h"
@@ -858,6 +858,11 @@ void NvgWindow::drawLead(QPainter &painter,
 
   // === 위치/크기 ===
   float sz = std::clamp((25.f * 30.f) / (d_rel / 3.f + 30.f), 15.0f, 30.0f) * 2.35f;
+
+  // ✅ 원을 조금 더 크게
+  const float circleScale = 1.20f;        // 1.10~1.35 취향
+  sz *= circleScale;
+
   float x = std::clamp((float)vd.x(), 0.f, width() - sz / 2.f);
   float y = std::fmin(height() - sz * 0.6f, (float)vd.y());
 
@@ -867,34 +872,86 @@ void NvgWindow::drawLead(QPainter &painter,
   // ✅ 레이더=녹색, 비전=파랑
   QColor circleColor = is_radar ? QColor(0, 255, 0) : QColor(0, 160, 255);
 
-  int a = (int)fillAlpha;
-  a = std::clamp(a, 110, 255);     // 최소 알파 보장
-  circleColor.setAlpha(a);
+  // ============================
+  // ✅ Pulse animation (원+라벨)
+  // ============================
+  const float t = (float)sec_since_boot();
+  const float pulse_speed = 2.6f;          // 속도(클수록 빠름)
+  const float pulse = std::sin(t * pulse_speed);
+
+  // 가까울수록 강함
+  float pulse_strength = std::clamp(1.0f - (d_rel / 45.f), 0.f, 1.f);
+
+  // 상대속도 음수(접근)면 조금 더 강하게
+  if (v_rel < -1.0f) {
+    pulse_strength = std::min(1.0f, pulse_strength * (1.0f + std::clamp((-v_rel) / 8.f, 0.f, 0.6f)));
+  }
+
+  // 원 크기/알파에 반영
+  const float pulse_scale = 1.0f + pulse * 0.06f * pulse_strength;   // 크기 호흡
+  const float pulse_alpha = pulse * 28.f * pulse_strength;           // 알파 호흡
 
   // === 원 ===
-  const float r = sz * 0.85f;
+  const float r_base = sz * 0.85f;
+  const float r = r_base * pulse_scale;
   QRectF circleRect(x - r, y - r, r * 2.f, r * 2.f);
 
-  painter.setPen(QPen(QColor(0, 0, 0, 160), 3));   // 외곽선(가독성)
+  int a = (int)(fillAlpha + pulse_alpha);
+  a = std::clamp(a, 110, 255);
+  circleColor.setAlpha(a);
+
+  painter.setPen(QPen(QColor(0, 0, 0, 160), 3));
   painter.setBrush(circleColor);
   painter.drawEllipse(circleRect);
 
-  // === 원 안 숫자(거리) ===
+  // === 거리 텍스트(원 위 라운드 라벨) ===
   const int dist_i = (int)std::nearbyint(d_rel);
-  const QString dist_txt = QString::number(dist_i);   // 숫자만 (m 제거)
+  const QString dist_txt = QString::number(dist_i);
 
-  int font_px = std::clamp((int)(r * 0.95f), 26, 46);
-  configFont(painter, FONT_OPEN_SANS, font_px, "ExtraBold");
+  // 라벨 폰트(원 크기에 연동)
+  const int label_font_px = std::clamp((int)(r * 0.55f), 20, 34);
+  configFont(painter, FONT_OPEN_SANS, label_font_px, "ExtraBold");
 
-  painter.setPen(QColor(0, 0, 0, 210)); // 그림자
-  painter.drawText(circleRect.translated(2, 2), Qt::AlignCenter, dist_txt);
+  QFontMetrics fm(painter.font());
+  const int text_w = fm.horizontalAdvance(dist_txt);
+  const int text_h = fm.height();
 
-  painter.setPen(QColor(255, 255, 255, 255)); // 흰색
-  painter.drawText(circleRect, Qt::AlignCenter, dist_txt);
+  const float pad_x = std::clamp(r * 0.25f, 10.f, 16.f);
+  const float pad_y = std::clamp(r * 0.15f,  6.f, 12.f);
+
+  const float label_w = text_w + pad_x * 2.f;
+  const float label_h = text_h + pad_y * 2.f;
+
+  const float gap = std::clamp(r * 0.20f, 8.f, 14.f);
+
+  QRectF labelRect(circleRect.center().x() - label_w * 0.5f,
+                   circleRect.top() - label_h - gap,
+                   label_w, label_h);
+
+  // 화면 위쪽 잘림 방지
+  if (labelRect.top() < 0.f) labelRect.moveTop(0.f);
+  if (labelRect.left() < 0.f) labelRect.moveLeft(0.f);
+  if (labelRect.right() > width()) labelRect.moveRight(width());
+
+  const float radius = std::clamp(label_h * 0.35f, 6.f, 14.f);
+
+  // 라벨 배경 알파도 펄스 연동
+  int bgA = (int)(145 + pulse_alpha * 0.8f);
+  bgA = std::clamp(bgA, 120, 205);
+
+  painter.setPen(QPen(QColor(0, 0, 0, 185), 2));
+  painter.setBrush(QColor(0, 0, 0, bgA));
+  painter.drawRoundedRect(labelRect, radius, radius);
+
+  // 텍스트(그림자 + 본문)
+  painter.setPen(QColor(0, 0, 0, 220));
+  painter.drawText(labelRect.translated(2, 2), Qt::AlignCenter, dist_txt);
+
+  painter.setPen(QColor(255, 255, 255, 255));
+  painter.drawText(labelRect, Qt::AlignCenter, dist_txt);
 
   painter.restore();
 }
-
 
 void NvgWindow::paintGL() {
   CameraViewWidget::paintGL();
