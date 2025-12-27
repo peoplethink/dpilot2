@@ -16,8 +16,10 @@ from selfdrive.swaglog import cloudlog
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.car.car_helpers import get_car, get_startup_event, get_one_can
 from selfdrive.controls.lib.lane_planner import CAMERA_OFFSET
-from selfdrive.controls.lib.drive_helpers import V_CRUISE_INITIAL, update_v_cruise, initialize_v_cruise
-from selfdrive.controls.lib.drive_helpers import get_lag_adjusted_curvature
+
+# ✅ commaai#26472: VCruiseHelper로 통일
+from selfdrive.controls.lib.drive_helpers import V_CRUISE_INITIAL, VCruiseHelper, get_lag_adjusted_curvature
+
 from selfdrive.controls.lib.latcontrol import LatControl, MIN_LATERAL_CONTROL_SPEED
 from selfdrive.controls.lib.longcontrol import LongControl
 from selfdrive.controls.lib.latcontrol_pid import LatControlPID
@@ -189,8 +191,6 @@ class Controls:
     self.active = False
     self.can_rcv_error = False
     self.soft_disable_timer = 0
-    self.v_cruise_kph = V_CRUISE_UNSET
-    self.v_cruise_kph_last = 0
     self.mismatch_counter = 0
     self.cruise_mismatch_counter = 0
     self.can_rcv_error_counter = 0
@@ -200,13 +200,15 @@ class Controls:
     self.events_prev = []
     self.current_alert_types = [ET.PERMANENT]
     self.logged_comm_issue = False
-    self.button_timers = {ButtonEvent.Type.decelCruise: 0, ButtonEvent.Type.accelCruise: 0}
     self.last_actuators = car.CarControl.Actuators.new_message()
     self.steer_limited = False
     self.desired_curvature = 0.0
     self.desired_curvature_rate = 0.0
     self.nn_alert_shown = False
     self.experimental_mode = False
+
+    # ✅ commaai#26472: v_cruise helper 도입
+    self.v_cruise_helper = VCruiseHelper(self.CP)
 
     # ====== longControlState 통일 변수 ======
     self.long_control_state = LongControlState.off
@@ -234,7 +236,7 @@ class Controls:
     # mpcEvent UI pulse용
     self._mpc_event_last = 0
     self._mpc_event_pulse_frames = 0
-    
+
     # 롱크루즈갭 + lead 정보 보관
     self.longCruiseGap = 1
     self.dRel = 0.0
@@ -286,11 +288,11 @@ class Controls:
     if not self.CP.notCar:
       self.events.add_from_msg(self.sm['driverMonitoringState'].events)
 
-    # Block resume if cruise never previously enabled
+    # ✅ commaai#26472: Block resume if cruise never previously enabled
     resume_pressed = any(be.type in (ButtonType.accelCruise, ButtonType.resumeCruise) for be in CS.buttonEvents)
-    if not self.CP.pcmCruise and self.v_cruise_kph == V_CRUISE_INITIAL and resume_pressed:
+    if not self.CP.pcmCruise and (not self.v_cruise_helper.v_cruise_initialized) and resume_pressed:
       self.events.add(EventName.resumeBlocked)
-      
+
     if EON and (self.sm['peripheralState'].pandaType != PandaType.uno) and \
        self.sm['deviceState'].batteryPercent < 1 and self.sm['deviceState'].chargingError \
        and not self.params.get_bool("IsChargerFaultIgnored"):
@@ -420,13 +422,11 @@ class Controls:
         try:
           self.events.add(EventName(mpc_evt))
         except Exception:
-          # 혹시 enum 변환 실패하면 무시
           pass
     else:
-      # 상태가 0이면 리셋
       self._mpc_event_last = 0
       self._mpc_event_pulse_frames = 0
-      
+
     if TICI:
       for m in messaging.drain_sock(self.log_sock, wait_for_one=False):
         try:
@@ -493,16 +493,11 @@ class Controls:
     return CS
 
   def state_transition(self, CS):
-    self.v_cruise_kph_last = self.v_cruise_kph
+    # keep in sync (CI 내부 CP 갱신 가능)
     self.CP.pcmCruise = self.CI.CP.pcmCruise
 
-    if CS.cruiseState.available:
-      if not self.CP.pcmCruise:
-        self.v_cruise_kph = update_v_cruise(self.v_cruise_kph, CS.buttonEvents, self.button_timers, self.enabled, self.is_metric)
-      else:
-        self.v_cruise_kph = CS.cruiseState.speed * CV.MS_TO_KPH
-    else:
-      self.v_cruise_kph = V_CRUISE_UNSET
+    # ✅ commaai#26472: helper가 v_cruise/v_cruise_cluster 관리
+    self.v_cruise_helper.update_v_cruise(CS, self.enabled, self.is_metric)
 
     # SCC smoother
     SccSmoother.update_cruise_buttons(self, CS, self.CP.openpilotLongitudinalControl)
@@ -577,7 +572,6 @@ class Controls:
       if self.events.any(ET.ENABLE):
         if self.events.any(ET.NO_ENTRY):
           self.current_alert_types.append(ET.NO_ENTRY)
-          
         else:
           if self.events.any(ET.PRE_ENABLE):
             self.state = State.preEnabled
@@ -586,8 +580,9 @@ class Controls:
           else:
             self.state = State.enabled
           self.current_alert_types.append(ET.ENABLE)
-          if not self.CP.pcmCruise:
-            self.v_cruise_kph = initialize_v_cruise(CS.vEgo, self.experimental_mode, CS.buttonEvents, self.button_timers, self.v_cruise_kph_last)
+
+          # ✅ commaai#26472: enable 시 helper 초기 set speed
+          self.v_cruise_helper.initialize_v_cruise(CS)
 
     self.enabled = self.state in ENABLED_STATES
     self.active = self.state in ACTIVE_STATES
@@ -653,7 +648,9 @@ class Controls:
       self.LoC.reset(v_pid=CS.vEgo)
 
     if not self.joystick_mode:
-      pid_accel_limits = self.CI.get_pid_accel_limits(self.CP, CS.vEgo, self.v_cruise_kph * CV.KPH_TO_MS)
+      # ✅ helper 기준 set speed 사용
+      pid_accel_limits = self.CI.get_pid_accel_limits(self.CP, CS.vEgo,
+                                                      self.v_cruise_helper.v_cruise_kph * CV.KPH_TO_MS)
       t_since_plan = (self.sm.frame - self.sm.rcv_frame['longitudinalPlan']) * DT_CTRL
 
       actuators.accel, actuators.jerk = self.LoC.update(CC.longActive and CS.cruiseState.enabledAcc,
@@ -714,15 +711,6 @@ class Controls:
 
     return CC, lac_log
 
-  def update_button_timers(self, buttonEvents):
-    for k in self.button_timers:
-      if self.button_timers[k] > 0:
-        self.button_timers[k] += 1
-
-    for b in buttonEvents:
-      if b.type.raw in self.button_timers:
-        self.button_timers[b.type.raw] = 1 if b.pressed else 0
-
   def publish_logs(self, CS, start_time, CC, lac_log):
     orientation_value = list(self.sm['liveLocationKalman'].calibratedOrientationNED.value)
     if len(orientation_value) > 2:
@@ -741,7 +729,8 @@ class Controls:
       CC.cruiseControl.resume = self.enabled and CS.cruiseState.standstill and speeds[-1] > 0.1
 
     hudControl = CC.hudControl
-    hudControl.setSpeed = float(self.v_cruise_kph * CV.KPH_TO_MS)
+    # ✅ helper 기준 HUD setSpeed
+    hudControl.setSpeed = float(self.v_cruise_helper.v_cruise_cluster_kph * CV.KPH_TO_MS)
     hudControl.speedVisible = self.enabled
     hudControl.lanesVisible = self.enabled
     hudControl.leadVisible = self.sm['longitudinalPlan'].hasLead
@@ -835,7 +824,11 @@ class Controls:
     controlsState.longControlState = self.long_control_state
 
     controlsState.vPid = float(self.LoC.v_pid)
-    controlsState.vCruise = float(self.applyMaxSpeed if self.CP.openpilotLongitudinalControl else self.v_cruise_kph)
+
+    # ✅ applyMaxSpeed 유지 + fallback은 helper 기준
+    controlsState.vCruise = float(self.applyMaxSpeed if self.CP.openpilotLongitudinalControl
+                                  else self.v_cruise_helper.v_cruise_kph)
+
     controlsState.upAccelCmd = float(self.LoC.pid.p)
     controlsState.uiAccelCmd = float(self.LoC.pid.i)
     controlsState.ufAccelCmd = float(self.LoC.pid.f)
