@@ -152,6 +152,7 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     trafficError @126; #ajouatom
     trafficSignGreen @127; #ajouatom
     trafficSignChanged @128; #ajouatom
+    resumeBlocked @129;
   }
 }
 
