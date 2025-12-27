@@ -16,6 +16,7 @@ V_CRUISE_DELTA_MI = 5 * CV.MPH_TO_KPH
 V_CRUISE_DELTA_KM = 10
 V_CRUISE_ENABLE_MIN = 30
 V_CRUISE_INITIAL = 255  # kph
+IMPERIAL_INCREMENT = 1.6
 
 MIN_DIST = 0.001
 MIN_SPEED = 1.0
@@ -73,7 +74,7 @@ def update_v_cruise(v_cruise_kph, buttonEvents, button_timers, enabled, metric):
   button_type = None
 
   # should be CV.MPH_TO_KPH, but this causes rounding errors
-  v_cruise_delta = 1. if metric else 1.6
+  v_cruise_delta = 1. if metric else IMPERIAL_INCREMENT
 
   for b in buttonEvents:
     if b.type.raw in button_timers and not b.pressed:
