@@ -642,7 +642,7 @@ class LongitudinalMpc:
           self.xState = XState.e2eCruise
           self.mpcEvent = EventName.trafficSignGreen
 
-    elif controls, myDrivingMode == 4 or self.trafficStopMode == 0:
+    elif controls.myDrivingMode == 4 or self.trafficStopMode == 0:
       if self.status:
         self.xState = XState.lead
       else:
