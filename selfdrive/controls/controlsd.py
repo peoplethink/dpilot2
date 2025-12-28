@@ -420,13 +420,17 @@ class Controls:
       self.events.add(EventName.fcw)
 
     # ===== MPC event -> UI Event (CruiseHelper 이식: 변경 감지 + 디바운스) =====
+    # ===== MPC event -> UI Event (CruiseHelper 이식: 변경 감지 + 디바운스) =====
     try:
       mpc_evt = int(self.sm['longitudinalPlan'].mpcEvent)
     except Exception:
       mpc_evt = 0
 
     if self.enabled and self.CP.openpilotLongitudinalControl:
-      if mpc_evt > 0 and mpc_evt != self._mpc_event_prev:
+      # 🔑 핵심: 0이면 prev를 리셋 → 같은 이벤트 재발생 허용
+      if mpc_evt == 0:
+        self._mpc_event_prev = 0
+      elif mpc_evt != self._mpc_event_prev:
         self._send_mpc_event(mpc_evt, waiting_s=5.0)
     else:
       self._mpc_event_prev = 0
