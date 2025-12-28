@@ -147,18 +147,18 @@ class Planner:
     if self.mpc.mode == 'acc':
       #accel_limits = [A_CRUISE_MIN, get_max_accel(v_ego)]      
       if myDrivingMode in [1]: # 연비
-        myMaxAccel = clip(self.get_max_accel(v_ego)*self.myEcoModeFactor, 0, MAX_ACCEL)
+        myMaxAccel = clip(self.get_max_accel(v_ego)*self.myEcoModeFactor, 0, ACCEL_MAX)
       elif myDrivingMode in [2]: # 안전
-        myMaxAccel = clip(self.get_max_accel(v_ego)*self.myEcoModeFactor*mySafeModeFactor, 0, MAX_ACCEL)
+        myMaxAccel = clip(self.get_max_accel(v_ego)*self.myEcoModeFactor*mySafeModeFactor, 0, ACCEL_MAX)
       elif myDrivingMode in [3,4]: # 일반, 고속
-        myMaxAccel = clip(self.get_max_accel(v_ego), 0, MAX_ACCEL)
+        myMaxAccel = clip(self.get_max_accel(v_ego), 0, ACCEL_MAX)
       else:
         myMaxAccel = self.get_max_accel(v_ego)
       accel_limits = [A_CRUISE_MIN, myMaxAccel]
       accel_limits_turns = limit_accel_in_turns(v_ego, sm['carState'].steeringAngleDeg, accel_limits, self.CP)
     else:
-      accel_limits = [MIN_ACCEL, MAX_ACCEL]
-      accel_limits_turns = [MIN_ACCEL, MAX_ACCEL]
+      accel_limits = [ACCEL_MIN, ACCEL_MAX]
+      accel_limits_turns = [ACCEL_MIN, ACCEL_MAX]
 
     if reset_state:
       self.v_desired_filter.x = v_ego
