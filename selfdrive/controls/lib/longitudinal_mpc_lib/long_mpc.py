@@ -360,8 +360,8 @@ class LongitudinalMpc:
     x_lead = clip(x_lead, min_x_lead, 1e8)
     v_lead = clip(v_lead, 0.0, 1e8)
     a_lead = clip(a_lead, -10.0, 5.0)
-    return lead_xv
-
+    return self.extrapolate_lead(x_lead, v_lead, a_lead, a_lead_tau)
+    
   def set_accel_limits(self, min_a, max_a):
     self.cruise_min_a = min_a
     self.max_a = max_a
