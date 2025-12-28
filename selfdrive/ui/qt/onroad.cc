@@ -856,14 +856,18 @@ void NvgWindow::drawLead(QPainter &painter,
 
   float sz = std::clamp((25.f * 30.f) / (d_rel / 3.f + 30.f), 15.0f, 30.0f) * 2.35f;
 
+  // ====== 튜닝 스케일 (요청: 1.15) ======
+  const float LEAD_SCALE  = 1.15f;  // 원 + R/V
+  const float LABEL_SCALE = 1.15f;  // 거리 라벨 + 숫자
+  // =====================================
+
   const float circleScale = 1.20f;        // 1.10~1.35 취향
-  sz *= circleScale;
+  sz *= (circleScale * LEAD_SCALE);
 
   float x = std::clamp((float)vd.x(), 0.f, width() - sz / 2.f);
   float y = std::fmin(height() - sz * 0.6f, (float)vd.y());
 
   const bool is_radar = uiState()->scene.lead_radar[num];
-
   QColor circleColor = is_radar ? QColor(0, 255, 0) : QColor(0, 160, 255);
 
   const float t = leadPulseTimer.elapsed() * 0.001f;
@@ -871,7 +875,6 @@ void NvgWindow::drawLead(QPainter &painter,
   const float pulse = std::sin(t * pulse_speed);
 
   float pulse_strength = std::clamp(1.0f - (d_rel / 45.f), 0.f, 1.f);
-
   if (v_rel < -1.0f) {
     pulse_strength = std::min(1.0f, pulse_strength * (1.0f + std::clamp((-v_rel) / 8.f, 0.f, 0.6f)));
   }
@@ -890,9 +893,10 @@ void NvgWindow::drawLead(QPainter &painter,
   painter.setPen(QPen(QColor(0, 0, 0, 160), 3));
   painter.setBrush(circleColor);
   painter.drawEllipse(circleRect);
-	
+
+  // ===== R/V 글자(원과 같이) 크게 =====
   const QString rv_txt = is_radar ? "R" : "V";
-  const int rv_font_px = std::clamp((int)(r * 0.9f), 26, 52);
+  const int rv_font_px = std::clamp((int)(r * 0.9f * LEAD_SCALE), 28, 58);
   configFont(painter, FONT_OPEN_SANS, rv_font_px, "ExtraBold");
 
   painter.setPen(QColor(0, 0, 0, 200));
@@ -901,23 +905,24 @@ void NvgWindow::drawLead(QPainter &painter,
   painter.setPen(QColor(255, 255, 255, 255));
   painter.drawText(circleRect, Qt::AlignCenter, rv_txt);
 
+  // ===== 거리 라벨: 박스+숫자 확대 + 흰 테두리 =====
   const int dist_i = (int)std::nearbyint(d_rel);
   const QString dist_txt = QString::number(dist_i);
 
-  const int label_font_px = std::clamp((int)(r * 0.55f), 20, 34);
+  const int label_font_px = std::clamp((int)(r * 0.55f * LABEL_SCALE), 22, 40);
   configFont(painter, FONT_OPEN_SANS, label_font_px, "ExtraBold");
 
   QFontMetrics fm(painter.font());
   const int text_w = fm.horizontalAdvance(dist_txt);
   const int text_h = fm.height();
 
-  const float pad_x = std::clamp(r * 0.25f, 10.f, 16.f);
-  const float pad_y = std::clamp(r * 0.15f,  6.f, 12.f);
+  const float pad_x = std::clamp(r * 0.25f * LABEL_SCALE, 12.f, 20.f);
+  const float pad_y = std::clamp(r * 0.15f * LABEL_SCALE,  8.f, 14.f);
 
   const float label_w = text_w + pad_x * 2.f;
   const float label_h = text_h + pad_y * 2.f;
 
-  const float gap = std::clamp(r * 0.20f, 8.f, 14.f);
+  const float gap = std::clamp(r * 0.20f * LABEL_SCALE, 9.f, 16.f);
 
   QRectF labelRect(circleRect.center().x() - label_w * 0.5f,
                    circleRect.top() - label_h - gap,
@@ -927,12 +932,13 @@ void NvgWindow::drawLead(QPainter &painter,
   if (labelRect.left() < 0.f) labelRect.moveLeft(0.f);
   if (labelRect.right() > width()) labelRect.moveRight(width());
 
-  const float radius = std::clamp(label_h * 0.35f, 6.f, 14.f);
+  const float radius = std::clamp(label_h * 0.35f, 7.f, 16.f);
 
   int bgA = (int)(145 + pulse_alpha * 0.8f);
   bgA = std::clamp(bgA, 120, 205);
 
-  painter.setPen(QPen(QColor(0, 0, 0, 185), 2));
+  // 흰색 테두리 요청
+  painter.setPen(QPen(QColor(255, 255, 255, 220), 2));
   painter.setBrush(QColor(0, 0, 0, bgA));
   painter.drawRoundedRect(labelRect, radius, radius);
 
