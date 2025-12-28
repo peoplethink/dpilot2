@@ -71,7 +71,7 @@ def get_stopped_equivalence_factor(v_lead, v_ego, t_follow=T_FOLLOW, stop_distan
   if not krkeegan:
     return (v_lead**2) / (2 * COMFORT_BRAKE)
 
-  v_diff = v_lead - v_e
+  v_diff = v_lead - v_ego
   if np.all(v_lead - v_ego > 0):
     v_diff_offset = ((v_lead - v_ego) * 1.)
     v_diff_offset = np.clip(v_diff_offset, 0, stop_distance / 2)
@@ -391,7 +391,7 @@ class LongitudinalMpc:
     # and then treat that as a stopped car/obstacle at this new distance.
     lead_0_obstacle = lead_xv_0[:,0] + get_stopped_equivalence_factor(lead_xv_0[:,1], self.x_sol[:,1], self.t_follow, self.stopDistance, krkeegan=self.applyLongDynamicCost)
     lead_1_obstacle = lead_xv_1[:,0] + get_stopped_equivalence_factor(lead_xv_1[:,1], self.x_sol[:,1], self.t_follow, self.stopDistance, krkeegan=self.applyLongDynamicCost)
-    self.params[:,0] = MIN_ACCEL if not reset_state else a_ego
+    self.params[:,0] = ACCEL_MIN if not reset_state else a_ego
     self.params[:,1] = self.max_a if not reset_state else a_ego
 
     v_cruise, stop_x, self.mode = self.update_apilot(controls, carstate, radarstate, model, v_cruise, self.mode)
@@ -540,7 +540,7 @@ class LongitudinalMpc:
   def update_gap_tf(self, controls, v_ego, a_ego):
     v_ego_kph = v_ego * CV.MS_TO_KPH
 
-    self.applyCruiseGap = clip(controls, longCruiseGap, 1, 4)
+    self.applyCruiseGap = clip(controls.longCruiseGap, 1, 4)
     if self.openpilotLongitudinalControl:
       if v_ego_kph >= self.v_ego_kph_prev: # 감속일때는 t_follow(gap) 계산안함.
         cruiseGap_dict = {
@@ -598,7 +598,7 @@ class LongitudinalMpc:
     v = model.velocity.x
 
     self.fakeCruiseDistance = 0.0
-    radar_detected = radarstate.leadOne.status & radarstate.leadOne.radar
+    radar_detected = radarstate.leadOne.status and radarstate.leadOne.radar
 
     # stop dist (model)
     stop_x = x[self.applyModelDistOrder]
@@ -614,9 +614,6 @@ class LongitudinalMpc:
 
     if self.e2eCruiseCount > 0:
       self.e2eCruiseCount -= 1
-
-    if carstate.gasPressed or carstate.brakePressed:
-      new_event = 0
 
     # SOFT_HOLD
     if carstate.brakePressed and v_ego < 0.1 and self.softHoldMode > 0:
