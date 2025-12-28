@@ -46,7 +46,6 @@ A_EGO_COST = 0.
 J_EGO_COST = 5.0
 
 A_CHANGE_COST = 200.
-A_CHANGE_COST_STARTING = 200.0
 DANGER_ZONE_COST = 100.
 CRASH_DISTANCE = .25
 LEAD_DANGER_FACTOR = 0.8
@@ -342,7 +341,7 @@ class LongitudinalMpc:
     a_lead_traj = a_lead * np.exp(-a_lead_tau * (T_IDXS**2) / 2.0)
     v_lead_traj = np.clip(v_lead + np.cumsum(T_DIFFS * a_lead_traj), 0.0, 1e8)
     x_lead_traj = x_lead + np.cumsum(T_DIFFS * v_lead_traj)
-    return lead_xv
+    return np.column_stack((x_lead_traj, v_lead_traj))
 
   def process_lead(self, lead):
     v_ego = self.x0[1]
