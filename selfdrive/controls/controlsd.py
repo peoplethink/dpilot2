@@ -233,9 +233,10 @@ class Controls:
     self.disable_op_fcw = params.get_bool('DisableOpFcw')
     self.mad_mode_enabled = params.get_bool('MadModeEnabled')
 
-    # mpcEvent UI pulse용
-    self._mpc_event_last = 0
-    self._mpc_event_pulse_frames = 0
+    # ✅✅ (이식) mpcEvent 디바운스 상태
+    self._mpc_event_prev = 0
+    self._mpc_event_frame = 0
+    self._mpc_event_wait_frames = 0  # (호환용, 실제 계산은 함수에서 수행)
 
     # 롱크루즈갭 + lead 정보 보관
     self.longCruiseGap = 1
@@ -267,6 +268,19 @@ class Controls:
 
     self.rk = Ratekeeper(100, print_delay_threshold=None)
     self.prof = Profiler(False)
+
+  # ✅✅ (이식) CruiseHelper send_apilot_event 방식: 시간 디바운스
+  def _send_mpc_event(self, mpc_evt: int, waiting_s: float = 5.0) -> None:
+    wait_frames = int(waiting_s / DT_CTRL)
+    if (self.sm.frame - self._mpc_event_frame) < max(wait_frames, 1):
+      return
+    try:
+      evt = EventName(int(mpc_evt))
+    except Exception:
+      return
+    self.events.add(evt)
+    self._mpc_event_frame = self.sm.frame
+    self._mpc_event_prev = int(mpc_evt)
 
   def update_events(self, CS):
     self.events.clear()
@@ -405,27 +419,18 @@ class Controls:
     if not self.disable_op_fcw and (planner_fcw or model_fcw):
       self.events.add(EventName.fcw)
 
-    # ===== MPC event -> UI Event (trafficStopping/trafficSignGreen/trafficSignChanged 등) =====
+    # ===== MPC event -> UI Event (CruiseHelper 이식: 변경 감지 + 디바운스) =====
     try:
       mpc_evt = int(self.sm['longitudinalPlan'].mpcEvent)
     except Exception:
       mpc_evt = 0
 
-    if mpc_evt != 0:
-      # 순간 알림은 2초만 띄우기 (스팸 방지)
-      if mpc_evt != self._mpc_event_last:
-        self._mpc_event_last = mpc_evt
-        self._mpc_event_pulse_frames = int(2.0 / DT_CTRL)
-
-      if self._mpc_event_pulse_frames > 0:
-        self._mpc_event_pulse_frames -= 1
-        try:
-          self.events.add(EventName(mpc_evt))
-        except Exception:
-          pass
+    if self.enabled and self.CP.openpilotLongitudinalControl:
+      if mpc_evt > 0 and mpc_evt != self._mpc_event_prev:
+        self._send_mpc_event(mpc_evt, waiting_s=5.0)
     else:
-      self._mpc_event_last = 0
-      self._mpc_event_pulse_frames = 0
+      self._mpc_event_prev = 0
+      self._mpc_event_frame = 0
 
     if TICI:
       for m in messaging.drain_sock(self.log_sock, wait_for_one=False):
