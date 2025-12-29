@@ -86,6 +86,10 @@ class Planner:
 
     self.mpc.openpilotLongitudinalControl = CP.openpilotLongitudinalControl
 
+  # ✅ [수정 1번] self.get_max_accel(...) 호출을 위해 메서드 추가
+  def get_max_accel(self, v_ego):
+    return interp(v_ego, A_CRUISE_MAX_BP, A_CRUISE_MAX_VALS)
+
   def read_param(self):
     self.myEcoModeFactor = float(int(Params().get("MyEcoModeFactor", encoding="utf8"))) / 100.
     self.cruiseMaxVals1 = float(int(Params().get("CruiseMaxVals1", encoding="utf8"))) / 100.
