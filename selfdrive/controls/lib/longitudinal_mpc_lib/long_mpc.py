@@ -611,7 +611,7 @@ class LongitudinalMpc:
       self.trafficError = False
 
     if self.e2eCruiseCount > 0:
-      self.e2eCruiseCount -= 1
+      self.e2eCruiseCount = int(self.e2eCruiseCount) - 1
 
     # SOFT_HOLD
     if carstate.brakePressed and v_ego < 0.1 and self.softHoldMode > 0:
@@ -654,7 +654,7 @@ class LongitudinalMpc:
         if v_ego < 0.1:
           if self.trafficState == 2 and (not self.trafficError or (self.trafficError and cruiseButtonCounterDiff > 0)):
             self.xState = XState.e2eCruisePrepare
-            self.e2eCruiseCount = 3 * DT_MDL
+            self.e2eCruiseCount = int(3.0 / DT_MDL)
             self.mpcEvent = EventName.trafficSignGreen
           else:
             if self.trafficState == 2 and self.trafficError:
@@ -664,7 +664,7 @@ class LongitudinalMpc:
             elif not self.trafficError and cruiseButtonCounterDiff < 0:
               self.trafficError = True          
             self.stopDist = 0.0
-            v_cruise = 0.0
+            //v_cruise = 0.0
             stop_x = 0.0
         elif radar_detected and (radarstate.leadOne.dRel - stop_x) < 2.0:
           self.xState = XState.lead
