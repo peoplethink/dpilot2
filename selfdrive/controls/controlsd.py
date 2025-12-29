@@ -73,6 +73,14 @@ ENABLED_STATES = (State.preEnabled, *ACTIVE_STATES)
 
 LongControlState = car.CarControl.Actuators.LongControlState
 
+# ============================
+# ✅✅ (선택 포함) traffic 이벤트 발생 조건 선택
+# 0: enabled일 때 (기본, CruiseHelper의 longActiveUser>0에 가장 근접)
+# 1: active일 때
+# 2: longActive(LoC state != off)일 때
+# ============================
+TRAFFIC_EVENT_COND = 0
+
 
 class Controls:
   def __init__(self, sm=None, pm=None, can_sock=None, CI=None):
@@ -238,6 +246,11 @@ class Controls:
     self._mpc_event_frame = 0
     self._mpc_event_wait_frames = 0  # (호환용, 실제 계산은 함수에서 수행)
 
+    # ✅✅ (이식) traffic 이벤트 디바운스 + prev 상태
+    self._traffic_state_prev = 0
+    self._traffic_evt_frame = 0
+    self._xstate_prev_for_traffic = XState.cruise
+
     # 롱크루즈갭 + lead 정보 보관
     self.longCruiseGap = 1
     self.dRel = 0.0
@@ -274,13 +287,18 @@ class Controls:
     wait_frames = int(waiting_s / DT_CTRL)
     if (self.sm.frame - self._mpc_event_frame) < max(wait_frames, 1):
       return
-    try:
-      evt = EventName(int(mpc_evt))
-    except Exception:
-      return
+    evt = EventName(int(mpc_evt))
     self.events.add(evt)
     self._mpc_event_frame = self.sm.frame
     self._mpc_event_prev = int(mpc_evt)
+
+  # ✅✅ (이식) traffic 이벤트 디바운스 (CruiseHelper send_apilot_event 스타일)
+  def _send_traffic_event(self, evt: EventName, waiting_s: float = 20.0) -> None:
+    wait_frames = int(waiting_s / DT_CTRL)
+    if (self.sm.frame - self._traffic_evt_frame) < max(wait_frames, 1):
+      return
+    self.events.add(evt)
+    self._traffic_evt_frame = self.sm.frame
 
   def update_events(self, CS):
     self.events.clear()
@@ -420,11 +438,7 @@ class Controls:
       self.events.add(EventName.fcw)
 
     # ===== MPC event -> UI Event (CruiseHelper 이식: 변경 감지 + 디바운스) =====
-    # ===== MPC event -> UI Event (CruiseHelper 이식: 변경 감지 + 디바운스) =====
-    try:
-      mpc_evt = int(self.sm['longitudinalPlan'].mpcEvent)
-    except Exception:
-      mpc_evt = 0
+    mpc_evt = int(self.sm['longitudinalPlan'].mpcEvent)
 
     if self.enabled and self.CP.openpilotLongitudinalControl:
       # 🔑 핵심: 0이면 prev를 리셋 → 같은 이벤트 재발생 허용
@@ -435,6 +449,36 @@ class Controls:
     else:
       self._mpc_event_prev = 0
       self._mpc_event_frame = 0
+
+    # ===== trafficState/xState 기반 이벤트 (CruiseHelper 이식) =====
+    traffic_raw = int(self.sm['longitudinalPlan'].trafficState)
+    traffic_state = traffic_raw % 100
+    traffic_error = traffic_raw >= 1000
+    xstate_now = self.sm['longitudinalPlan'].xState
+
+    # ✅✅ (선택) traffic 이벤트 발생 조건
+    if TRAFFIC_EVENT_COND == 0:
+      traffic_allowed = self.enabled and self.CP.openpilotLongitudinalControl
+    elif TRAFFIC_EVENT_COND == 1:
+      traffic_allowed = self.active and self.CP.openpilotLongitudinalControl
+    else:  # 2
+      traffic_allowed = self.enabled and self.CP.openpilotLongitudinalControl and (self.LoC.long_control_state != LongControlState.off)
+
+    if traffic_allowed:
+      if xstate_now == XState.softHold and (self._traffic_state_prev != 2 and traffic_state == 2):
+        self._send_traffic_event(EventName.trafficSignChanged, waiting_s=20.0)
+
+      elif xstate_now == XState.e2eCruise and (self._traffic_state_prev != 2 and traffic_state == 2) and CS.vEgo < 0.1:
+        self._send_traffic_event(EventName.trafficSignGreen, waiting_s=5.0)
+
+      elif xstate_now == XState.e2eStop and self._xstate_prev_for_traffic in (XState.e2eCruise, XState.lead):
+        self._send_traffic_event(EventName.trafficStopping, waiting_s=20.0)
+
+      elif traffic_error:
+        self._send_traffic_event(EventName.trafficError, waiting_s=20.0)
+
+    self._traffic_state_prev = traffic_state
+    self._xstate_prev_for_traffic = xstate_now
 
     if TICI:
       for m in messaging.drain_sock(self.log_sock, wait_for_one=False):
