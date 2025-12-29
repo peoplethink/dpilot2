@@ -252,8 +252,14 @@ class Controls:
     self._xstate_prev_for_traffic = XState.cruise
 
     # ===== 크루즈갭 + lead 정보 보관 =====
-    # (✅ 첫 코드의 "크루즈갭/표시" 흐름에 맞게: 내부 보관값을 HUD/controlsState에 동일 반영)
-    self.longCruiseGap = 1
+    # (✅ CruiseHelper "PrevCruiseGap" 방식 이식)
+    self.longCruiseGap = clip(int(self.params.get("PrevCruiseGap")), 1, 4)
+
+    # gap 버튼 디바운스/롱프레스 상태 (CruiseHelper 스타일)
+    self._gap_btn_cnt = 0
+    self._gap_btn_prev = ButtonType.unknown
+    self._gap_btn_long_pressed = False
+
     self.dRel = 0.0
     self.vRel = 0.0
 
@@ -300,6 +306,30 @@ class Controls:
       return
     self.events.add(evt)
     self._traffic_evt_frame = self.sm.frame
+
+  # ✅✅ (이식) CruiseHelper의 gapAdjustCruise 처리: PrevCruiseGap을 1~4 순환 저장
+  def _update_long_cruise_gap_from_buttons(self, button_events) -> None:
+    # press 시작 -> release에서 short press면 gap 순환
+    if self._gap_btn_cnt > 0:
+      self._gap_btn_cnt += 1
+
+    for b in button_events:
+      if b.pressed and self._gap_btn_cnt == 0 and b.type == ButtonType.gapAdjustCruise:
+        self._gap_btn_cnt = 1
+        self._gap_btn_prev = b.type
+
+      elif (not b.pressed) and self._gap_btn_cnt > 0 and b.type == ButtonType.gapAdjustCruise:
+        # release: short press만 처리 (long press면 무시)
+        if not self._gap_btn_long_pressed:
+          self.longCruiseGap = self.longCruiseGap + 1 if self.longCruiseGap < 4 else 1
+          put_nonblocking("PrevCruiseGap", str(int(self.longCruiseGap)))
+        self._gap_btn_long_pressed = False
+        self._gap_btn_cnt = 0
+
+    # long press 판정(원 코드: 40프레임 초과)
+    if self._gap_btn_cnt > 40 and self._gap_btn_prev == ButtonType.gapAdjustCruise:
+      self._gap_btn_long_pressed = True
+      self._gap_btn_cnt = 0
 
   def update_events(self, CS):
     self.events.clear()
@@ -554,6 +584,9 @@ class Controls:
     # SCC smoother
     SccSmoother.update_cruise_buttons(self, CS, self.CP.openpilotLongitudinalControl)
 
+    # ✅✅ (이식) gap 버튼으로 PrevCruiseGap 갱신
+    self._update_long_cruise_gap_from_buttons(CS.buttonEvents)
+
     # ✅✅ myDrivingMode / mySafeModeFactor sanitize
     try:
       self.myDrivingMode = int(self.myDrivingMode)
@@ -568,15 +601,20 @@ class Controls:
     self.mySafeModeFactor = float(clip(self.mySafeModeFactor, 0.1, 1.0))
 
     # ===========================
-    # ✅✅ 크루즈갭 "보관값" 갱신 (첫 코드 흐름 반영)
-    # - openpilotLong ON: planner(longitudinalPlan.cruiseGap)
-    # - openpilotLong OFF: 차량( CS.cruiseGap ) fallback
+    # ✅✅ 크루즈갭 "표시/보관값" 우선순위
+    # 1) PrevCruiseGap (사용자 선택)
+    # 2) openpilotLong ON이면 planner(longitudinalPlan.cruiseGap) fallback
+    # 3) openpilotLong OFF이면 CS.cruiseGap fallback
     # ===========================
-    if self.CP.openpilotLongitudinalControl:
-      self.longCruiseGap = clip(int(self.sm['longitudinalPlan'].cruiseGap), 1, 4)
-    else:
-      # 일부 차종은 cruiseGap 필드가 없을 수 있어 getattr로 안전 처리
-      self.longCruiseGap = clip(int(getattr(CS, 'cruiseGap', 1)), 1, 4)
+    try:
+      pref_gap = int(self.params.get("PrevCruiseGap"))
+      self.longCruiseGap = clip(pref_gap, 1, 4)
+    except Exception:
+      if self.CP.openpilotLongitudinalControl:
+        self.longCruiseGap = clip(int(self.sm['longitudinalPlan'].cruiseGap), 1, 4)
+      else:
+        # 일부 차종은 cruiseGap 필드가 없을 수 있어 getattr로 안전 처리
+        self.longCruiseGap = clip(int(getattr(CS, 'cruiseGap', 1)), 1, 4)
 
     lead = self.sm['radarState'].leadOne
     if lead.status:
@@ -799,7 +837,7 @@ class Controls:
     hudControl.softHold = True if (xState == XState.softHold and CC.longActive) else False
 
     # ===========================
-    # ✅✅ 크루즈갭 표시를 "보관값" 기준으로 통일 (첫 코드 반영)
+    # ✅✅ 크루즈갭 표시를 "보관값" 기준으로 통일 (CruiseHelper 반영)
     # ===========================
     hudControl.cruiseGap = clip(int(self.longCruiseGap), 1, 4)
     hudControl.objDist = int(self.dRel)
@@ -917,7 +955,7 @@ class Controls:
     controlsState.sccCurvatureFactor = ntune_scc_get('sccCurvatureFactor')
     controlsState.lateralControlSelect = int(self.lateral_control_select)
 
-    # ✅✅ 크루즈갭 publish도 "보관값" 기준 (첫 코드 스타일)
+    # ✅✅ 크루즈갭 publish도 "보관값" 기준 (CruiseHelper 스타일)
     controlsState.longCruiseGap = clip(int(self.longCruiseGap), 1, 4)
 
     controlsState.myDrivingMode = int(self.myDrivingMode)
