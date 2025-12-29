@@ -664,7 +664,7 @@ class LongitudinalMpc:
             elif not self.trafficError and cruiseButtonCounterDiff < 0:
               self.trafficError = True          
             self.stopDist = 0.0
-            //v_cruise = 0.0
+            #v_cruise = 0.0
             stop_x = 0.0
         elif radar_detected and (radarstate.leadOne.dRel - stop_x) < 2.0:
           self.xState = XState.lead
