@@ -69,7 +69,7 @@ def get_stopped_equivalence_factor(v_lead, v_ego, t_follow=T_FOLLOW, stop_distan
   if not krkeegan:
     return (v_lead**2) / (2 * COMFORT_BRAKE)
 
-  v_diff = v_lead - v_ego
+  v_diff_offset = 0
   if np.all(v_lead - v_ego > 0):
     v_diff_offset = ((v_lead - v_ego) * 1.)
     v_diff_offset = np.clip(v_diff_offset, 0, stop_distance / 2)
