@@ -294,7 +294,7 @@ class Controls:
     wait_frames = int(waiting_s / DT_CTRL)
     if (self.sm.frame - self._mpc_event_frame) < max(wait_frames, 1):
       return
-    evt = EventName(int(mpc_evt))
+    evt = int(mpc_evt)
     self.events.add(evt)
     self._mpc_event_frame = self.sm.frame
     self._mpc_event_prev = int(mpc_evt)
