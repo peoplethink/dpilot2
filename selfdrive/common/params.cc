@@ -283,6 +283,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"CruiseMaxVals5", PERSISTENT},
     {"CruiseMaxVals6", PERSISTENT},
     {"SccConnectedBus2", PERSISTENT},
+    {"PrevCruiseGap", PERSISTENT},
     {"NNFF", PERSISTENT},
     {"NNFFLite", PERSISTENT},
     {"NNFFModelName", PERSISTENT},
