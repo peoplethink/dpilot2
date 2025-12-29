@@ -1183,50 +1183,40 @@ void NvgWindow::drawBottomIcons(QPainter &p) {
   const int y = rect().bottom() - footer_h / 2 - 10;
 
   // ========== Cruise Gap (항상 표시) ==========
-  const int gap_cluster = controls_state.getLongCruiseGap();
+  int gap_cluster = (int)controls_state.getLongCruiseGap();
+  gap_cluster = std::clamp(gap_cluster, 0, 4);
+
+  // tFollow/거리표시 (planner 값은 참고용)
   const float tFollow = lp.getTFollow();
-  //const float v_ego = car_state.getCluSpeedMs();
   const float v_ego = car_state.getVEgo();
   const float dist_m = tFollow * v_ego + 6.0f;
 
-  const bool longControl = scc_smoother.getLongControl();
-
-  QString gap_str;
-  QColor textColor = QColor(255, 255, 255, 250);
-
-  if (gap_cluster <= 0) {
-    gap_str = "N/A";
-  } else if (longControl) {
-    switch (gap_cluster) {
-      case 1: gap_str = "1"; break;
-      case 2: gap_str = "2"; break;
-      case 3: gap_str = "3"; break;
-      case 4: gap_str = "4"; break;
-      default:
-        gap_str = QString::number(gap_cluster);
-        textColor = QColor(255, 255, 225, 250);
-        break;
+  // ✅ long active 판단: carControl.longActive 우선, 없으면 기존 scc_smoother
+  bool active_long = false;
+  {
+    const auto cc = sm["carControl"].getCarControl();
+    // carControl에 longActive가 있을 때(대부분 있음)
+    if (cc.hasLongActive()) {
+      active_long = cc.getLongActive();
+    } else {
+      active_long = scc_smoother.getLongControl();
     }
-  } else {
-    gap_str = QString::number(gap_cluster);
-    textColor = QColor(255, 255, 225, 250);
   }
 
-  // GAP 막대 (1=1개, 4=4개)
-  const int gap_x = x - 350;   // 기존 텍스트 위치 기준
-  const int gap_y = y + 118;   // 막대는 텍스트보다 약간 위/아래 취향 조절
+  // GAP 막대 위치
+  const int gap_x = x - 350;
+  const int gap_y = y + 118;
 
-  // --- 항상 표시되는 Gap Info ---
+  // --- 항상 표시되는 Gap Info (tFollow / 거리) ---
   QString tf_str = QString::asprintf("%.2f", tFollow);
   QString dm_str = QString::asprintf("%.0fM", dist_m);
 
   {
     const int bar_w = 26;
-    const int bar_h = 24;
     const int bar_gap = 8;
     const int max_bars = 4;
 
-    // 막대 위 텍스트 Y (원하면 -8~-14로 조절)
+    // 막대 위 텍스트 Y
     const int info_y = gap_y - 6;
 
     // 2칸 영역 폭(왼쪽2칸/오른쪽2칸)
@@ -1259,14 +1249,16 @@ void NvgWindow::drawBottomIcons(QPainter &p) {
       drawTextWithColor(p, center_x - na_w / 2, info_y, na, QColor(255,255,255,220));
     }
   }
-	
+
+  // --- GAP bar 그리기 (갭 값은 무조건 controlsState.longCruiseGap) ---
   if (gap_cluster <= 0) {
     configFont(p, "Open Sans", 28, "Bold");
     drawTextWithColor(p, gap_x, y + 135, "N/A", QColor(255,255,255,220));
   } else {
-    drawGapBars(p, gap_x, gap_y, gap_cluster, longControl);
+    // ✅ active_long에 따라 색만 바뀜 (초록/파랑), 갭 값은 그대로
+    drawGapBars(p, gap_x, gap_y, gap_cluster, active_long);
   }
-
+	
   // Accel표시
   float accel = car_state.getAEgo();  
   float dx = 138 + 1330;
