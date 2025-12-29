@@ -930,7 +930,8 @@ struct LongitudinalPlan @0xe00b5b3eba12876c {
   xStop @54 : Float32;
   mpcEvent @60 : Int32;
   mpcMode @61 : Int32;
- 
+  xCruiseTarget @62 :Float32;   # planner.publish()에서 설정
+  xObstacle @63 :Float32;
   visionCurrentLatAcc @56 :Float32;
   visionMaxPredLatAcc @57 :Float32;
   tFollow @58 :Float32;
