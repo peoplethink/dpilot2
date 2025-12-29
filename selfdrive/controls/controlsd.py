@@ -251,7 +251,8 @@ class Controls:
     self._traffic_evt_frame = 0
     self._xstate_prev_for_traffic = XState.cruise
 
-    # 롱크루즈갭 + lead 정보 보관
+    # ===== 크루즈갭 + lead 정보 보관 =====
+    # (✅ 첫 코드의 "크루즈갭/표시" 흐름에 맞게: 내부 보관값을 HUD/controlsState에 동일 반영)
     self.longCruiseGap = 1
     self.dRel = 0.0
     self.vRel = 0.0
@@ -441,7 +442,6 @@ class Controls:
     mpc_evt = int(self.sm['longitudinalPlan'].mpcEvent)
 
     if self.enabled and self.CP.openpilotLongitudinalControl:
-      # 🔑 핵심: 0이면 prev를 리셋 → 같은 이벤트 재발생 허용
       if mpc_evt == 0:
         self._mpc_event_prev = 0
       elif mpc_evt != self._mpc_event_prev:
@@ -456,7 +456,6 @@ class Controls:
     traffic_error = traffic_raw >= 1000
     xstate_now = self.sm['longitudinalPlan'].xState
 
-    # ✅✅ (선택) traffic 이벤트 발생 조건
     if TRAFFIC_EVENT_COND == 0:
       traffic_allowed = self.enabled and self.CP.openpilotLongitudinalControl
     elif TRAFFIC_EVENT_COND == 1:
@@ -568,7 +567,17 @@ class Controls:
 
     self.mySafeModeFactor = float(clip(self.mySafeModeFactor, 0.1, 1.0))
 
-    self.longCruiseGap = clip(int(self.sm['longitudinalPlan'].cruiseGap), 1, 4)
+    # ===========================
+    # ✅✅ 크루즈갭 "보관값" 갱신 (첫 코드 흐름 반영)
+    # - openpilotLong ON: planner(longitudinalPlan.cruiseGap)
+    # - openpilotLong OFF: 차량( CS.cruiseGap ) fallback
+    # ===========================
+    if self.CP.openpilotLongitudinalControl:
+      self.longCruiseGap = clip(int(self.sm['longitudinalPlan'].cruiseGap), 1, 4)
+    else:
+      # 일부 차종은 cruiseGap 필드가 없을 수 있어 getattr로 안전 처리
+      self.longCruiseGap = clip(int(getattr(CS, 'cruiseGap', 1)), 1, 4)
+
     lead = self.sm['radarState'].leadOne
     if lead.status:
       self.dRel = float(lead.dRel)
@@ -701,7 +710,6 @@ class Controls:
       self.LoC.reset(v_pid=CS.vEgo)
 
     if not self.joystick_mode:
-      # ✅ helper 기준 set speed 사용
       pid_accel_limits = self.CI.get_pid_accel_limits(self.CP, CS.vEgo,
                                                       self.v_cruise_helper.v_cruise_kph * CV.KPH_TO_MS)
       t_since_plan = (self.sm.frame - self.sm.rcv_frame['longitudinalPlan']) * DT_CTRL
@@ -782,7 +790,6 @@ class Controls:
       CC.cruiseControl.resume = self.enabled and CS.cruiseState.standstill and speeds[-1] > 0.1
 
     hudControl = CC.hudControl
-    # ✅ helper 기준 HUD setSpeed
     hudControl.setSpeed = float(self.v_cruise_helper.v_cruise_cluster_kph * CV.KPH_TO_MS)
     hudControl.speedVisible = self.enabled
     hudControl.lanesVisible = self.enabled
@@ -791,7 +798,10 @@ class Controls:
     xState = self.sm['longitudinalPlan'].xState
     hudControl.softHold = True if (xState == XState.softHold and CC.longActive) else False
 
-    hudControl.cruiseGap = clip(int(self.sm['longitudinalPlan'].cruiseGap), 1, 4)
+    # ===========================
+    # ✅✅ 크루즈갭 표시를 "보관값" 기준으로 통일 (첫 코드 반영)
+    # ===========================
+    hudControl.cruiseGap = clip(int(self.longCruiseGap), 1, 4)
     hudControl.objDist = int(self.dRel)
     hudControl.objRelSpd = float(self.vRel)
 
@@ -878,7 +888,6 @@ class Controls:
 
     controlsState.vPid = float(self.LoC.v_pid)
 
-    # ✅ applyMaxSpeed 유지 + fallback은 helper 기준
     controlsState.vCruise = float(self.applyMaxSpeed if self.CP.openpilotLongitudinalControl
                                   else self.v_cruise_helper.v_cruise_kph)
 
@@ -908,9 +917,9 @@ class Controls:
     controlsState.sccCurvatureFactor = ntune_scc_get('sccCurvatureFactor')
     controlsState.lateralControlSelect = int(self.lateral_control_select)
 
+    # ✅✅ 크루즈갭 publish도 "보관값" 기준 (첫 코드 스타일)
     controlsState.longCruiseGap = clip(int(self.longCruiseGap), 1, 4)
 
-    # ✅✅ planner에서 읽는 필드 publish
     controlsState.myDrivingMode = int(self.myDrivingMode)
     controlsState.mySafeModeFactor = float(self.mySafeModeFactor)
 
@@ -963,18 +972,14 @@ class Controls:
     start_time = sec_since_boot()
     self.experimental_mode = self.params.get_bool("ExperimentalMode") and self.CP.openpilotLongitudinalControl
 
-    # Sample data
     CS = self.data_sample()
 
-    # Update events & transitions
     self.update_events(CS)
     if not self.read_only and self.initialized:
       self.state_transition(CS)
 
-    # Control
     CC, lac_log = self.state_control(CS)
 
-    # Publish
     self.publish_logs(CS, start_time, CC, lac_log)
 
     self.CS_prev = CS
