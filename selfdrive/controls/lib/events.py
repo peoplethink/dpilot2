@@ -552,7 +552,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
       Priority.LOW, VisualAlert.none, AudibleAlert.none, 2.),
   },
 
-  EventName.visionLeaving: {
+  EventName.visionleaving: {
     ET.WARNING: Alert(
       "Curve Leaving",
       "",
