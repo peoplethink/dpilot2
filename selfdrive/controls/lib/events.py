@@ -921,7 +921,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
   # ==========================
   EventName.trafficStopping: {
     ET.WARNING: Alert(
-      "신호 감지",
+      "신호감속 정지중입니다",
       "감속/정지 중입니다",
       AlertStatus.normal, AlertSize.small,
       Priority.LOW, VisualAlert.none, AudibleAlert.none,
