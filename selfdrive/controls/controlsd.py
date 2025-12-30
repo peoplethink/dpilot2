@@ -235,10 +235,13 @@ class Controls:
     self.disable_op_fcw = params.get_bool('DisableOpFcw')
     self.mad_mode_enabled = params.get_bool('MadModeEnabled')
 
-    # ✅✅ (이식) mpcEvent 디바운스 상태
-    self._mpc_event_prev = 0
-    self._mpc_event_frame = 0
-    self._mpc_event_wait_frames = 0  # (호환용, 실제 계산은 함수에서 수행)
+    # ==========================================================
+    # ✅✅✅ (1,2,3 반영) CruiseHelper 스타일 이벤트 디바운스 상태
+    # ==========================================================
+    self.apilotEventFrame = 0
+    self.apilotEventWait = 0.0
+    self.mpcEvent_prev = 0
+    # ==========================================================
 
     # ✅✅ (이식) traffic 이벤트 디바운스 + prev 상태
     self._traffic_state_prev = 0
@@ -283,17 +286,24 @@ class Controls:
     self.rk = Ratekeeper(100, print_delay_threshold=None)
     self.prof = Profiler(False)
 
-  # ✅✅ (이식) CruiseHelper send_apilot_event 방식: 시간 디바운스
-  def _send_mpc_event(self, mpc_evt: int, waiting_s: float = 5.0) -> None:
-    wait_frames = int(waiting_s / DT_CTRL)
-    if (self.sm.frame - self._mpc_event_frame) < max(wait_frames, 1):
-      return
-    evt = int(mpc_evt)
-    if evt <= 0:
-      return
-    self.events.add(evt)
-    self._mpc_event_frame = self.sm.frame
-    self._mpc_event_prev = evt
+  # ==========================================================
+  # ✅✅✅ (2 반영) CruiseHelper send_apilot_event 그대로 이식
+  # ==========================================================
+  def send_apilot_event(self, eventName, waiting=20.0):
+    # CruiseHelper와 동일: 마지막 이벤트 후 waiting초 경과 시에만 발생
+    if (self.sm.frame - self.apilotEventFrame) * DT_CTRL > self.apilotEventWait:
+      # 포크/버전에 따라 int(event) 처리에서 크래시 방지용 안전 처리만 추가
+      try:
+        self.events.add(eventName)
+      except Exception:
+        try:
+          self.events.add(EventName(int(eventName)))
+        except Exception:
+          return
+
+      self.apilotEventFrame = self.sm.frame
+      self.apilotEventWait = float(waiting)
+  # ==========================================================
 
   # ✅✅ (이식) traffic 이벤트 디바운스 (CruiseHelper send_apilot_event 스타일)
   def _send_traffic_event(self, evt: EventName, waiting_s: float = 20.0) -> None:
@@ -464,19 +474,20 @@ class Controls:
     if not self.disable_op_fcw and (planner_fcw or model_fcw):
       self.events.add(EventName.fcw)
 
-    # ===== MPC event -> UI Event (CruiseHelper 이식: 변경 감지 + 디바운스) =====
-    mpc_evt = int(self.sm['longitudinalPlan'].mpcEvent)
+    # ==========================================================
+    # ✅✅✅ (3 반영) MPC event -> CruiseHelper 방식 그대로
+    # ==========================================================
+    mpcEvent = int(self.sm['longitudinalPlan'].mpcEvent)
 
     if self.enabled and self.CP.openpilotLongitudinalControl:
-      if mpc_evt == 0:
-        self._mpc_event_prev = 0
-      elif mpc_evt != self._mpc_event_prev:
-        self._send_mpc_event(mpc_evt, waiting_s=5.0)
-    else:
-      self._mpc_event_prev = 0
-      self._mpc_event_frame = 0
+      if mpcEvent != self.mpcEvent_prev and mpcEvent > 0:
+        # CruiseHelper: self.send_apilot_event(controls, mpcEvent, 5.0)
+        self.send_apilot_event(mpcEvent, 5.0)
 
-    # ===== trafficState/xState 기반 이벤트 (CruiseHelper 이식) =====
+    self.mpcEvent_prev = mpcEvent
+    # ==========================================================
+
+    # ===== trafficState/xState 기반 이벤트 (기존 유지) =====
     traffic_raw = int(self.sm['longitudinalPlan'].trafficState)
     traffic_state = traffic_raw % 100
     traffic_error = traffic_raw >= 1000
