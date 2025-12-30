@@ -289,9 +289,11 @@ class Controls:
     if (self.sm.frame - self._mpc_event_frame) < max(wait_frames, 1):
       return
     evt = int(mpc_evt)
+    if evt <= 0:
+      return
     self.events.add(evt)
     self._mpc_event_frame = self.sm.frame
-    self._mpc_event_prev = int(mpc_evt)
+    self._mpc_event_prev = evt
 
   # ✅✅ (이식) traffic 이벤트 디바운스 (CruiseHelper send_apilot_event 스타일)
   def _send_traffic_event(self, evt: EventName, waiting_s: float = 20.0) -> None:
