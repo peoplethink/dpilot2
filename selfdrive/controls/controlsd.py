@@ -2,7 +2,6 @@
 import os
 import math
 from typing import SupportsFloat
-from decimal import Decimal
 
 from cereal import car, log
 from common.numpy_fast import clip, interp
@@ -16,10 +15,7 @@ from selfdrive.swaglog import cloudlog
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.car.car_helpers import get_car, get_startup_event, get_one_can
 from selfdrive.controls.lib.lane_planner import CAMERA_OFFSET
-
-# ✅ commaai#26472: VCruiseHelper로 통일
 from selfdrive.controls.lib.drive_helpers import V_CRUISE_INITIAL, VCruiseHelper, get_lag_adjusted_curvature
-
 from selfdrive.controls.lib.latcontrol import LatControl, MIN_LATERAL_CONTROL_SPEED
 from selfdrive.controls.lib.longcontrol import LongControl
 from selfdrive.controls.lib.latcontrol_pid import LatControlPID
@@ -61,8 +57,6 @@ EventName = car.CarEvent.EventName
 ButtonEvent = car.CarState.ButtonEvent
 ButtonType = car.CarState.ButtonEvent.Type
 SafetyModel = car.CarParams.SafetyModel
-
-# ✅ xState 사용
 XState = log.LongitudinalPlan.XState
 
 IGNORED_SAFETY_MODES = (SafetyModel.silent, SafetyModel.noOutput)
@@ -252,7 +246,7 @@ class Controls:
     self._xstate_prev_for_traffic = XState.cruise
 
     # ===== 크루즈갭 + lead 정보 보관 =====
-    # (✅ CruiseHelper "PrevCruiseGap" 방식 이식)
+    # (✅ CruiseHelper "PrevCruiseGap" 방식 이식)  ---- 1번안 유지
     self.longCruiseGap = clip(int(self.params.get("PrevCruiseGap")), 1, 4)
 
     # gap 버튼 디바운스/롱프레스 상태 (CruiseHelper 스타일)
@@ -602,19 +596,9 @@ class Controls:
 
     # ===========================
     # ✅✅ 크루즈갭 "표시/보관값" 우선순위
-    # 1) PrevCruiseGap (사용자 선택)
-    # 2) openpilotLong ON이면 planner(longitudinalPlan.cruiseGap) fallback
-    # 3) openpilotLong OFF이면 CS.cruiseGap fallback
+    # 1) PrevCruiseGap (사용자 선택)  ---- ✅ 1번안: fallback 제거, 항상 PrevCruiseGap만 사용
     # ===========================
-    try:
-      pref_gap = int(self.params.get("PrevCruiseGap"))
-      self.longCruiseGap = clip(pref_gap, 1, 4)
-    except Exception:
-      if self.CP.openpilotLongitudinalControl:
-        self.longCruiseGap = clip(int(self.sm['longitudinalPlan'].cruiseGap), 1, 4)
-      else:
-        # 일부 차종은 cruiseGap 필드가 없을 수 있어 getattr로 안전 처리
-        self.longCruiseGap = clip(int(getattr(CS, 'cruiseGap', 1)), 1, 4)
+    self.longCruiseGap = clip(int(self.params.get("PrevCruiseGap")), 1, 4)
 
     lead = self.sm['radarState'].leadOne
     if lead.status:
