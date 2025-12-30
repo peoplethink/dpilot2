@@ -50,7 +50,8 @@ class Events:
   def __init__(self):
     self.events: List[int] = []
     self.static_events: List[int] = []
-    self.events_prev = dict.fromkeys(EVENTS.keys(), 0)
+    # ✅ 안전: EVENTS에 없는 이벤트가 들어와도 터지지 않게 기본 dict로 시작
+    self.events_prev: Dict[int, int] = {}
 
   @property
   def names(self) -> List[int]:
@@ -60,12 +61,26 @@ class Events:
     return len(self.events)
 
   def add(self, event_name: int, static: bool = False) -> None:
+    # ✅ 안전: 새 이벤트가 들어오면 events_prev에 자동 등록
+    if event_name not in self.events_prev:
+      self.events_prev[event_name] = 0
+
     if static:
       self.static_events.append(event_name)
     self.events.append(event_name)
 
   def clear(self) -> None:
-    self.events_prev = {k: (v + 1 if k in self.events else 0) for k, v in self.events_prev.items()}
+    # ✅ 안전: 기존 키는 카운트 업데이트, 이번 프레임 새로 들어온 이벤트도 누락 없이 반영
+    new_prev: Dict[int, int] = {}
+    # 기존 키 업데이트
+    for k, v in self.events_prev.items():
+      new_prev[k] = (v + 1) if (k in self.events) else 0
+    # 이번 프레임에만 등장한(기존에 없던) 이벤트도 등록
+    for e in self.events:
+      if e not in new_prev:
+        new_prev[e] = 0
+
+    self.events_prev = new_prev
     self.events = self.static_events.copy()
 
   def any(self, event_type: str) -> bool:
@@ -82,10 +97,15 @@ class Events:
 
     ret = []
     for e in self.events:
-      types = EVENTS[e].keys()
+      # ✅ 핵심: EVENTS[e] 직접 접근 금지 (없으면 KeyError)
+      ev_map = EVENTS.get(e, {})
+      if not ev_map:
+        continue
+
+      types = ev_map.keys()
       for et in event_types:
         if et in types:
-          alert = EVENTS[e][et]
+          alert = ev_map[et]
           if not isinstance(alert, Alert):
             # ✅ 5개 우선 + 4개 구형 콜백 호환
             try:
@@ -93,15 +113,17 @@ class Events:
             except TypeError:
               alert = alert(*callback_args[:4])
 
-          if DT_CTRL * (self.events_prev[e] + 1) >= alert.creation_delay:
-            alert.alert_type = f"{EVENT_NAME[e]}/{et}"
+          # ✅ events_prev에도 없을 수 있으니 get 사용
+          prev = self.events_prev.get(e, 0)
+          if DT_CTRL * (prev + 1) >= alert.creation_delay:
+            alert.alert_type = f"{EVENT_NAME.get(e, str(e))}/{et}"
             alert.event_type = et
             ret.append(alert)
     return ret
 
   def add_from_msg(self, events):
     for e in events:
-      self.events.append(e.name.raw)
+      self.add(e.name.raw)
 
   def to_msg(self):
     ret = []
@@ -212,8 +234,6 @@ def get_display_speed(speed_ms: float, metric: bool) -> str:
 
 
 # ********** alert callback functions **********
-
-# ✅ controlsd에서 callback_args로 [CP, CC, sm, metric, soft_disable_time] 5개를 넘김
 AlertCallbackType = Callable[[car.CarParams, car.CarControl, messaging.SubMaster, bool, int], Alert]
 
 
@@ -716,6 +736,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
     ET.SOFT_DISABLE: soft_disable_alert("Communication Issue between Processes"),
     ET.NO_ENTRY: NoEntryAlert("Communication Issue between Processes"),
   },
+
   EventName.commIssueAvgFreq: {
     ET.SOFT_DISABLE: soft_disable_alert("Low Communication Rate between Processes"),
     ET.NO_ENTRY: NoEntryAlert("Low Communication Rate between Processes"),
@@ -895,6 +916,9 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
     ET.PERMANENT: torque_nn_load_alert,
   },
 
+  # ==========================
+  # ✅ 사용자 추가: Traffic Events
+  # ==========================
   EventName.trafficStopping: {
     ET.WARNING: Alert(
       "신호 감지",
@@ -934,5 +958,4 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
     ET.PERMANENT: Alert("과속카메라 감지 : 감속중","", AlertStatus.normal, AlertSize.small,
       Priority.HIGH, VisualAlert.none, AudibleAlert.none, 2.),
   },
-
 }
