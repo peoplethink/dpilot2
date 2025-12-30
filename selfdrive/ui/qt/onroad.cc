@@ -1195,7 +1195,7 @@ void NvgWindow::drawBottomIcons(QPainter &p) {
   bool active_long = false;
   {
     const auto cc = sm["carControl"].getCarControl();
-    bool active_long = cc.getLongActive();
+    active_long = cc.getLongActive();
   }
 
   // GAP 막대 위치
