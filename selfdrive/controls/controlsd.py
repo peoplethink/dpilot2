@@ -594,11 +594,15 @@ class Controls:
 
     self.mySafeModeFactor = float(clip(self.mySafeModeFactor, 0.1, 1.0))
 
-    # ===========================
-    # ✅✅ 크루즈갭 "표시/보관값" 우선순위
-    # 1) PrevCruiseGap (사용자 선택)  ---- ✅ 1번안: fallback 제거, 항상 PrevCruiseGap만 사용
-    # ===========================
-    self.longCruiseGap = clip(int(self.params.get("PrevCruiseGap")), 1, 4)
+    try:
+      pref_gap = int(self.params.get("PrevCruiseGap"))
+      self.longCruiseGap = clip(pref_gap, 1, 4)
+    except Exception:
+      if self.CP.openpilotLongitudinalControl:
+        self.longCruiseGap = clip(int(self.sm['longitudinalPlan'].cruiseGap), 1, 4)
+      else:
+        # 일부 차종은 cruiseGap 필드가 없을 수 있어 getattr로 안전 처리
+        self.longCruiseGap = clip(int(getattr(CS, 'cruiseGap', 1)), 1, 4)
 
     lead = self.sm['radarState'].leadOne
     if lead.status:
