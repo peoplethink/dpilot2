@@ -15,7 +15,7 @@ from selfdrive.swaglog import cloudlog
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.car.car_helpers import get_car, get_startup_event, get_one_can
 from selfdrive.controls.lib.lane_planner import CAMERA_OFFSET
-from selfdrive.controls.lib.drive_helpers import V_CRUISE_INITIAL, VCruiseHelper, get_lag_adjusted_curvature
+from selfdrive.controls.lib.drive_helpers import V_CRUISE_INITIAL, V_CRUISE_MAX, V_CRUISE_MIN, VCruiseHelper, get_lag_adjusted_curvature
 from selfdrive.controls.lib.latcontrol import LatControl, MIN_LATERAL_CONTROL_SPEED
 from selfdrive.controls.lib.longcontrol import LongControl
 from selfdrive.controls.lib.latcontrol_pid import LatControlPID
@@ -67,18 +67,8 @@ ENABLED_STATES = (State.preEnabled, *ACTIVE_STATES)
 
 LongControlState = car.CarControl.Actuators.LongControlState
 
-# ============================
-# ✅✅ (선택 포함) traffic 이벤트 발생 조건 선택
-# 0: enabled일 때 (기본, CruiseHelper의 longActiveUser>0에 가장 근접)
-# 1: active일 때
-# 2: longActive(LoC state != off)일 때
-# ============================
 TRAFFIC_EVENT_COND = 0
 
-
-# ==========================================================
-# ✅✅✅ CruiseHelper 스타일 "apply speed + 버튼 기반" 최소 이식(Lite)
-# ==========================================================
 ButtonPrev = ButtonType.unknown
 ButtonCnt = 0
 LongPressed = False
@@ -189,7 +179,6 @@ class CruiseHelperLite:
     v_cruise_kph = self.update_cruise_buttons(enabled, buttonEvents, v_cruise_kph, metric)
     self.v_cruise_kph_apply = v_cruise_kph
     return v_cruise_kph
-# ==========================================================
 
 
 class Controls:
@@ -325,14 +314,10 @@ class Controls:
     self.nn_alert_shown = False
     self.experimental_mode = False
 
-    # ✅ commaai#26472: v_cruise helper 도입
     self.v_cruise_helper = VCruiseHelper(self.CP)
 
-    # ✅✅✅ CruiseHelper(아파일럿) 스타일 "apply speed" 최소 이식
-    self.cruise_helper_lite = CruiseHelperLite(V_CRUISE_INITIAL["max"] if isinstance(V_CRUISE_INITIAL, dict) and "max" in V_CRUISE_INITIAL else 255,
-                                               V_CRUISE_INITIAL["min"] if isinstance(V_CRUISE_INITIAL, dict) and "min" in V_CRUISE_INITIAL else 20)
+    self.cruise_helper_lite = CruiseHelperLite(V_CRUISE_MAX, V_CRUISE_MIN)
 
-    # ====== longControlState 통일 변수 ======
     self.long_control_state = LongControlState.off
     self.stopping = False
 
@@ -355,24 +340,15 @@ class Controls:
     self.disable_op_fcw = params.get_bool('DisableOpFcw')
     self.mad_mode_enabled = params.get_bool('MadModeEnabled')
 
-    # ==========================================================
-    # ✅✅✅ (1,2,3 반영) CruiseHelper 스타일 이벤트 디바운스 상태
-    # ==========================================================
     self.apilotEventFrame = 0
     self.apilotEventWait = 0.0
     self.mpcEvent_prev = 0
-    # ==========================================================
-
-    # ✅✅ (이식) traffic 이벤트 디바운스 + prev 상태
     self._traffic_state_prev = 0
     self._traffic_evt_frame = 0
     self._xstate_prev_for_traffic = XState.cruise
 
-    # ===== 크루즈갭 + lead 정보 보관 =====
-    # (✅ CruiseHelper "PrevCruiseGap" 방식 이식)  ---- 1번안 유지
     self.longCruiseGap = clip(int(self.params.get("PrevCruiseGap")), 1, 4)
 
-    # gap 버튼 디바운스/롱프레스 상태 (CruiseHelper 스타일)
     self._gap_btn_cnt = 0
     self._gap_btn_prev = ButtonType.unknown
     self._gap_btn_long_pressed = False
@@ -380,7 +356,6 @@ class Controls:
     self.dRel = 0.0
     self.vRel = 0.0
 
-    # ✅✅ (이식) planner가 참조하는 myDrivingMode / mySafeModeFactor 기본값
     self.myDrivingMode = 0
     self.mySafeModeFactor = 1.0
 
@@ -406,9 +381,6 @@ class Controls:
     self.rk = Ratekeeper(100, print_delay_threshold=None)
     self.prof = Profiler(False)
 
-  # ==========================================================
-  # ✅✅✅ (2 반영) CruiseHelper send_apilot_event 그대로 이식
-  # ==========================================================
   def send_apilot_event(self, eventName, waiting=20.0):
     # CruiseHelper와 동일: 마지막 이벤트 후 waiting초 경과 시에만 발생
     if (self.sm.frame - self.apilotEventFrame) * DT_CTRL > self.apilotEventWait:
@@ -421,9 +393,7 @@ class Controls:
           return
       self.apilotEventFrame = self.sm.frame
       self.apilotEventWait = float(waiting)
-  # ==========================================================
-
-  # ✅✅ (이식) traffic 이벤트 디바운스 (CruiseHelper send_apilot_event 스타일)
+      
   def _send_traffic_event(self, evt: EventName, waiting_s: float = 20.0) -> None:
     wait_frames = int(waiting_s / DT_CTRL)
     if (self.sm.frame - self._traffic_evt_frame) < max(wait_frames, 1):
@@ -431,7 +401,6 @@ class Controls:
     self.events.add(evt)
     self._traffic_evt_frame = self.sm.frame
 
-  # ✅✅ (이식) CruiseHelper의 gapAdjustCruise 처리: PrevCruiseGap을 1~4 순환 저장
   def _update_long_cruise_gap_from_buttons(self, button_events) -> None:
     # press 시작 -> release에서 short press면 gap 순환
     if self._gap_btn_cnt > 0:
@@ -475,7 +444,6 @@ class Controls:
     if not self.CP.notCar:
       self.events.add_from_msg(self.sm['driverMonitoringState'].events)
 
-    # ✅ commaai#26472: Block resume if cruise never previously enabled
     resume_pressed = any(be.type in (ButtonType.accelCruise, ButtonType.resumeCruise) for be in CS.buttonEvents)
     if not self.CP.pcmCruise and (not self.v_cruise_helper.v_cruise_initialized) and resume_pressed:
       self.events.add(EventName.resumeBlocked)
@@ -592,9 +560,6 @@ class Controls:
     if not self.disable_op_fcw and (planner_fcw or model_fcw):
       self.events.add(EventName.fcw)
 
-    # ==========================================================
-    # ✅✅✅ (3 반영) MPC event -> CruiseHelper 방식 그대로
-    # ==========================================================
     mpcEvent = int(self.sm['longitudinalPlan'].mpcEvent)
 
     if self.enabled and self.CP.openpilotLongitudinalControl:
@@ -602,9 +567,6 @@ class Controls:
         self.send_apilot_event(mpcEvent, 5.0)
 
     self.mpcEvent_prev = mpcEvent
-    # ==========================================================
-
-    # ===== trafficState/xState 기반 이벤트 (기존 유지) =====
     traffic_raw = int(self.sm['longitudinalPlan'].trafficState)
     traffic_state = traffic_raw % 100
     traffic_error = traffic_raw >= 1000
@@ -701,22 +663,17 @@ class Controls:
   def state_transition(self, CS):
     # keep in sync (CI 내부 CP 갱신 가능)
     self.CP.pcmCruise = self.CI.CP.pcmCruise
-
-    # ✅ commaai#26472: helper가 v_cruise/v_cruise_cluster 관리
     self.v_cruise_helper.update_v_cruise(CS, self.enabled, self.is_metric)
-
-    # ✅✅✅ CruiseHelper 스타일 apply speed 생성(가속 제한에 반영할 값)
     base_v_cruise_kph = float(self.v_cruise_helper.v_cruise_kph)
+    if base_v_cruise_kph >= 250:  # unset 방어
+      base_v_cruise_kph = float(self.cruise_helper_lite.v_cruise_kph_backup)
     self.cruise_helper_lite.update(self.sm.frame, self.enabled, self.is_metric, base_v_cruise_kph, CS.buttonEvents)
     self.applyMaxSpeed = float(self.cruise_helper_lite.v_cruise_kph_apply)
 
     # SCC smoother
     SccSmoother.update_cruise_buttons(self, CS, self.CP.openpilotLongitudinalControl)
 
-    # ✅✅ (이식) gap 버튼으로 PrevCruiseGap 갱신
     self._update_long_cruise_gap_from_buttons(CS.buttonEvents)
-
-    # ✅✅ myDrivingMode / mySafeModeFactor sanitize
     try:
       self.myDrivingMode = int(self.myDrivingMode)
     except Exception:
@@ -870,7 +827,6 @@ class Controls:
       self.LoC.reset(v_pid=CS.vEgo)
 
     if not self.joystick_mode:
-      # ✅✅✅ applyMaxSpeed를 accel-limit에 반영 (핵심)
       v_for_limits_kph = float(self.v_cruise_helper.v_cruise_kph)
       if self.CP.openpilotLongitudinalControl and self.applyMaxSpeed > 0:
         v_for_limits_kph = float(self.applyMaxSpeed)
@@ -964,9 +920,6 @@ class Controls:
     xState = self.sm['longitudinalPlan'].xState
     hudControl.softHold = True if (xState == XState.softHold and CC.longActive) else False
 
-    # ===========================
-    # ✅✅ 크루즈갭 표시를 "보관값" 기준으로 통일 (CruiseHelper 반영)
-    # ===========================
     hudControl.cruiseGap = clip(int(self.longCruiseGap), 1, 4)
     hudControl.objDist = int(self.dRel)
     hudControl.objRelSpd = float(self.vRel)
@@ -1081,8 +1034,6 @@ class Controls:
     controlsState.sccBrakeFactor = ntune_scc_get('sccBrakeFactor')
     controlsState.sccCurvatureFactor = ntune_scc_get('sccCurvatureFactor')
     controlsState.lateralControlSelect = int(self.lateral_control_select)
-
-    # ✅✅ 크루즈갭 publish도 "보관값" 기준 (CruiseHelper 스타일)
     controlsState.longCruiseGap = clip(int(self.longCruiseGap), 1, 4)
 
     controlsState.myDrivingMode = int(self.myDrivingMode)
