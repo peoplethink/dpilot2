@@ -15,7 +15,10 @@ from selfdrive.swaglog import cloudlog
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.car.car_helpers import get_car, get_startup_event, get_one_can
 from selfdrive.controls.lib.lane_planner import CAMERA_OFFSET
-from selfdrive.controls.lib.drive_helpers import V_CRUISE_INITIAL, VCruiseHelper, get_lag_adjusted_curvature
+
+# ✅ V_CRUISE_MAX/MIN도 같이 import (사용자 drive_helpers.py와 호환/안전)
+from selfdrive.controls.lib.drive_helpers import V_CRUISE_INITIAL, VCruiseHelper, get_lag_adjusted_curvature, V_CRUISE_MAX, V_CRUISE_MIN
+
 from selfdrive.controls.lib.latcontrol import LatControl, MIN_LATERAL_CONTROL_SPEED
 from selfdrive.controls.lib.longcontrol import LongControl
 from selfdrive.controls.lib.latcontrol_pid import LatControlPID
@@ -249,8 +252,13 @@ class Controls:
     self._xstate_prev_for_traffic = XState.cruise
 
     # ===== 크루즈갭 + lead 정보 보관 =====
-    # (✅ CruiseHelper "PrevCruiseGap" 방식 이식)  ---- 1번안 유지
-    self.longCruiseGap = clip(int(self.params.get("PrevCruiseGap")), 1, 4)
+    # ✅ None/빈값 크래시 방지: PrevCruiseGap 없으면 "2" 기본값
+    try:
+      prev_gap = self.params.get("PrevCruiseGap")
+      prev_gap_int = int(prev_gap) if prev_gap is not None else 2
+    except Exception:
+      prev_gap_int = 2
+    self.longCruiseGap = clip(prev_gap_int, 1, 4)
 
     # gap 버튼 디바운스/롱프레스 상태 (CruiseHelper 스타일)
     self._gap_btn_cnt = 0
@@ -481,7 +489,6 @@ class Controls:
 
     if self.enabled and self.CP.openpilotLongitudinalControl:
       if mpcEvent != self.mpcEvent_prev and mpcEvent > 0:
-        # CruiseHelper: self.send_apilot_event(controls, mpcEvent, 5.0)
         self.send_apilot_event(mpcEvent, 5.0)
 
     self.mpcEvent_prev = mpcEvent
@@ -614,7 +621,6 @@ class Controls:
       if self.CP.openpilotLongitudinalControl:
         self.longCruiseGap = clip(int(self.sm['longitudinalPlan'].cruiseGap), 1, 4)
       else:
-        # 일부 차종은 cruiseGap 필드가 없을 수 있어 getattr로 안전 처리
         self.longCruiseGap = clip(int(getattr(CS, 'cruiseGap', 1)), 1, 4)
 
     lead = self.sm['radarState'].leadOne
@@ -959,8 +965,15 @@ class Controls:
     # ✅✅ 크루즈갭 publish도 "보관값" 기준 (CruiseHelper 스타일)
     controlsState.longCruiseGap = clip(int(self.longCruiseGap), 1, 4)
 
-    controlsState.myDrivingMode = int(self.myDrivingMode)
-    controlsState.mySafeModeFactor = float(self.mySafeModeFactor)
+    # ✅ 타입 오염 방지(최종 publish 직전 안전 캐스팅)
+    try:
+      controlsState.myDrivingMode = int(self.myDrivingMode)
+    except Exception:
+      controlsState.myDrivingMode = 0
+    try:
+      controlsState.mySafeModeFactor = float(self.mySafeModeFactor)
+    except Exception:
+      controlsState.mySafeModeFactor = 1.0
 
     if self.joystick_mode:
       controlsState.lateralControlState.debugState = lac_log
