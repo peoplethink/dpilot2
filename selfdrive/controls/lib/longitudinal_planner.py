@@ -62,7 +62,6 @@ class Planner:
     self.solverExecutionTime = 0.0
     self.params = Params()
     self.param_read_counter = 0
-    self.read_param()
 
     self.vCluRatio = 1.0
 
@@ -82,6 +81,8 @@ class Planner:
 
     self.mpc.openpilotLongitudinalControl = CP.openpilotLongitudinalControl
 
+    # initial read
+    self.read_param()
 
   def read_param(self):
     self.myEcoModeFactor = float(int(Params().get("MyEcoModeFactor", encoding="utf8"))) / 100.
@@ -93,13 +94,25 @@ class Planner:
     self.cruiseMaxVals6 = float(int(Params().get("CruiseMaxVals6", encoding="utf8"))) / 100.
 
   def get_max_accel(self, v_ego):
-    cruiseMaxVals = [self.cruiseMaxVals1, self.cruiseMaxVals2, self.cruiseMaxVals3, self.cruiseMaxVals4, self.cruiseMaxVals5, self.cruiseMaxVals6]
+    cruiseMaxVals = [
+      self.cruiseMaxVals1, self.cruiseMaxVals2, self.cruiseMaxVals3,
+      self.cruiseMaxVals4, self.cruiseMaxVals5, self.cruiseMaxVals6
+    ]
     return interp(v_ego, A_CRUISE_MAX_BP, cruiseMaxVals)
-  @staticmethod
-  def parse_model(self, model_msg, model_error):
+
+  # ✅ FIX: staticmethod 제거 + 인자/호출 일치 (model_msg가 float로 들어가던 크래시 해결)
+  def parse_model(self, model_msg, model_error, v_ego):
+    # modelV2 메시지가 깨졌을 때(혹은 None) 크래시 방지
+    if model_msg is None or not hasattr(model_msg, 'position'):
+      x = np.zeros(len(T_IDXS_MPC))
+      v = np.ones(len(T_IDXS_MPC)) * float(v_ego)
+      a = np.zeros(len(T_IDXS_MPC))
+      j = np.zeros(len(T_IDXS_MPC))
+      return x, v, a, j
+
     if (len(model_msg.position.x) == 33 and
-       len(model_msg.velocity.x) == 33 and
-       len(model_msg.acceleration.x) == 33):
+        len(model_msg.velocity.x) == 33 and
+        len(model_msg.acceleration.x) == 33):
       x = np.interp(T_IDXS_MPC, T_IDXS, model_msg.position.x) - model_error * T_IDXS_MPC
       v = np.interp(T_IDXS_MPC, T_IDXS, model_msg.velocity.x) - model_error
       a = np.interp(T_IDXS_MPC, T_IDXS, model_msg.acceleration.x)
@@ -142,15 +155,15 @@ class Planner:
     prev_accel_constraint = not (reset_state or sm['carState'].standstill)
 
     if self.mpc.mode == 'acc':
-      #accel_limits = [A_CRUISE_MIN, get_max_accel(v_ego)]      
-      if myDrivingMode in [1]: # 연비
-        myMaxAccel = clip(self.get_max_accel(v_ego)*self.myEcoModeFactor, 0, ACCEL_MAX)
-      elif myDrivingMode in [2]: # 안전
-        myMaxAccel = clip(self.get_max_accel(v_ego)*self.myEcoModeFactor*mySafeModeFactor, 0, ACCEL_MAX)
-      elif myDrivingMode in [3,4]: # 일반, 고속
+      if myDrivingMode in [1]:  # 연비
+        myMaxAccel = clip(self.get_max_accel(v_ego) * self.myEcoModeFactor, 0, ACCEL_MAX)
+      elif myDrivingMode in [2]:  # 안전
+        myMaxAccel = clip(self.get_max_accel(v_ego) * self.myEcoModeFactor * mySafeModeFactor, 0, ACCEL_MAX)
+      elif myDrivingMode in [3, 4]:  # 일반, 고속
         myMaxAccel = clip(self.get_max_accel(v_ego), 0, ACCEL_MAX)
       else:
         myMaxAccel = self.get_max_accel(v_ego)
+
       accel_limits = [A_CRUISE_MIN, myMaxAccel]
       accel_limits_turns = limit_accel_in_turns(v_ego, sm['carState'].steeringAngleDeg, accel_limits, self.CP)
     else:
@@ -162,8 +175,9 @@ class Planner:
       # Clip aEgo to cruise limits to prevent large accelerations when becoming active
       self.a_desired = clip(sm['carState'].aEgo, accel_limits[0], accel_limits[1])
       # mpc에서는 prev_a를 참고하여 constraint작동함.... pid off -> on시에는 현재 constraint가 작동하지 않아서 집어넣어봄...
-      self.mpc.prev_a = np.full(N+1, self.a_desired)
-      accel_limits_turns[0] = accel_limits_turns[0] = 0.0
+      self.mpc.prev_a = np.full(N + 1, self.a_desired)
+      # ✅ FIX: 중복 대입 제거 (오타)
+      accel_limits_turns[0] = 0.0
 
     # Prevent divergence, smooth in current v_ego
     self.v_desired_filter.x = max(0.0, self.v_desired_filter.update(v_ego))
@@ -182,10 +196,13 @@ class Planner:
 
     self.mpc.set_accel_limits(accel_limits_turns[0], accel_limits_turns[1])
     self.mpc.set_cur_state(self.v_desired_filter.x, self.a_desired)
+
+    # ✅ FIX: parse_model 시그니처/호출 일치
     x, v, a, j = self.parse_model(sm['modelV2'], self.v_model_error, v_ego)
 
     self.mpc.update(sm['carState'], sm['radarState'], sm['modelV2'], sm['controlsState'],
                     v_cruise, x, v, a, j, prev_accel_constraint, reset_state)
+
     self.v_desired_trajectory_full = np.interp(T_IDXS, T_IDXS_MPC, self.mpc.v_solution)
     self.a_desired_trajectory_full = np.interp(T_IDXS, T_IDXS_MPC, self.mpc.a_solution)
     self.v_desired_trajectory = self.v_desired_trajectory_full[:CONTROL_N]
@@ -218,7 +235,7 @@ class Planner:
     longitudinalPlan.hasLead = sm['radarState'].leadOne.status
     longitudinalPlan.longitudinalPlanSource = self.mpc.source
     longitudinalPlan.fcw = self.fcw
-    
+
     longitudinalPlan.visionTurnControllerState = self.vision_turn_controller.state
     longitudinalPlan.visionTurnSpeed = float(self.vision_turn_controller.v_target)
     longitudinalPlan.visionCurrentLatAcc = float(self.vision_turn_controller.current_lat_acc)
@@ -228,7 +245,7 @@ class Planner:
     longitudinalPlan.xState = int(self.mpc.xState)
     if self.mpc.trafficError:
       longitudinalPlan.trafficState = self.mpc.trafficState + 1000
-    longitudinalPlan.xStop = float(self.mpc.stopDist) #float(self.mpc.xStop)
+    longitudinalPlan.xStop = float(self.mpc.stopDist)  # float(self.mpc.xStop)
     longitudinalPlan.tFollow = float(self.mpc.t_follow)
     longitudinalPlan.cruiseGap = float(self.mpc.applyCruiseGap)
     longitudinalPlan.xObstacle = float(self.mpc.x_obstacle_min[0])
