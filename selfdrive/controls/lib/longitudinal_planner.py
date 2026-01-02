@@ -20,10 +20,6 @@ from common.params import Params
 from selfdrive.controls.lib.events import Events
 
 LON_MPC_STEP = 0.2  # first step is 0.2s
-
-# =========================
-# Cruise accel limits base
-# =========================
 A_CRUISE_MIN = -1.2
 A_CRUISE_MAX_VALS = [1.5, 1.3, 0.4, 0.2, 0.15, 0.1]
 A_CRUISE_MAX_BP = [0., 40 * CV.KPH_TO_MS, 60 * CV.KPH_TO_MS, 80 * CV.KPH_TO_MS, 110 * CV.KPH_TO_MS, 140 * CV.KPH_TO_MS]
@@ -86,9 +82,6 @@ class Planner:
 
     self.mpc.openpilotLongitudinalControl = CP.openpilotLongitudinalControl
 
-  # ✅ [수정 1번] self.get_max_accel(...) 호출을 위해 메서드 추가
-  def get_max_accel(self, v_ego):
-    return interp(v_ego, A_CRUISE_MAX_BP, A_CRUISE_MAX_VALS)
 
   def read_param(self):
     self.myEcoModeFactor = float(int(Params().get("MyEcoModeFactor", encoding="utf8"))) / 100.
@@ -99,10 +92,10 @@ class Planner:
     self.cruiseMaxVals5 = float(int(Params().get("CruiseMaxVals5", encoding="utf8"))) / 100.
     self.cruiseMaxVals6 = float(int(Params().get("CruiseMaxVals6", encoding="utf8"))) / 100.
 
-  def get_max_accel_user(self, v_ego):
+  def get_max_accel(self, v_ego):
     cruiseMaxVals = [self.cruiseMaxVals1, self.cruiseMaxVals2, self.cruiseMaxVals3, self.cruiseMaxVals4, self.cruiseMaxVals5, self.cruiseMaxVals6]
     return interp(v_ego, A_CRUISE_MAX_BP, cruiseMaxVals)
-
+  @staticmethod
   def parse_model(self, model_msg, model_error):
     if (len(model_msg.position.x) == 33 and
        len(model_msg.velocity.x) == 33 and
@@ -170,7 +163,7 @@ class Planner:
       self.a_desired = clip(sm['carState'].aEgo, accel_limits[0], accel_limits[1])
       # mpc에서는 prev_a를 참고하여 constraint작동함.... pid off -> on시에는 현재 constraint가 작동하지 않아서 집어넣어봄...
       self.mpc.prev_a = np.full(N+1, self.a_desired)
-      accel_limits_turns[0] = accel_limits_turns[1] = 0.0
+      accel_limits_turns[0] = accel_limits_turns[0] = 0.0
 
     # Prevent divergence, smooth in current v_ego
     self.v_desired_filter.x = max(0.0, self.v_desired_filter.update(v_ego))
@@ -189,13 +182,14 @@ class Planner:
 
     self.mpc.set_accel_limits(accel_limits_turns[0], accel_limits_turns[1])
     self.mpc.set_cur_state(self.v_desired_filter.x, self.a_desired)
-    x, v, a, j = self.parse_model(sm['modelV2'], self.v_model_error)
+    x, v, a, j = self.parse_model(sm['modelV2'], self.v_model_error, v_ego)
 
     self.mpc.update(sm['carState'], sm['radarState'], sm['modelV2'], sm['controlsState'],
                     v_cruise, x, v, a, j, prev_accel_constraint, reset_state)
-
-    self.v_desired_trajectory = np.interp(T_IDXS[:CONTROL_N], T_IDXS_MPC, self.mpc.v_solution)
-    self.a_desired_trajectory = np.interp(T_IDXS[:CONTROL_N], T_IDXS_MPC, self.mpc.a_solution)
+    self.v_desired_trajectory_full = np.interp(T_IDXS, T_IDXS_MPC, self.mpc.v_solution)
+    self.a_desired_trajectory_full = np.interp(T_IDXS, T_IDXS_MPC, self.mpc.a_solution)
+    self.v_desired_trajectory = self.v_desired_trajectory_full[:CONTROL_N]
+    self.a_desired_trajectory = self.a_desired_trajectory_full[:CONTROL_N]
     self.j_desired_trajectory = np.interp(T_IDXS[:CONTROL_N], T_IDXS_MPC[:-1], self.mpc.j_solution)
 
     # TODO counter is only needed because radar is glitchy, remove once radar is gone
