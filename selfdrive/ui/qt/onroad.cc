@@ -868,7 +868,7 @@ void NvgWindow::drawLead(QPainter &painter,
   float y = std::fmin(height() - sz * 0.6f, (float)vd.y());
 
   const bool is_radar = uiState()->scene.lead_radar[num];
-  QColor circleColor = is_radar ? QColor(0, 255, 0) : QColor(0, 160, 255);
+  QColor circleColor = is_radar ? QColor(255, 0, 255) : QColor(0, 160, 255);
 
   const float t = leadPulseTimer.elapsed() * 0.001f;
   const float pulse_speed = 2.6f;          // 속도(클수록 빠름)
