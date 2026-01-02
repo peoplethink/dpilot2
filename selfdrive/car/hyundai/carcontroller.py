@@ -54,7 +54,10 @@ class CarController:
     self.frame = 0
 
     self.apply_steer_last = 0
-    self.accel = 0
+
+    # ✅ accel (첫번째 코드 스타일: update()에서 매 프레임 갱신)
+    self.accel = 0.0
+    self.accel_last = 0.0  # (선택) 디버그/튜닝용, 에러 없음
 
     self.lkas11_cnt = 0
     self.scc12_cnt = -1
@@ -122,6 +125,19 @@ class CarController:
 
     torque_fault = CC.latActive and not apply_steer_req
     self.apply_steer_last = apply_steer
+
+    # ==========================================================
+    # ✅ accel: 첫번째 코드 방식 (update()에서 매 프레임 clip)
+    # ==========================================================
+    accel = clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
+    self.accel = float(accel)
+    controls.apply_accel = float(accel)
+
+    # (옵션) longControl off면 0으로
+    if actuators.longControlState == LongCtrlState.off:
+      self.accel = 0.0
+      controls.apply_accel = 0.0
+    # ==========================================================
 
     sys_warning, sys_state, left_lane_warning, right_lane_warning = process_hud_alert(
       CC.enabled, self.car_fingerprint, hud_control
@@ -194,7 +210,7 @@ class CarController:
 
     new_actuators = actuators.copy()
     new_actuators.steer = apply_steer / self.params.STEER_MAX
-    new_actuators.accel = self.accel
+    new_actuators.accel = self.accel  # ✅ 항상 최신 accel
 
     self.frame += 1
     return new_actuators, can_sends
@@ -228,10 +244,14 @@ class CarController:
           set_speed = min_set_speed
         set_speed *= CV.MS_TO_MPH if CS.is_set_speed_in_mph else CV.MS_TO_KPH
 
-        apply_accel = clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
+        # ==========================================================
+        # ✅ accel: update()에서 계산한 self.accel을 그대로 사용
+        # ==========================================================
+        apply_accel = float(self.accel)
         stopping = (actuators.longControlState == LongCtrlState.stopping)
-        self.accel = apply_accel
-        controls.apply_accel = apply_accel
+        # 첫 코드 스타일로 "이번 프레임 사용값" 기록(선택)
+        self.accel_last = apply_accel
+        # ==========================================================
 
         aReqValue = CS.scc12["aReqValue"]
         controls.aReqValue = aReqValue
@@ -268,7 +288,7 @@ class CarController:
 
         can_sends.append(create_scc12(
           self.packer, apply_accel, CC.enabled, self.scc12_cnt, self.scc_live, CS.scc12,
-          CC.cruiseControl.override, CS.out.brakePressed, standstill,   # ✅ standstill
+          CC.cruiseControl.override, CS.out.brakePressed, standstill,
           self.car_fingerprint,
           softHold=soft_hold, softHoldMode=self.softHoldMode
         ))
