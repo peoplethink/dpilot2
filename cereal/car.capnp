@@ -348,6 +348,12 @@ struct CarControl {
   hudControl @5 :HUDControl;
 
   sccSmoother @15 :SccSmoother;
+  debugTextCC @16 : Text;
+  latEnabled @17: Bool;
+  latOverride @18: Bool;
+  longEnabled @19: Bool;
+  longOverride @20: Bool;
+  activeHda @21: Int8;
 
   struct SccSmoother {
     longControl @0: Bool;
