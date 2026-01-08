@@ -689,10 +689,168 @@ void SettingsWindow::hideEvent(QHideEvent *event) {
 }
 
 /////////////////////////////////////////////////////////////////////////
+CommunityPanel::CommunityPanel(QWidget* parent) : QWidget(parent) {
 
-// CommunityPanel, SelectCar ... (여기 아래는 네 원본 그대로 유지)
-// ...
-// (중간 생략 없이 그대로 붙여 넣어도 됨)
+  main_layout = new QStackedLayout(this);
+
+  homeScreen = new QWidget(this);
+  QVBoxLayout* vlayout = new QVBoxLayout(homeScreen);
+  vlayout->setContentsMargins(0, 20, 0, 20);
+
+  QString selected = QString::fromStdString(Params().get("SelectedCar"));
+
+  QPushButton* selectCarBtn = new QPushButton(selected.length() ? selected : "Select your car");
+  selectCarBtn->setObjectName("selectCarBtn");
+  //selectCarBtn->setStyleSheet("margin-right: 30px;");
+  //selectCarBtn->setFixedSize(350, 100);
+  connect(selectCarBtn, &QPushButton::clicked, [=]() { main_layout->setCurrentWidget(selectCar); });
+  
+  homeWidget = new QWidget(this);
+  QVBoxLayout* toggleLayout = new QVBoxLayout(homeWidget);
+  homeWidget->setObjectName("homeWidget");
+
+  ScrollView *scroller = new ScrollView(homeWidget, this);
+  scroller->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+  
+  main_layout->addWidget(homeScreen);
+
+  selectCar = new SelectCar(this);
+  connect(selectCar, &SelectCar::backPress, [=]() { main_layout->setCurrentWidget(homeScreen); });
+  connect(selectCar, &SelectCar::selectedCar, [=]() {
+
+     QString selected = QString::fromStdString(Params().get("SelectedCar"));
+     selectCarBtn->setText(selected.length() ? selected : "Select your car");
+     main_layout->setCurrentWidget(homeScreen);
+  });
+  main_layout->addWidget(selectCar);
+  QHBoxLayout* layoutBtn = new QHBoxLayout(homeWidget);
+
+  layoutBtn->addWidget(selectCarBtn);
+  vlayout->addSpacing(10);
+  vlayout->addLayout(layoutBtn, 0);
+  
+  auto tmuxlog_btn = new ButtonControl("Tmux error log", tr("RUN"));
+  QObject::connect(tmuxlog_btn, &ButtonControl::clicked, [=]() {
+    const std::string txt = util::read_file("/data/tmux_error.log");
+    ConfirmationDialog::alert(QString::fromStdString(txt), this);
+  });
+  vlayout->addWidget(tmuxlog_btn);
+
+  vlayout->addWidget(scroller, 1);
+  
+  QList<ParamControl*> toggles;
+  toggles.append(new ParamControl("PutPrebuilt", 
+                                           "Smart Prebuilt 실행 ",
+                                           "Prebuilt 파일을 생성하며 부팅속도를 향상시킵니다.",
+                                            "../assets/offroad/icon_shell.png",
+                                            this));
+
+  toggles.append(new ParamControl("UseClusterSpeed",
+                                            "계기판 속도 사용",
+                                            "휠스피드 센서 속도를 사용시 오프.",
+                                            "../assets/offroad/icon_road.png",
+                                            this));
+  
+  toggles.append(new ParamControl("LongControlEnabled",
+                                            "Enable HKG Long Control",
+                                            "warnings: it is beta, be careful!! Openpilot will control the speed of your car",
+                                            "../assets/offroad/icon_road.png",
+                                            this));
+  
+  toggles.append(new ParamControl("MadModeEnabled",
+                                            "Enable HKG MAD mode",
+                                            "Openpilot will engage when turn cruise control on",
+                                            "../assets/offroad/icon_openpilot.png",
+                                            this));
+  
+  toggles.append(new ParamControl("SccSmootherSlowOnCurves",
+                                            "SCC기반 커브감속",
+                                            "SCC 설정 시 곡률에 따른 속도 감속 기능을 사용",
+                                            "../assets/offroad/icon_road.png",
+                                            this));
+
+  toggles.append(new ParamControl("TurnVisionControl",
+                                            "비젼기반 커브감속",
+                                            "비젼커브 활성화시 우선순위 ",
+                                            "../assets/offroad/icon_road.png",
+                                            this));
+  
+  toggles.append(new ParamControl("LaneChangeEnabled",
+                                            "Enable Lane Change Assist",
+                                            "Perform assisted lane changes with openpilowards your desired lane.",
+                                            "../assets/offroad/icon_road.png",
+                                            this));
+
+  toggles.append(new ParamControl("AutoLaneChangeEnabled",
+                                            "Enable Auto Lane Change(Nudgeless)",
+                                            "Automatically changes lanes at turn signal.",
+                                            "../assets/offroad/icon_road.png",
+                                            this));
+  
+  toggles.append(new ParamControl("SccSmootherSyncGasPressed",
+                                            "가속 속도 동기화",
+                                            "",
+                                            "../assets/offroad/icon_road.png",
+                                            this));
+
+
+  for(ParamControl *toggle : toggles) {
+    if(main_layout->count() != 0) {
+      toggleLayout->addWidget(horizontal_line());
+    }
+    toggleLayout->addWidget(toggle);
+  }
+}
+
+SelectCar::SelectCar(QWidget* parent): QWidget(parent) {
+
+  QVBoxLayout* main_layout = new QVBoxLayout(this);
+  main_layout->setMargin(20);
+  main_layout->setSpacing(20);
+
+  // Back button
+  QPushButton* back = new QPushButton("닫기");
+  back->setObjectName("back_btn");
+  back->setFixedSize(500, 100);
+  connect(back, &QPushButton::clicked, [=]() { emit backPress(); });
+  main_layout->addWidget(back, 0, Qt::AlignLeft);
+
+  QListWidget* list = new QListWidget(this);
+  list->setStyleSheet("QListView {padding: 40px; background-color: #393939; border-radius: 15px; height: 140px;} QListView::item{height: 100px}");
+  //list->setAttribute(Qt::WA_AcceptTouchEvents, true);
+  QScroller::grabGesture(list->viewport(), QScroller::LeftMouseButtonGesture);
+  list->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
+
+  list->addItem("[ Not selected ]");
+
+  QStringList items = get_list("/data/params/d/SupportedCars");
+  list->addItems(items);
+  list->setCurrentRow(0);
+
+  QString selected = QString::fromStdString(Params().get("SelectedCar"));
+
+  int index = 0;
+  for(QString item : items) {
+    if(selected == item) {
+        list->setCurrentRow(index + 1);
+        break;
+    }
+    index++;
+  }
+
+  QObject::connect(list, QOverload<QListWidgetItem*>::of(&QListWidget::itemClicked),
+    [=](QListWidgetItem* item){
+
+    if(list->currentRow() == 0)
+        Params().remove("SelectedCar");
+    else
+        Params().put("SelectedCar", list->currentItem()->text().toStdString());
+
+    emit selectedCar();
+    });
+
+  main_layout->addWidget(list);
+}
 
 TUNINGPanel::TUNINGPanel(QWidget* parent) : QWidget(parent) {
 
