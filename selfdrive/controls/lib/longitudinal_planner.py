@@ -22,7 +22,14 @@ from selfdrive.controls.lib.events import Events
 LON_MPC_STEP = 0.2  # first step is 0.2s
 A_CRUISE_MIN = -1.2
 A_CRUISE_MAX_VALS = [1.5, 1.3, 0.4, 0.2, 0.15, 0.1]
-A_CRUISE_MAX_BP = [0., 30 * CV.KPH_TO_MS, 50 * CV.KPH_TO_MS, 70 * CV.KPH_TO_MS, 90 * CV.KPH_TO_MS, 110 * CV.KPH_TO_MS]
+A_CRUISE_MAX_BP = [
+  0.,
+  30 * CV.KPH_TO_MS,
+  50 * CV.KPH_TO_MS,
+  70 * CV.KPH_TO_MS,
+  90 * CV.KPH_TO_MS,
+  110 * CV.KPH_TO_MS
+]
 
 # Lookup table for turns
 _A_TOTAL_MAX_V = [1.7, 3.2]
@@ -60,21 +67,27 @@ class Planner:
     self.a_desired_trajectory = np.zeros(CONTROL_N)
     self.j_desired_trajectory = np.zeros(CONTROL_N)
     self.solverExecutionTime = 0.0
+
     self.params = Params()
     self.param_read_counter = 0
 
     self.vCluRatio = 1.0
 
     self.myEcoModeFactor = 1.0
-    self.params_count = 0
-    self.cruiseMaxVals1 = float(int(Params().get("CruiseMaxVals1", encoding="utf8"))) / 100.
-    self.cruiseMaxVals2 = float(int(Params().get("CruiseMaxVals2", encoding="utf8"))) / 100.
-    self.cruiseMaxVals3 = float(int(Params().get("CruiseMaxVals3", encoding="utf8"))) / 100.
-    self.cruiseMaxVals4 = float(int(Params().get("CruiseMaxVals4", encoding="utf8"))) / 100.
-    self.cruiseMaxVals5 = float(int(Params().get("CruiseMaxVals5", encoding="utf8"))) / 100.
-    self.cruiseMaxVals6 = float(int(Params().get("CruiseMaxVals6", encoding="utf8"))) / 100.
+    self.myDrivingMode = 3  # ✅ UI(Params) 기반으로만 사용할 driving mode (기본: 일반)
 
-    self.use_cluster_speed = Params().get_bool('UseClusterSpeed')
+    self.params_count = 0
+
+    # (초기값) 파라미터 없을 수 있으니 안전하게 기본값 세팅
+    self.cruiseMaxVals1 = 1.5
+    self.cruiseMaxVals2 = 1.3
+    self.cruiseMaxVals3 = 0.4
+    self.cruiseMaxVals4 = 0.2
+    self.cruiseMaxVals5 = 0.15
+    self.cruiseMaxVals6 = 0.1
+
+    # cluster speed 사용 여부
+    self.use_cluster_speed = self.params.get_bool('UseClusterSpeed')
     self.cruise_source = 'cruise'
     self.vision_turn_controller = VisionTurnController(CP)
     self.events = Events()
@@ -85,13 +98,24 @@ class Planner:
     self.read_param()
 
   def read_param(self):
-    self.myEcoModeFactor = float(int(Params().get("MyEcoModeFactor", encoding="utf8"))) / 100.
-    self.cruiseMaxVals1 = float(int(Params().get("CruiseMaxVals1", encoding="utf8"))) / 100.
-    self.cruiseMaxVals2 = float(int(Params().get("CruiseMaxVals2", encoding="utf8"))) / 100.
-    self.cruiseMaxVals3 = float(int(Params().get("CruiseMaxVals3", encoding="utf8"))) / 100.
-    self.cruiseMaxVals4 = float(int(Params().get("CruiseMaxVals4", encoding="utf8"))) / 100.
-    self.cruiseMaxVals5 = float(int(Params().get("CruiseMaxVals5", encoding="utf8"))) / 100.
-    self.cruiseMaxVals6 = float(int(Params().get("CruiseMaxVals6", encoding="utf8"))) / 100.
+    # ✅ 안전하게: 값이 없거나 파싱 실패해도 크래시 안 나게
+    try:
+      self.myEcoModeFactor = float(int(self.params.get("MyEcoModeFactor", encoding="utf8"))) / 100.
+    except Exception:
+      pass
+
+    for i in range(1, 7):
+      try:
+        v = float(int(self.params.get(f"CruiseMaxVals{i}", encoding="utf8"))) / 100.
+        setattr(self, f"cruiseMaxVals{i}", v)
+      except Exception:
+        pass
+
+    # ✅ UI에서만 실시간 반영: controlsState.myDrivingMode 무시하고 Params만 사용
+    try:
+      self.myDrivingMode = int(self.params.get("MyDrivingMode", encoding="utf8"))
+    except Exception:
+      pass
 
   def get_max_accel(self, v_ego):
     cruiseMaxVals = [
@@ -125,9 +149,11 @@ class Planner:
     return x, v, a, j
 
   def update(self, sm):
-    if self.param_read_counter % 50 == 0:
+    # ✅ UI 실시간 반영: 더 자주 읽기(0.1s 정도 체감)
+    if self.param_read_counter % 10 == 0:
       self.read_param()
     self.param_read_counter += 1
+
     self.mpc.experimentalMode = sm['controlsState'].experimentalMode
 
     v_ego = sm['carState'].vEgo
@@ -143,7 +169,9 @@ class Planner:
         v_cruise = int(v_cruise * CV.MS_TO_KPH + 0.25) * CV.KPH_TO_MS
 
     mySafeModeFactor = sm['controlsState'].mySafeModeFactor
-    myDrivingMode = sm['controlsState'].myDrivingMode
+
+    # ✅ UI(Params)에서만 실시간 반영되도록 고정
+    myDrivingMode = self.myDrivingMode
 
     long_control_off = sm['controlsState'].longControlState == LongCtrlState.off
     force_slow_decel = sm['controlsState'].forceDecel
@@ -165,7 +193,9 @@ class Planner:
         myMaxAccel = self.get_max_accel(v_ego)
 
       accel_limits = [A_CRUISE_MIN, myMaxAccel]
-      accel_limits_turns = limit_accel_in_turns(v_ego, sm['carState'].steeringAngleDeg, accel_limits, self.CP)
+      accel_limits_turns = limit_accel_in_turns(
+        v_ego, sm['carState'].steeringAngleDeg, accel_limits, self.CP
+      )
     else:
       accel_limits = [ACCEL_MIN, ACCEL_MAX]
       accel_limits_turns = [ACCEL_MIN, ACCEL_MAX]
@@ -176,7 +206,7 @@ class Planner:
       self.a_desired = clip(sm['carState'].aEgo, accel_limits[0], accel_limits[1])
       # mpc에서는 prev_a를 참고하여 constraint작동함.... pid off -> on시에는 현재 constraint가 작동하지 않아서 집어넣어봄...
       self.mpc.prev_a = np.full(N + 1, self.a_desired)
-      # ✅ FIX: 중복 대입 제거 (오타)
+      # ✅ FIX: 중복 대입 제거 (오타) + 하한 0으로(원 코드 유지)
       accel_limits_turns[0] = 0.0
 
     # Prevent divergence, smooth in current v_ego
@@ -187,8 +217,13 @@ class Planner:
       v_cruise = 0.0
 
     # Get acceleration and active solutions for custom long mpc.
-    v_cruise = self.cruise_solutions(not reset_state, self.v_desired_filter.x,
-                                     self.a_desired, v_cruise, sm)
+    v_cruise = self.cruise_solutions(
+      not reset_state,
+      self.v_desired_filter.x,
+      self.a_desired,
+      v_cruise,
+      sm
+    )
 
     # clip limits, cannot init MPC outside of bounds
     accel_limits_turns[0] = min(accel_limits_turns[0], self.a_desired + 0.05)
@@ -200,8 +235,16 @@ class Planner:
     # ✅ FIX: parse_model 시그니처/호출 일치
     x, v, a, j = self.parse_model(sm['modelV2'], self.v_model_error, v_ego)
 
-    self.mpc.update(sm['carState'], sm['radarState'], sm['modelV2'], sm['controlsState'],
-                    v_cruise, x, v, a, j, prev_accel_constraint, reset_state)
+    self.mpc.update(
+      sm['carState'],
+      sm['radarState'],
+      sm['modelV2'],
+      sm['controlsState'],
+      v_cruise,
+      x, v, a, j,
+      prev_accel_constraint,
+      reset_state
+    )
 
     self.v_desired_trajectory_full = np.interp(T_IDXS, T_IDXS_MPC, self.mpc.v_solution)
     self.a_desired_trajectory_full = np.interp(T_IDXS, T_IDXS_MPC, self.mpc.a_solution)
@@ -245,7 +288,7 @@ class Planner:
     longitudinalPlan.xState = int(self.mpc.xState)
     if self.mpc.trafficError:
       longitudinalPlan.trafficState = self.mpc.trafficState + 1000
-    longitudinalPlan.xStop = float(self.mpc.stopDist)  # float(self.mpc.xStop)
+    longitudinalPlan.xStop = float(self.mpc.stopDist)
     longitudinalPlan.tFollow = float(self.mpc.t_follow)
     longitudinalPlan.cruiseGap = float(self.mpc.applyCruiseGap)
     longitudinalPlan.xObstacle = float(self.mpc.x_obstacle_min[0])
