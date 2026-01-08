@@ -316,7 +316,6 @@ class Controls:
     self.experimental_mode = False
 
     self.v_cruise_helper = VCruiseHelper(self.CP)
-
     self.cruise_helper_lite = CruiseHelperLite(V_CRUISE_MAX, V_CRUISE_MIN)
 
     self.long_control_state = LongControlState.off
@@ -358,9 +357,12 @@ class Controls:
     self.vRel = 0.0
 
     # ✅ UI에서만 반영할 값들
-    self.myDrivingMode = 3          # 기본값(일반=3) 원하는대로
-    self.mySafeModeFactor = 1.0
-    self._md_mode_read_cnt = 0      # myDrivingMode param read counter
+    self.myDrivingMode = 3          # 1:ECO 2:SAFE 3:NORMAL 4:HIGH 5:AUTO
+    self.mySafeModeFactor = 1.0     # 0.1~1.0
+    self._md_mode_read_cnt = 0      # param read counter
+
+    # 초기 1회 로드
+    self._update_my_driving_mode_from_params(force=True)
 
     # TODO: no longer necessary, aside from process replay
     self.sm['liveParameters'].valid = True
@@ -384,16 +386,31 @@ class Controls:
     self.rk = Ratekeeper(100, print_delay_threshold=None)
     self.prof = Profiler(False)
 
-  # ✅ UI(Params)에서만 MyDrivingMode를 읽어 실시간 반영
-  def _update_my_driving_mode_from_params(self):
+  # ✅ UI(Params)에서 MyDrivingMode + MySafeModeFactor 읽어 실시간 반영
+  def _update_my_driving_mode_from_params(self, force: bool = False):
     # 너무 자주 읽지 않도록 10프레임(0.1s)마다 갱신
-    if self._md_mode_read_cnt % 10 == 0:
-      try:
-        v = self.params.get("MyDrivingMode", encoding="utf8")
-        if v is not None:
-          self.myDrivingMode = int(v)
-      except Exception:
-        pass
+    if (not force) and (self._md_mode_read_cnt % 10 != 0):
+      self._md_mode_read_cnt += 1
+      return
+
+    # MyDrivingMode (1~5)
+    try:
+      v = self.params.get("MyDrivingMode", encoding="utf8")
+      if v is not None and len(v):
+        self.myDrivingMode = int(v)
+    except Exception:
+      pass
+    self.myDrivingMode = int(clip(int(self.myDrivingMode), 1, 5))
+
+    # MySafeModeFactor (10~100 [%]) -> 0.1~1.0
+    try:
+      ms = self.params.get("MySafeModeFactor", encoding="utf8")
+      if ms is not None and len(ms):
+        self.mySafeModeFactor = float(int(ms)) / 100.0
+    except Exception:
+      pass
+    self.mySafeModeFactor = float(clip(float(self.mySafeModeFactor), 0.1, 1.0))
+
     self._md_mode_read_cnt += 1
 
   def send_apilot_event(self, eventName, waiting=20.0):
@@ -690,18 +707,17 @@ class Controls:
 
     self._update_long_cruise_gap_from_buttons(CS.buttonEvents)
 
-    # ✅ myDrivingMode는 step()에서 Params로 갱신하므로 여기서 덮어쓰지 않음
-    # (형변환만 안전하게)
+    # myDrivingMode/mySafeModeFactor는 step()에서 Params로 갱신됨 (여긴 안전 캐스팅만)
     try:
       self.myDrivingMode = int(self.myDrivingMode)
     except Exception:
       self.myDrivingMode = 3
+    self.myDrivingMode = int(clip(self.myDrivingMode, 1, 5))
 
     try:
       self.mySafeModeFactor = float(self.mySafeModeFactor)
     except Exception:
       self.mySafeModeFactor = 1.0
-
     self.mySafeModeFactor = float(clip(self.mySafeModeFactor, 0.1, 1.0))
 
     try:
@@ -1107,8 +1123,8 @@ class Controls:
     start_time = sec_since_boot()
     self.experimental_mode = self.params.get_bool("ExperimentalMode") and self.CP.openpilotLongitudinalControl
 
-    # ✅ UI(Params)에서만 MyDrivingMode 실시간 반영
-    self._update_my_driving_mode_from_params()
+    # ✅ UI(Params)에서만 MyDrivingMode/MySafeModeFactor 실시간 반영
+    self._update_my_driving_mode_from_params(force=False)
 
     CS = self.data_sample()
 
@@ -1117,9 +1133,7 @@ class Controls:
       self.state_transition(CS)
 
     CC, lac_log = self.state_control(CS)
-
     self.publish_logs(CS, start_time, CC, lac_log)
-
     self.CS_prev = CS
 
   def controlsd_thread(self):
