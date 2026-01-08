@@ -73,6 +73,7 @@ ButtonPrev = ButtonType.unknown
 ButtonCnt = 0
 LongPressed = False
 
+
 class CruiseHelperLite:
   def __init__(self, V_CRUISE_MAX, V_CRUISE_MIN):
     self.V_CRUISE_MAX = V_CRUISE_MAX
@@ -356,8 +357,10 @@ class Controls:
     self.dRel = 0.0
     self.vRel = 0.0
 
-    self.myDrivingMode = 0
+    # ✅ UI에서만 반영할 값들
+    self.myDrivingMode = 3          # 기본값(일반=3) 원하는대로
     self.mySafeModeFactor = 1.0
+    self._md_mode_read_cnt = 0      # myDrivingMode param read counter
 
     # TODO: no longer necessary, aside from process replay
     self.sm['liveParameters'].valid = True
@@ -381,6 +384,18 @@ class Controls:
     self.rk = Ratekeeper(100, print_delay_threshold=None)
     self.prof = Profiler(False)
 
+  # ✅ UI(Params)에서만 MyDrivingMode를 읽어 실시간 반영
+  def _update_my_driving_mode_from_params(self):
+    # 너무 자주 읽지 않도록 10프레임(0.1s)마다 갱신
+    if self._md_mode_read_cnt % 10 == 0:
+      try:
+        v = self.params.get("MyDrivingMode", encoding="utf8")
+        if v is not None:
+          self.myDrivingMode = int(v)
+      except Exception:
+        pass
+    self._md_mode_read_cnt += 1
+
   def send_apilot_event(self, eventName, waiting=20.0):
     # CruiseHelper와 동일: 마지막 이벤트 후 waiting초 경과 시에만 발생
     if (self.sm.frame - self.apilotEventFrame) * DT_CTRL > self.apilotEventWait:
@@ -393,7 +408,7 @@ class Controls:
           return
       self.apilotEventFrame = self.sm.frame
       self.apilotEventWait = float(waiting)
-      
+
   def _send_traffic_event(self, evt: EventName, waiting_s: float = 20.0) -> None:
     wait_frames = int(waiting_s / DT_CTRL)
     if (self.sm.frame - self._traffic_evt_frame) < max(wait_frames, 1):
@@ -674,10 +689,13 @@ class Controls:
     SccSmoother.update_cruise_buttons(self, CS, self.CP.openpilotLongitudinalControl)
 
     self._update_long_cruise_gap_from_buttons(CS.buttonEvents)
+
+    # ✅ myDrivingMode는 step()에서 Params로 갱신하므로 여기서 덮어쓰지 않음
+    # (형변환만 안전하게)
     try:
       self.myDrivingMode = int(self.myDrivingMode)
     except Exception:
-      self.myDrivingMode = 0
+      self.myDrivingMode = 3
 
     try:
       self.mySafeModeFactor = float(self.mySafeModeFactor)
@@ -1036,6 +1054,7 @@ class Controls:
     controlsState.lateralControlSelect = int(self.lateral_control_select)
     controlsState.longCruiseGap = clip(int(self.longCruiseGap), 1, 4)
 
+    # ✅ UI(Params)에서만 반영된 값 publish
     controlsState.myDrivingMode = int(self.myDrivingMode)
     controlsState.mySafeModeFactor = float(self.mySafeModeFactor)
 
@@ -1087,6 +1106,9 @@ class Controls:
   def step(self):
     start_time = sec_since_boot()
     self.experimental_mode = self.params.get_bool("ExperimentalMode") and self.CP.openpilotLongitudinalControl
+
+    # ✅ UI(Params)에서만 MyDrivingMode 실시간 반영
+    self._update_my_driving_mode_from_params()
 
     CS = self.data_sample()
 
