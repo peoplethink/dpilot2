@@ -762,12 +762,6 @@ CommunityPanel::CommunityPanel(QWidget* parent) : QWidget(parent) {
                                             "Openpilot will engage when turn cruise control on",
                                             "../assets/offroad/icon_openpilot.png",
                                             this));
-  
-  toggles.append(new ParamControl("SccSmootherSlowOnCurves",
-                                            "SCC기반 커브감속",
-                                            "SCC 설정 시 곡률에 따른 속도 감속 기능을 사용",
-                                            "../assets/offroad/icon_road.png",
-                                            this));
 
   toggles.append(new ParamControl("TurnVisionControl",
                                             "비젼기반 커브감속",
@@ -871,6 +865,9 @@ TUNINGPanel::TUNINGPanel(QWidget* parent) : QWidget(parent) {
 
     vlayout->addWidget(scroller, 1);
     toggleLayout->addWidget(new LabelControl("〓〓〓〓〓〓〓〓【 조향메뉴 】〓〓〓〓〓〓〓〓", ""));
+    toggleLayout->addWidget(new ParamControl("SccSmootherSlowOnCurves", "Auto 커브감속", "곡률에 따른 속도 감속 기능을 사용", "../assets/offroad/icon_road.png", this));
+    toggleLayout->addWidget(new CValueControl("AutoCurveSpeedFactor", "커브속도조절비율(100%)", "높으면 커브속도 느려짐", "../assets/offroad/icon_road.png", 50, 300, 1));
+    toggleLayout->addWidget(new CValueControl("AutoCurveSpeedFactorIn", "커브속도조절비울진입(10%)", "올리면 진입속도를 줄임", "../assets/offroad/icon_road.png", 0, 300, 1));
     toggleLayout->addWidget(new ParamControl("Steer_SRTune", "SR가변 사용", "SR속도 가변사용(반드시 활성화할것)", "../assets/offroad/icon_road.png", this));
     toggleLayout->addWidget(new CValueControl("Steer_SRTune_v", "SR가변 비율", "SR가변시 비율값(추천:95)", "../assets/offroad/icon_road.png", 80, 120, 1));
     toggleLayout->addWidget(new CValueControl("MaxAngleFrames", "MaxAngleFrames(89)", "89:기본, lkas fault 발생시 87:사용", "../assets/offroad/icon_road.png", 80, 100, 1));
