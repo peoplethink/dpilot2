@@ -64,12 +64,17 @@ class SccSmoother:
     return int(kph * CV.KPH_TO_MS * self.speed_conv_to_clu)
 
   def __init__(self):
+    # Params 객체 재사용 (실시간 갱신용)
+    self.params = Params()
+    self._params_frame = -1
 
-    self.longcontrol = Params().get_bool('LongControlEnabled')
-    self.slow_on_curves = Params().get_bool('SccSmootherSlowOnCurves')
-    self.sync_set_speed_while_gas_pressed = Params().get_bool('SccSmootherSyncGasPressed')
-    self.is_metric = Params().get_bool('IsMetric')
-    self.autoascc = Params().get_bool('AutoAscc')
+    self.longcontrol = self.params.get_bool('LongControlEnabled')
+    self.slow_on_curves = self.params.get_bool('SccSmootherSlowOnCurves')
+    self.autoCurveSpeedFactor = float(int(self.params.get("AutoCurveSpeedFactor", encoding="utf8"))) * 0.01
+    self.autoCurveSpeedFactorIn = float(int(self.params.get("AutoCurveSpeedFactorIn", encoding="utf8"))) * 0.01
+    self.sync_set_speed_while_gas_pressed = self.params.get_bool('SccSmootherSyncGasPressed')
+    self.is_metric = self.params.get_bool('IsMetric')
+    self.autoascc = self.params.get_bool('AutoAscc')
 
     self.speed_conv_to_ms = CV.KPH_TO_MS if self.is_metric else CV.MPH_TO_MS
     self.speed_conv_to_clu = CV.MS_TO_KPH if self.is_metric else CV.MS_TO_MPH
@@ -101,10 +106,18 @@ class SccSmoother:
 
     self.turnSpeed_prev = 300
     self.curvatureFilter = StreamingMovingAverage(20)
-    self.autoCurveSpeedFactor = float(int(Params().get("AutoCurveSpeedFactor", encoding="utf8"))) * 0.01
-    self.autoCurveSpeedFactorIn = float(int(Params().get("AutoCurveSpeedFactorIn", encoding="utf8"))) * 0.01
 
-         
+  def update_params_3(self, frame: int):
+    if frame == self._params_frame:
+      return
+    if frame % 20 != 0:
+      return
+    self._params_frame = frame
+
+    self.slow_on_curves = self.params.get_bool('SccSmootherSlowOnCurves')
+    self.autoCurveSpeedFactor = float(int(self.params.get("AutoCurveSpeedFactor", encoding="utf8")))*0.01
+    self.autoCurveSpeedFactorIn = float(int(self.params.get("AutoCurveSpeedFactorIn", encoding="utf8")))*0.01
+
   def reset(self):
 
     self.wait_timer = 0
@@ -158,13 +171,9 @@ class SccSmoother:
     else:
       self.over_speed_limit = False
 
-    #max_speed_log = "{:.1f}/{:.1f}/{:.1f}".format(float(limit_speed),
-    #                                              float(self.curve_speed_ms*self.speed_conv_to_clu),
-    #                                              float(lead_speed))
-
     max_speed_log = ""
 
-    if apply_limit_speed >= self.kph_to_clu(10):  
+    if apply_limit_speed >= self.kph_to_clu(10):
 
       if first_started:
         self.max_speed_clu = clu11_speed
@@ -204,6 +213,8 @@ class SccSmoother:
     return road_limit_speed, left_dist, max_speed_log
 
   def update(self, enabled, can_sends, packer, CC, CS, frame, controls):
+    # ✅ 3개값 실시간 갱신 (slow_on_curves / factor / factorIn)
+    self.update_params_3(frame)
 
     # mph or kph
     clu11_speed = CS.clu11["CF_Clu_Vanz"]
@@ -218,9 +229,9 @@ class SccSmoother:
     CC.sccSmoother.cruiseMaxSpeed = controls.v_cruise_kph
 
     ascc_enabled = CS.acc_mode and enabled and CS.cruiseState_enabled \
-                   and 1 < CS.cruiseState_speed < 255 and not CS.brake_pressed  
+                   and 1 < CS.cruiseState_speed < 255 and not CS.brake_pressed
 
-    # Auto-resume Cruise Set Speed by JangPoo 
+    # Auto-resume Cruise Set Speed by JangPoo
     dRel = 0.
     lead = self.get_lead(controls.sm)
     if lead is not None:
@@ -228,7 +239,7 @@ class SccSmoother:
 
     # Auto-resume Cruise Set Speed by JangPoo
     ascc_auto_set = enabled and (clu11_speed > 30 or (CS.obj_valid and dRel > 1)) \
-                    and CS.gas_pressed and CS.prev_cruiseState_speed and not CS.cruiseState_speed # Auto-resume Cruise Set Speed by JangPoo - ??
+                    and CS.gas_pressed and CS.prev_cruiseState_speed and not CS.cruiseState_speed
 
     if not self.longcontrol:
       if (not ascc_enabled or CS.standstill or CS.cruise_buttons != Buttons.NONE) and not ascc_auto_set:
@@ -247,11 +258,11 @@ class SccSmoother:
       self.wait_timer -= 1
     elif (ascc_enabled and not CS.out.cruiseState.standstill) or ascc_auto_set:
       if self.alive_timer == 0:
-        if ascc_enabled: 
-          if self.autoascc:  
+        if ascc_enabled:
+          if self.autoascc:
             self.btn = self.get_button(CS.cruiseState_speed * self.speed_conv_to_clu)
         elif ascc_auto_set and clu11_speed < 30:
-          if self.autoascc:  
+          if self.autoascc:
             self.btn = Buttons.SET_DECEL
         else:
           self.btn = Buttons.RES_ACCEL
@@ -338,7 +349,6 @@ class SccSmoother:
     turnSpeed_kph = 300
     if abs(curvature) > 0.0001:
       turnSpeed_kph = interp(curvature, V_CURVE_LOOKUP_BP, V_CRUVE_LOOKUP_VALS)
-      # MIN_CURVE_SPEED는 파일 상단에서 이미 m/s로 정의되어 있으니 kph로 변환해 클립
       min_curve_kph = MIN_CURVE_SPEED * CV.MS_TO_KPH
       turnSpeed_kph = clip(turnSpeed_kph, min_curve_kph, 255)
     else:
@@ -346,12 +356,10 @@ class SccSmoother:
 
     self.turnSpeed_prev = turnSpeed_kph
 
-    # 현재속도(kph) 대비 초과분만큼 추가 감속(in factor)
     speed_diff_kph = max(0.0, (v_ego * CV.MS_TO_KPH) - turnSpeed_kph)
     turnSpeed_kph = turnSpeed_kph - speed_diff_kph * self.autoCurveSpeedFactorIn
 
-    # SccSmoother는 curve_speed_ms로 사용
-    if turnSpeed_kph >= 299:   # 300이면 제한 없음 처리
+    if turnSpeed_kph >= 299:
       self.curve_speed_ms = 255.
     else:
       self.curve_speed_ms = float(max(turnSpeed_kph * CV.KPH_TO_MS, MIN_CURVE_SPEED))
@@ -380,7 +388,7 @@ class SccSmoother:
     if not self.longcontrol or self.max_speed_clu <= 0:
       self.max_speed_clu = max_speed
     else:
-      kp = 0.01 #if limited_curv else 0.01
+      kp = 0.01
       error = max_speed - self.max_speed_clu
       self.max_speed_clu = self.max_speed_clu + error * kp
 
@@ -388,7 +396,7 @@ class SccSmoother:
 
     gas_factor = ntune_scc_get("sccGasFactor")
     brake_factor = ntune_scc_get("sccBrakeFactor")
-    
+
     if accel > 0:
       accel *= gas_factor
     else:
