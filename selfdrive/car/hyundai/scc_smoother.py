@@ -326,43 +326,26 @@ class SccSmoother:
     return 0
 
   def cal_curve_speed(self, sm, v_ego, frame):
-    # modelV2 없거나 길이 부족하면 제한 없음
-    if 'modelV2' not in sm:
-      self.curve_speed_ms = 255.
-      return
-
-    # 회전속도/속도 기반 곡률 계산(미래 1.4~3.5초 구간: 12~20)
-    try:
-      orientationRates = np.array(sm['modelV2'].orientationRate.z, dtype=np.float32)
-      if orientationRates.shape[0] < 21:
-        self.curve_speed_ms = 255.
-        return
-    except Exception:
-      self.curve_speed_ms = 255.
-      return
-
-    speed = min(self.turnSpeed_prev * CV.KPH_TO_MS, clip(v_ego, 0.5, 100.0))
-
-    curvature = np.max(np.abs(orientationRates[12:20])) / speed
+    # 회전속도를 선속도 나누면 : 곡률이 됨. [20]은 약 4초앞의 곡률을 보고 커브를 계산함.
+    #curvature = abs(controls.sm['modelV2'].orientationRate.z[20] / clip(CS.vEgo, 0.1, 100.0))
+    orientationRates = np.array(controls.sm['modelV2'].orientationRate.z, dtype=np.float32)
+    # 계산된 결과로, oritetationRates를 나누어 조금더 curvature값이 커지도록 함.
+    speed = min(self.turnSpeed_prev / 3.6, clip(CS.vEgo, 0.5, 100.0))    
+    #curvature = np.max(np.abs(orientationRates[12:])) / speed  # 12: 약1.4초 미래의 curvature를 계산함.
+    curvature = np.max(np.abs(orientationRates[12:20])) / speed  # 12: 약1.4~3.5초 미래의 curvature를 계산함.
     curvature = self.curvatureFilter.process(curvature) * self.autoCurveSpeedFactor
-
-    turnSpeed_kph = 300
+    turnSpeed = 300
     if abs(curvature) > 0.0001:
-      turnSpeed_kph = interp(curvature, V_CURVE_LOOKUP_BP, V_CRUVE_LOOKUP_VALS)
-      min_curve_kph = MIN_CURVE_SPEED * CV.MS_TO_KPH
-      turnSpeed_kph = clip(turnSpeed_kph, min_curve_kph, 255)
+      turnSpeed = interp(curvature, V_CURVE_LOOKUP_BP, V_CRUVE_LOOKUP_VALS)
+      turnSpeed = clip(turnSpeed, MIN_CURVE_SPEED, 255)
     else:
-      turnSpeed_kph = 300
+      turnSpeed = 300
 
-    self.turnSpeed_prev = turnSpeed_kph
-
-    speed_diff_kph = max(0.0, (v_ego * CV.MS_TO_KPH) - turnSpeed_kph)
-    turnSpeed_kph = turnSpeed_kph - speed_diff_kph * self.autoCurveSpeedFactorIn
-
-    if turnSpeed_kph >= 299:
-      self.curve_speed_ms = 255.
-    else:
-      self.curve_speed_ms = float(max(turnSpeed_kph * CV.KPH_TO_MS, MIN_CURVE_SPEED))
+    self.turnSpeed_prev = turnSpeed
+    speed_diff = max(0, CS.vEgo*3.6 - turnSpeed)
+    turnSpeed = turnSpeed - speed_diff * self.autoCurveSpeedFactorIn
+    controls.debugText2 = 'CURVE={:5.1f},curvature={:5.4f},mode={:3.1f}'.format(self.turnSpeed_prev, curvature, self.drivingModeIndex)
+    return turnSpeed
 
   def cal_target_speed(self, CS, clu11_speed, controls):
 
