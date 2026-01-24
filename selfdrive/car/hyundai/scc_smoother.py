@@ -13,6 +13,7 @@ from selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, V_CRUISE_MIN, V_C
   CONTROL_N
 from selfdrive.controls.ntune import ntune_scc_get
 from selfdrive.controls.lib.lane_planner import TRAJECTORY_SIZE
+from common.filter_simple import StreamingMovingAverage
 from selfdrive.road_speed_limiter import road_speed_limiter_get_max_speed, road_speed_limiter_get_active, \
   get_road_speed_limiter
 
@@ -27,14 +28,17 @@ WAIT_COUNT = [12, 14, 16, 18]
 AliveIndex = 0
 WaitIndex = 0
 
-MIN_CURVE_SPEED = 32. * CV.KPH_TO_MS
+MIN_CURVE_SPEED = 20. * CV.KPH_TO_MS
 
 EventName = car.CarEvent.EventName
-
 ButtonType = car.CarState.ButtonEvent.Type
 ButtonPrev = ButtonType.unknown
 ButtonCnt = 0
 LongPressed = False
+
+# 국가법령정보센터: 도로설계기준
+V_CURVE_LOOKUP_BP = [0., 1./800., 1./670., 1./560., 1./440., 1./360., 1./265., 1./190., 1./135., 1./85., 1./55., 1./30., 1./15.]
+V_CRUVE_LOOKUP_VALS = [300, 150, 120, 110, 100, 90, 80, 70, 60, 50, 45, 35, 30]
 
 class SccSmoother:
 
@@ -62,7 +66,6 @@ class SccSmoother:
   def __init__(self):
 
     self.longcontrol = Params().get_bool('LongControlEnabled')
-    self.slow_on_curves = Params().get_bool('SccSmootherSlowOnCurves')
     self.sync_set_speed_while_gas_pressed = Params().get_bool('SccSmootherSyncGasPressed')
     self.is_metric = Params().get_bool('IsMetric')
     self.autoascc = Params().get_bool('AutoAscc')
@@ -94,6 +97,12 @@ class SccSmoother:
 
     self.curve_speed_ms = 0.
     self.stock_weight = 0.
+
+    self.turnSpeed_prev = 300
+    self.curvatureFilter = StreamingMovingAverage(20)
+    self.autoCurveSpeedFactor = float(int(Params().get("AutoCurveSpeedFactor", encoding="utf8"))) * 0.01
+    self.autoCurveSpeedFactorIn = float(int(Params().get("AutoCurveSpeedFactorIn", encoding="utf8"))) * 0.01
+
          
   def reset(self):
 
@@ -127,9 +136,6 @@ class SccSmoother:
       events.add(EventName.slowingDownSpeed)
 
   def cal_max_speed(self, frame, CC, CS, sm, clu11_speed, controls):
-
-    # kph
-
     road_speed_limiter = get_road_speed_limiter()
     apply_limit_speed, road_limit_speed, left_dist, first_started, cam_type, max_speed_log = \
       road_speed_limiter.get_max_speed(clu11_speed, self.is_metric)
@@ -308,23 +314,46 @@ class SccSmoother:
     return 0
 
   def cal_curve_speed(self, sm, v_ego, frame):
-
-    lateralPlan = sm['lateralPlan']
-    if len(lateralPlan.curvatures) == CONTROL_N:
-      curv = (lateralPlan.curvatures[-1] + lateralPlan.curvatures[-2]) / 2.
-      a_y_max = 2.975 - v_ego * 0.0375  # ~1.85 @ 75mph, ~2.6 @ 25mph
-      v_curvature = sqrt(a_y_max / max(abs(curv), 1e-4))
-      model_speed = v_curvature * 0.85 * ntune_scc_get("sccCurvatureFactor")
-
-      if model_speed < v_ego:
-        self.curve_speed_ms = float(max(model_speed, MIN_CURVE_SPEED))
-      else:
-        self.curve_speed_ms = 255.
-
-      if np.isnan(self.curve_speed_ms):
-        self.curve_speed_ms = 255.
-    else:
+    # modelV2 없거나 길이 부족하면 제한 없음
+    if 'modelV2' not in sm:
       self.curve_speed_ms = 255.
+      return
+
+    # 회전속도/속도 기반 곡률 계산(미래 1.4~3.5초 구간: 12~20)
+    try:
+      orientationRates = np.array(sm['modelV2'].orientationRate.z, dtype=np.float32)
+      if orientationRates.shape[0] < 21:
+        self.curve_speed_ms = 255.
+        return
+    except Exception:
+      self.curve_speed_ms = 255.
+      return
+
+    speed = min(self.turnSpeed_prev * CV.KPH_TO_MS, clip(v_ego, 0.5, 100.0))
+
+    curvature = np.max(np.abs(orientationRates[12:20])) / speed
+    curvature = self.curvatureFilter.process(curvature) * self.autoCurveSpeedFactor
+
+    turnSpeed_kph = 300
+    if abs(curvature) > 0.0001:
+      turnSpeed_kph = interp(curvature, V_CURVE_LOOKUP_BP, V_CRUVE_LOOKUP_VALS)
+      # MIN_CURVE_SPEED는 파일 상단에서 이미 m/s로 정의되어 있으니 kph로 변환해 클립
+      min_curve_kph = MIN_CURVE_SPEED * CV.MS_TO_KPH
+      turnSpeed_kph = clip(turnSpeed_kph, min_curve_kph, 255)
+    else:
+      turnSpeed_kph = 300
+
+    self.turnSpeed_prev = turnSpeed_kph
+
+    # 현재속도(kph) 대비 초과분만큼 추가 감속(in factor)
+    speed_diff_kph = max(0.0, (v_ego * CV.MS_TO_KPH) - turnSpeed_kph)
+    turnSpeed_kph = turnSpeed_kph - speed_diff_kph * self.autoCurveSpeedFactorIn
+
+    # SccSmoother는 curve_speed_ms로 사용
+    if turnSpeed_kph >= 299:   # 300이면 제한 없음 처리
+      self.curve_speed_ms = 255.
+    else:
+      self.curve_speed_ms = float(max(turnSpeed_kph * CV.KPH_TO_MS, MIN_CURVE_SPEED))
 
   def cal_target_speed(self, CS, clu11_speed, controls):
 
