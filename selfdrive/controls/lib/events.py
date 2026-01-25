@@ -584,6 +584,16 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
     ET.WARNING: curve_speed_adjust_alert,
   },
 
+  EventName.curveSlowdown: {
+    ET.WARNING: Alert(
+      "curve Slowdown",
+      "",
+      AlertStatus.normal, AlertSize.small,
+      Priority.LOW, VisualAlert.none, AudibleAlert.none,
+      2.0,
+      alert_rate=0.5),
+  },
+
   # ********** events that affect controls state transitions **********
   EventName.pcmEnable: {
     ET.ENABLE: EngagementAlert(AudibleAlert.engage),
