@@ -113,6 +113,10 @@ class SccSmoother:
     self.turnSpeed_prev = 300
     self.curvatureFilter = StreamingMovingAverage(20)
 
+    # ✅ 브레이크 해제 후 크루즈 ON(신규)
+    self.prev_brake_pressed = False
+    self.brake_release_frame = -10**9  # 충분히 과거로 초기화
+
   def update_params_3(self, frame: int):
     if frame == self._params_frame:
       return
@@ -242,6 +246,11 @@ class SccSmoother:
     # mph or kph
     clu11_speed = CS.clu11["CF_Clu_Vanz"]
 
+    # ✅ 브레이크 해제 순간 감지 (신규)
+    if self.prev_brake_pressed and not CS.brake_pressed:
+      self.brake_release_frame = frame
+    self.prev_brake_pressed = CS.brake_pressed
+
     road_limit_speed, left_dist, max_speed_log = self.cal_max_speed(frame, CC, CS, controls.sm, clu11_speed, controls)
 
     # kph
@@ -254,23 +263,47 @@ class SccSmoother:
     ascc_enabled = CS.acc_mode and enabled and CS.cruiseState_enabled \
                    and 1 < CS.cruiseState_speed < 255 and not CS.brake_pressed
 
-    # Auto-resume Cruise Set Speed by JangPoo
+    # lead distance
     dRel = 0.
     lead = self.get_lead(controls.sm)
     if lead is not None:
       dRel = lead.dRel
 
-    # Auto-resume Cruise Set Speed by JangPoo
+    # Auto-resume Cruise Set Speed by JangPoo (기존)
     ascc_auto_set = enabled and (clu11_speed > 30 or (CS.obj_valid and dRel > 1)) \
                     and CS.gas_pressed and CS.prev_cruiseState_speed and not CS.cruiseState_speed
 
+    # ✅ 브레이크 해제 후 크루즈 ON (신규)
+    # - 브레이크 해제 후 1초 이내
+    # - 저속(30 이하)에서만 동작
+    # - 가속페달 안 밟는 상태
+    # - 조향각 과대(>20도)면 제외
+    brake_released_recent = (frame - self.brake_release_frame) < int(1.0 / DT_CTRL)
+    resume_cond = abs(CS.steeringAngleDeg) < 20
+
+    auto_resume_from_brake = (
+      enabled and
+      self.autoascc and
+      brake_released_recent and
+      (not CS.brake_pressed) and
+      (not CS.gas_pressed) and
+      resume_cond and
+      (clu11_speed < 30) and
+      (not CS.cruiseState_speed) and                 # 현재 크루즈 set speed가 0(=OFF로 읽히는 상황)
+      (
+        CS.out.cruiseState.standstill or             # 정지/출발 상황
+        (0 < dRel < 12.0) or                         # 앞차 출발(거리 조건)
+        (CS.obj_valid and dRel > 1.0)                # 레이더 valid 보조 조건
+      )
+    )
+
     if not self.longcontrol:
-      if (not ascc_enabled or CS.standstill or CS.cruise_buttons != Buttons.NONE) and not ascc_auto_set:
+      if (not ascc_enabled or CS.standstill or CS.cruise_buttons != Buttons.NONE) and not ascc_auto_set and not auto_resume_from_brake:
         self.reset()
         self.wait_timer = max(ALIVE_COUNT) + max(WAIT_COUNT)
         return
 
-    if not ascc_enabled and not ascc_auto_set:
+    if not ascc_enabled and not ascc_auto_set and not auto_resume_from_brake:
       self.reset()
 
     self.cal_target_speed(CS, clu11_speed, controls)
@@ -279,7 +312,7 @@ class SccSmoother:
 
     if self.wait_timer > 0:
       self.wait_timer -= 1
-    elif (ascc_enabled and not CS.out.cruiseState.standstill) or ascc_auto_set:
+    elif (ascc_enabled and not CS.out.cruiseState.standstill) or ascc_auto_set or auto_resume_from_brake:
       if self.alive_timer == 0:
         if ascc_enabled:
           if self.autoascc:
@@ -287,8 +320,11 @@ class SccSmoother:
         elif ascc_auto_set and clu11_speed < 30:
           if self.autoascc:
             self.btn = Buttons.SET_DECEL
+        elif auto_resume_from_brake:
+          self.btn = Buttons.RES_ACCEL
         else:
           self.btn = Buttons.RES_ACCEL
+
         self.alive_count = SccSmoother.get_alive_count()
 
       if self.btn != Buttons.NONE:
@@ -371,9 +407,6 @@ class SccSmoother:
 
     speed_diff = max(0, v_ego * 3.6 - turnSpeed)
     turnSpeed = turnSpeed - speed_diff * self.autoCurveSpeedFactorIn
-
-    # (원본 유지) 외부에서 debugText2를 쓰는 구조라면 여기는 필요시만 사용
-    # controls.debugText2 = ...
 
     # m/s 로 반환
     return float(turnSpeed * CV.KPH_TO_MS)
