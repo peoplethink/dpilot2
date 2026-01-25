@@ -40,6 +40,7 @@ LongPressed = False
 V_CURVE_LOOKUP_BP = [0., 1./800., 1./670., 1./560., 1./440., 1./360., 1./265., 1./190., 1./135., 1./85., 1./55., 1./30., 1./15.]
 V_CRUVE_LOOKUP_VALS = [300, 150, 120, 110, 100, 90, 80, 70, 60, 50, 45, 35, 30]
 
+
 class SccSmoother:
 
   @staticmethod
@@ -92,9 +93,14 @@ class SccSmoother:
     self.alive_count = ALIVE_COUNT
     random.shuffle(WAIT_COUNT)
 
+    # 카메라 감속 이벤트(기존)
     self.slowing_down = False
     self.slowing_down_alert = False
     self.slowing_down_sound_alert = False
+
+    # ✅ 커브 감속 이벤트(신규 분리)
+    self.curve_slowdown_alert = False
+
     self.active_cam = False
     self.over_speed_limit = False
 
@@ -115,11 +121,10 @@ class SccSmoother:
     self._params_frame = frame
 
     self.slow_on_curves = self.params.get_bool('SccSmootherSlowOnCurves')
-    self.autoCurveSpeedFactor = float(int(self.params.get("AutoCurveSpeedFactor", encoding="utf8")))*0.01
-    self.autoCurveSpeedFactorIn = float(int(self.params.get("AutoCurveSpeedFactorIn", encoding="utf8")))*0.01
+    self.autoCurveSpeedFactor = float(int(self.params.get("AutoCurveSpeedFactor", encoding="utf8"))) * 0.01
+    self.autoCurveSpeedFactorIn = float(int(self.params.get("AutoCurveSpeedFactorIn", encoding="utf8"))) * 0.01
 
   def reset(self):
-
     self.wait_timer = 0
     self.alive_timer = 0
     self.btn = Buttons.NONE
@@ -132,6 +137,9 @@ class SccSmoother:
     self.slowing_down_alert = False
     self.slowing_down_sound_alert = False
 
+    # ✅ 커브 감속 이벤트 리셋
+    self.curve_slowdown_alert = False
+
   @staticmethod
   def create_clu11(packer, bus, clu11, button):
     values = copy.copy(clu11)
@@ -143,6 +151,11 @@ class SccSmoother:
     return frame - self.started_frame <= max(ALIVE_COUNT) + max(WAIT_COUNT)
 
   def inject_events(self, events):
+    # ✅ 커브 감속(신규 분리)
+    if self.curve_slowdown_alert:
+      events.add(EventName.curveSlowdown)
+
+    # 기존 카메라 감속 이벤트
     if self.slowing_down_sound_alert:
       self.slowing_down_sound_alert = False
       events.add(EventName.slowingDownSpeedSound)
@@ -154,13 +167,23 @@ class SccSmoother:
     apply_limit_speed, road_limit_speed, left_dist, first_started, cam_type, max_speed_log = \
       road_speed_limiter.get_max_speed(clu11_speed, self.is_metric)
 
+    # ✅ 매 프레임 커브 이벤트 초기화 (이번 프레임 계산 결과로 다시 세팅)
+    self.curve_slowdown_alert = False
+
     curv_limit = 0
-    self.cal_curve_speed(sm, CS.out.vEgo, frame)
+    self.curve_speed_ms = self.cal_curve_speed(sm, CS.out.vEgo, CS)
     if self.slow_on_curves and self.curve_speed_ms >= MIN_CURVE_SPEED:
       max_speed_clu = min(controls.v_cruise_kph * CV.KPH_TO_MS, self.curve_speed_ms) * self.speed_conv_to_clu
       curv_limit = int(max_speed_clu)
     else:
       max_speed_clu = self.kph_to_clu(controls.v_cruise_kph)
+
+    # ✅ 커브 제한이 실제로 걸렸고(=v_cruise보다 낮아짐), 현재속도도 그보다 높으면 "감속중" 표시
+    if curv_limit > 0:
+      curv_limit_ms = curv_limit * self.speed_conv_to_ms
+      cruise_ms = controls.v_cruise_kph * CV.KPH_TO_MS
+      if curv_limit_ms < cruise_ms - 0.3 and CS.out.vEgo > curv_limit_ms + 0.3:
+        self.curve_slowdown_alert = True
 
     self.active_cam = road_limit_speed > 0 and left_dist > 0
 
@@ -223,7 +246,7 @@ class SccSmoother:
 
     # kph
     controls.applyMaxSpeed = float(clip(CS.cruiseState_speed * CV.MS_TO_KPH, MIN_SET_SPEED_KPH,
-                                                self.max_speed_clu * self.speed_conv_to_ms * CV.MS_TO_KPH))
+                                        self.max_speed_clu * self.speed_conv_to_ms * CV.MS_TO_KPH))
     CC.sccSmoother.longControl = self.longcontrol
     CC.sccSmoother.applyMaxSpeed = controls.applyMaxSpeed
     CC.sccSmoother.cruiseMaxSpeed = controls.v_cruise_kph
@@ -325,16 +348,19 @@ class SccSmoother:
 
     return 0
 
-  def cal_curve_speed(self, sm, v_ego, frame):
-    # 회전속도를 선속도 나누면 : 곡률이 됨. [20]은 약 4초앞의 곡률을 보고 커브를 계산함.
-    #curvature = abs(controls.sm['modelV2'].orientationRate.z[20] / clip(CS.vEgo, 0.1, 100.0))
-    orientationRates = np.array(controls.sm['modelV2'].orientationRate.z, dtype=np.float32)
-    # 계산된 결과로, oritetationRates를 나누어 조금더 curvature값이 커지도록 함.
-    speed = min(self.turnSpeed_prev / 3.6, clip(CS.vEgo, 0.5, 100.0))    
-    #curvature = np.max(np.abs(orientationRates[12:])) / speed  # 12: 약1.4초 미래의 curvature를 계산함.
-    curvature = np.max(np.abs(orientationRates[12:20])) / speed  # 12: 약1.4~3.5초 미래의 curvature를 계산함.
+  def cal_curve_speed(self, sm, v_ego, CS):
+    # 회전속도/선속도 = 곡률
+    # 12:20 => 약 1.4~3.5초 미래의 curvature를 계산
+    try:
+      orientationRates = np.array(sm['modelV2'].orientationRate.z, dtype=np.float32)
+    except Exception:
+      self.turnSpeed_prev = 300
+      return 300.0
+
+    speed = min(self.turnSpeed_prev / 3.6, clip(v_ego, 0.5, 100.0))
+    curvature = np.max(np.abs(orientationRates[12:20])) / speed
     curvature = self.curvatureFilter.process(curvature) * self.autoCurveSpeedFactor
-    turnSpeed = 300
+
     if abs(curvature) > 0.0001:
       turnSpeed = interp(curvature, V_CURVE_LOOKUP_BP, V_CRUVE_LOOKUP_VALS)
       turnSpeed = clip(turnSpeed, MIN_CURVE_SPEED, 255)
@@ -342,10 +368,15 @@ class SccSmoother:
       turnSpeed = 300
 
     self.turnSpeed_prev = turnSpeed
-    speed_diff = max(0, CS.vEgo*3.6 - turnSpeed)
+
+    speed_diff = max(0, v_ego * 3.6 - turnSpeed)
     turnSpeed = turnSpeed - speed_diff * self.autoCurveSpeedFactorIn
-    controls.debugText2 = 'CURVE={:5.1f},curvature={:5.4f},mode={:3.1f}'.format(self.turnSpeed_prev, curvature, self.drivingModeIndex)
-    return turnSpeed
+
+    # (원본 유지) 외부에서 debugText2를 쓰는 구조라면 여기는 필요시만 사용
+    # controls.debugText2 = ...
+
+    # m/s 로 반환
+    return float(turnSpeed * CV.KPH_TO_MS)
 
   def cal_target_speed(self, CS, clu11_speed, controls):
 
