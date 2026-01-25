@@ -113,9 +113,26 @@ class SccSmoother:
     self.turnSpeed_prev = 300
     self.curvatureFilter = StreamingMovingAverage(20)
 
-    # ✅ 브레이크 해제 후 크루즈 ON(신규)
+    # ✅ 브레이크 해제 후 크루즈 ON (A->B 방식 최대 반영)
     self.prev_brake_pressed = False
     self.brake_release_frame = -10**9  # 충분히 과거로 초기화
+
+    # B(CruiseHelper) 파라미터들(가능한 범위 내 반영)
+    self.autoResumeFromBrakeRelease = self.params.get_bool("AutoResumeFromBrakeRelease")
+    self.autoResumeFromBrakeReleaseDist = float(int(self.params.get("AutoResumeFromBrakeReleaseDist", encoding="utf8")))
+    self.autoResumeFromBrakeReleaseLeadCar = self.params.get_bool("AutoResumeFromBrakeReleaseLeadCar")
+    self.autoResumeFromBrakeCarSpeed = float(int(self.params.get("AutoResumeFromBrakeCarSpeed", encoding="utf8")))
+    self.autoResumeFromBrakeReleaseTrafficSign = self.params.get_bool("AutoResumeFromBrakeReleaseTrafficSign")
+
+    # B의 gasTime/slowSpeedFrameCount 근사
+    self.gasPressedFrame = -10**9
+    self.slowSpeedFrameCount = 0
+
+    # B의 longActiveUser=13(버튼출발 유도) 근사: 잠시 자동재개 금지
+    self.brake_release_block_until = -10**9
+
+    # 브레이크 해제 자동재개에서 SET/RES 선택
+    self._brake_resume_prefer_set = False
 
   def update_params_3(self, frame: int):
     if frame == self._params_frame:
@@ -127,6 +144,13 @@ class SccSmoother:
     self.slow_on_curves = self.params.get_bool('SccSmootherSlowOnCurves')
     self.autoCurveSpeedFactor = float(int(self.params.get("AutoCurveSpeedFactor", encoding="utf8"))) * 0.01
     self.autoCurveSpeedFactorIn = float(int(self.params.get("AutoCurveSpeedFactorIn", encoding="utf8"))) * 0.01
+
+    # B(CruiseHelper) 브레이크해제 크루즈ON 파라미터 갱신
+    self.autoResumeFromBrakeRelease = self.params.get_bool("AutoResumeFromBrakeRelease")
+    self.autoResumeFromBrakeReleaseDist = float(int(self.params.get("AutoResumeFromBrakeReleaseDist", encoding="utf8")))
+    self.autoResumeFromBrakeReleaseLeadCar = self.params.get_bool("AutoResumeFromBrakeReleaseLeadCar")
+    self.autoResumeFromBrakeCarSpeed = float(int(self.params.get("AutoResumeFromBrakeCarSpeed", encoding="utf8")))
+    self.autoResumeFromBrakeReleaseTrafficSign = self.params.get_bool("AutoResumeFromBrakeReleaseTrafficSign")
 
   def reset(self):
     self.wait_timer = 0
@@ -143,6 +167,9 @@ class SccSmoother:
 
     # ✅ 커브 감속 이벤트 리셋
     self.curve_slowdown_alert = False
+
+    # 브레이크 해제 시도 관련(원하면 유지해도 됨. 여기선 보수적으로 초기화)
+    self._brake_resume_prefer_set = False
 
   @staticmethod
   def create_clu11(packer, bus, clu11, button):
@@ -165,6 +192,91 @@ class SccSmoother:
       events.add(EventName.slowingDownSpeedSound)
     elif self.slowing_down_alert:
       events.add(EventName.slowingDownSpeed)
+
+  def _decide_brake_release_auto_resume(self, CS, controls, dRel):
+    """
+    B(CruiseHelper) check_brake_cruise_on 정책을 A(SccSmoother)에 최대 반영한 판정.
+    반환:
+      (do_resume: bool, prefer_set: bool, block: bool)
+        - do_resume: 자동 크루즈 ON 시도
+        - prefer_set: True면 SET_DECEL로(현재속도 세트 근사), False면 RES_ACCEL
+        - block: True면 버튼출발 유도(자동재개 잠시 금지) 근사
+    """
+    if not self.autoResumeFromBrakeRelease:
+      return False, False, False
+
+    # steer 조건(B와 동일)
+    steer_angle = getattr(getattr(CS, "out", None), "steeringAngleDeg", getattr(CS, "steeringAngleDeg", 0.0))
+    if abs(steer_angle) >= 20:
+      return False, False, False
+
+    # blinker
+    blinker = bool(getattr(CS, "rightBlinker", False) or getattr(CS, "leftBlinker", False))
+
+    # v_ego kph
+    v_ego_ms = float(getattr(getattr(CS, "out", None), "vEgo", getattr(CS, "vEgo", 0.0)))
+    v_ego_kph = v_ego_ms * CV.MS_TO_KPH
+
+    # longPlan에서 trafficState/xStop (있으면 사용)
+    trafficState = 0
+    xStop = 0.0
+    try:
+      lp = controls.sm['longitudinalPlan']
+      trafficState = int(getattr(lp, "trafficState", 0) % 100)
+      xStop = float(getattr(lp, "xStop", 0.0))
+    except Exception:
+      trafficState = 0
+      xStop = 0.0
+
+    # gasTime(B 근사)
+    gasTime = (controls.sm.frame - self.gasPressedFrame) * DT_CTRL
+
+    # --- 저속(<20kph) 분기 ---
+    if v_ego_kph < 20.0:
+      gasWaitTime = 5.0 if (self.slowSpeedFrameCount * DT_CTRL) > 10.0 else 0.0
+      if gasTime < gasWaitTime:
+        return False, False, False
+
+      # 앞차 + 깜빡이(끼어들기/회전)면 패스
+      if (0 < dRel < 20.0) and blinker:
+        return False, False, False
+
+      # 앞차 10m 이내는 옵션 켰을 때만
+      if 0 < dRel < 10.0:
+        if self.autoResumeFromBrakeReleaseLeadCar:
+          return True, False, False  # RES
+        return False, False, False
+
+      # 앞차 없이 신호 감지 정지
+      if dRel == 0 and trafficState == 1:
+        if blinker:
+          return False, False, True  # block(=버튼출발 유도 근사)
+        if self.autoResumeFromBrakeReleaseTrafficSign:
+          return True, False, False  # RES
+        return False, False, False
+
+      return False, False, False
+
+    # --- 주행(>=20kph) 분기 ---
+    # 전방차 있음: 설정거리 이상에서만(가까울 땐 패스)
+    if dRel > 0:
+      if dRel > self.autoResumeFromBrakeReleaseDist:
+        return True, True, False  # SET(현재속도 세트 근사)
+      return False, False, False
+
+    # 신호 감지: 70kph 미만 + 옵션 + stop_dist < xStop
+    if trafficState == 1:
+      if v_ego_kph < 70.0 and self.autoResumeFromBrakeReleaseTrafficSign:
+        stop_dist = (v_ego_ms ** 2) / (2.5 * 2.0)
+        if stop_dist < xStop:
+          return True, True, False
+      return False, False, False
+
+    # 그냥 감속: 설정속도 이상이면 ON + 현재속도 세트
+    if self.autoResumeFromBrakeCarSpeed > 0 and v_ego_kph >= self.autoResumeFromBrakeCarSpeed:
+      return True, True, False
+
+    return False, False, False
 
   def cal_max_speed(self, frame, CC, CS, sm, clu11_speed, controls):
     road_speed_limiter = get_road_speed_limiter()
@@ -201,23 +313,18 @@ class SccSmoother:
     max_speed_log = ""
 
     if apply_limit_speed >= self.kph_to_clu(10):
-
       if first_started:
         self.max_speed_clu = clu11_speed
 
       max_speed_clu = min(max_speed_clu, apply_limit_speed)
 
       if clu11_speed > apply_limit_speed:
-
         if not self.slowing_down_alert and not self.slowing_down:
           self.slowing_down_sound_alert = True
           self.slowing_down = True
-
         self.slowing_down_alert = True
-
       else:
         self.slowing_down_alert = False
-
     else:
       self.slowing_down_alert = False
       self.slowing_down = False
@@ -240,13 +347,13 @@ class SccSmoother:
     return road_limit_speed, left_dist, max_speed_log
 
   def update(self, enabled, can_sends, packer, CC, CS, frame, controls):
-    # ✅ 3개값 실시간 갱신 (slow_on_curves / factor / factorIn)
+    # ✅ 실시간 갱신
     self.update_params_3(frame)
 
     # mph or kph
     clu11_speed = CS.clu11["CF_Clu_Vanz"]
 
-    # ✅ 브레이크 해제 순간 감지 (신규)
+    # ✅ 브레이크 해제 순간 감지
     if self.prev_brake_pressed and not CS.brake_pressed:
       self.brake_release_frame = frame
     self.prev_brake_pressed = CS.brake_pressed
@@ -273,30 +380,31 @@ class SccSmoother:
     ascc_auto_set = enabled and (clu11_speed > 30 or (CS.obj_valid and dRel > 1)) \
                     and CS.gas_pressed and CS.prev_cruiseState_speed and not CS.cruiseState_speed
 
-    # ✅ 브레이크 해제 후 크루즈 ON (신규)
-    # - 브레이크 해제 후 1초 이내
-    # - 저속(30 이하)에서만 동작
-    # - 가속페달 안 밟는 상태
-    # - 조향각 과대(>20도)면 제외
+    # -----------------------------
+    # ✅ 브레이크 해제 후 크루즈 ON (B 방식 최대 반영)
+    # -----------------------------
     brake_released_recent = (frame - self.brake_release_frame) < int(1.0 / DT_CTRL)
-    steer_angle = getattr(getattr(CS, "out", None), "steeringAngleDeg", 0.0)
-    resume_cond = abs(steer_angle) < 20
 
-    auto_resume_from_brake = (
-      enabled and
-      self.autoascc and
-      brake_released_recent and
-      (not CS.brake_pressed) and
-      (not CS.gas_pressed) and
-      resume_cond and
-      (clu11_speed < 30) and
-      (not CS.cruiseState_speed) and                 # 현재 크루즈 set speed가 0(=OFF로 읽히는 상황)
-      (
-        CS.out.cruiseState.standstill or             # 정지/출발 상황
-        (0 < dRel < 12.0) or                         # 앞차 출발(거리 조건)
-        (CS.obj_valid and dRel > 1.0)                # 레이더 valid 보조 조건
-      )
-    )
+    # B의 longActiveUser=13 근사: 일정시간 자동재개 금지
+    if frame < self.brake_release_block_until:
+      brake_released_recent = False
+
+    self._brake_resume_prefer_set = False
+    auto_resume_from_brake = False
+
+    if (enabled and self.autoascc and brake_released_recent and
+        (not CS.brake_pressed) and (not CS.gas_pressed) and
+        (not CS.cruiseState_speed)):  # OFF로 읽히는 상황에서만
+
+      do_resume, prefer_set, block = self._decide_brake_release_auto_resume(CS, controls, dRel)
+
+      if block:
+        # 3초간 자동재개 차단(버튼출발 유도 근사)
+        self.brake_release_block_until = frame + int(3.0 / DT_CTRL)
+        do_resume = False
+
+      auto_resume_from_brake = do_resume
+      self._brake_resume_prefer_set = prefer_set
 
     if not self.longcontrol:
       if (not ascc_enabled or CS.standstill or CS.cruise_buttons != Buttons.NONE) and not ascc_auto_set and not auto_resume_from_brake:
@@ -322,14 +430,14 @@ class SccSmoother:
           if self.autoascc:
             self.btn = Buttons.SET_DECEL
         elif auto_resume_from_brake:
-          self.btn = Buttons.RES_ACCEL
+          # B에서 "현재속도 세트" 성격은 SET_DECEL로 근사, 아니면 RES_ACCEL
+          self.btn = Buttons.SET_DECEL if self._brake_resume_prefer_set else Buttons.RES_ACCEL
         else:
           self.btn = Buttons.RES_ACCEL
 
         self.alive_count = SccSmoother.get_alive_count()
 
       if self.btn != Buttons.NONE:
-
         can_sends.append(SccSmoother.create_clu11(packer, CS.scc_bus, CS.clu11, self.btn))
 
         if self.alive_timer == 0:
@@ -348,8 +456,19 @@ class SccSmoother:
       if self.longcontrol:
         self.target_speed = 0.
 
-  def get_button(self, current_set_speed):
+    # -----------------------------
+    # ✅ B식 보조 상태 업데이트 (gasTime/slowSpeedFrameCount 근사)
+    # -----------------------------
+    v_ego_kph = float(getattr(CS.out, "vEgo", getattr(CS, "vEgo", 0.0))) * CV.MS_TO_KPH
+    if v_ego_kph < 20.0:
+      self.slowSpeedFrameCount += 1
+    else:
+      self.slowSpeedFrameCount = 0
 
+    if CS.gas_pressed:
+      self.gasPressedFrame = frame
+
+  def get_button(self, current_set_speed):
     if self.target_speed < self.min_set_speed_clu:
       return Buttons.NONE
 
@@ -360,15 +479,12 @@ class SccSmoother:
     return Buttons.RES_ACCEL if error > 0 else Buttons.SET_DECEL
 
   def get_lead(self, sm):
-
     radar = sm['radarState']
     if radar.leadOne.status:
       return radar.leadOne
-
     return None
 
   def get_long_lead_speed(self, CS, clu11_speed, sm):
-
     if self.longcontrol:
       lead = self.get_lead(sm)
       if lead is not None:
@@ -382,7 +498,6 @@ class SccSmoother:
             target_speed = clu11_speed + accel
             target_speed = max(target_speed, self.min_set_speed_clu)
             return target_speed
-
     return 0
 
   def cal_curve_speed(self, sm, v_ego, CS):
@@ -413,7 +528,6 @@ class SccSmoother:
     return float(turnSpeed * CV.KPH_TO_MS)
 
   def cal_target_speed(self, CS, clu11_speed, controls):
-
     if not self.longcontrol:
       if CS.gas_pressed and self.sync_set_speed_while_gas_pressed and CS.cruise_buttons == Buttons.NONE:
         if clu11_speed + SYNC_MARGIN > self.kph_to_clu(controls.v_cruise_kph):
@@ -432,7 +546,6 @@ class SccSmoother:
           self.target_speed = set_speed
 
   def update_max_speed(self, max_speed, limited_curv):
-
     if not self.longcontrol or self.max_speed_clu <= 0:
       self.max_speed_clu = max_speed
     else:
@@ -441,7 +554,6 @@ class SccSmoother:
       self.max_speed_clu = self.max_speed_clu + error * kp
 
   def get_apply_accel(self, CS, sm, accel, stopping):
-
     gas_factor = ntune_scc_get("sccGasFactor")
     brake_factor = ntune_scc_get("sccBrakeFactor")
 
@@ -466,7 +578,6 @@ class SccSmoother:
 
   @staticmethod
   def update_cruise_buttons(controls, CS, longcontrol):  # called by controlds's state_transition
-
     car_set_speed = CS.cruiseState.speed * CV.MS_TO_KPH
     is_cruise_enabled = car_set_speed != 0 and car_set_speed != 255 and CS.cruiseState.enabled and controls.CP.pcmCruise
 
@@ -493,7 +604,6 @@ class SccSmoother:
 
   @staticmethod
   def update_v_cruise(v_cruise_kph, buttonEvents, enabled, metric):
-
     global ButtonCnt, LongPressed, ButtonPrev
     if enabled:
       if ButtonCnt:
