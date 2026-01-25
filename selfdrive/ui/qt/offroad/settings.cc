@@ -868,6 +868,13 @@ TUNINGPanel::TUNINGPanel(QWidget* parent) : QWidget(parent) {
     toggleLayout->addWidget(new ParamControl("SccSmootherSlowOnCurves", "Auto 커브감속", "곡률에 따른 속도 감속 기능을 사용", "../assets/offroad/icon_road.png", this));
     toggleLayout->addWidget(new CValueControl("AutoCurveSpeedFactor", "커브속도조절비율(100%)", "높으면 커브속도 느려짐", "../assets/offroad/icon_road.png", 50, 300, 1));
     toggleLayout->addWidget(new CValueControl("AutoCurveSpeedFactorIn", "커브속도조절비울진입(10%)", "올리면 진입속도를 줄임", "../assets/offroad/icon_road.png", 0, 300, 1));
+    toggleLayout->addWidget(horizontal_line());
+    toggleLayout->addWidget(new ParamControl("AutoResumeFromBrakeRelease", "BRAKE CRUISE ON: Use", "Auto Cruise On when Brake released", "../assets/offroad/icon_road.png", this));
+    toggleLayout->addWidget(new CValueControl("AutoResumeFromBrakeReleaseDist", "BRAKE CRUISE ON: Moving, LeadCar(20)", "on moving, lead car is greater than the set dist", "../assets/offroad/icon_road.png", 0, 80, 5));
+    toggleLayout->addWidget(new ParamControl("AutoResumeFromBrakeReleaseLeadCar", "BRAKE CRUISE ON: Stopping, LeadCar", "on stopping, lead car within 10meters", "../assets/offroad/icon_road.png", this));
+    toggleLayout->addWidget(new CValueControl("AutoResumeFromBrakeCarSpeed", "BRAKE CRUISE ON: Moving, Speed(40)", "on moving, my car is greater then the set dist(no lead car)", "../assets/offroad/icon_road.png", 0, 80, 5));
+    toggleLayout->addWidget(new ParamControl("AutoResumeFromBrakeReleaseTrafficSign", "BRAKE CRUISE ON: Moving, Traffic signal", "on moving, if traffic signal detected", "../assets/offroad/icon_road.png", this));
+
     toggleLayout->addWidget(new ParamControl("Steer_SRTune", "SR가변 사용", "SR속도 가변사용(반드시 활성화할것)", "../assets/offroad/icon_road.png", this));
     toggleLayout->addWidget(new CValueControl("Steer_SRTune_v", "SR가변 비율", "SR가변시 비율값(추천:95)", "../assets/offroad/icon_road.png", 80, 120, 1));
     toggleLayout->addWidget(new CValueControl("MaxAngleFrames", "MaxAngleFrames(89)", "89:기본, lkas fault 발생시 87:사용", "../assets/offroad/icon_road.png", 80, 100, 1));
