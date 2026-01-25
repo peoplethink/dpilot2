@@ -279,7 +279,8 @@ class SccSmoother:
     # - 가속페달 안 밟는 상태
     # - 조향각 과대(>20도)면 제외
     brake_released_recent = (frame - self.brake_release_frame) < int(1.0 / DT_CTRL)
-    resume_cond = abs(CS.steeringAngleDeg) < 20
+    steer_angle = getattr(getattr(CS, "out", None), "steeringAngleDeg", 0.0)
+    resume_cond = abs(steer_angle) < 20
 
     auto_resume_from_brake = (
       enabled and
