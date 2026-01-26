@@ -60,7 +60,7 @@ T_IDXS = np.array(T_IDXS_LST)
 FCW_IDXS = T_IDXS < 5.0
 T_DIFFS = np.diff(T_IDXS, prepend=[0.])
 ACCEL_MIN = -4.0
-ACCEL_MAX = 2.0
+ACCEL_MAX = 2.5
 T_FOLLOW = 1.45
 COMFORT_BRAKE = 2.5
 STOP_DISTANCE = 6.5
@@ -164,8 +164,7 @@ def gen_long_ocp():
   constraints = vertcat(v_ego,
                         (a_ego - a_min),
                         (a_max - a_ego),
-                        ((x_obstacle - x_ego) -
-                         lead_danger_factor * desired_dist_comfort) / (v_ego + 10.))
+                        ((x_obstacle - x_ego) - lead_danger_factor * desired_dist_comfort) / (v_ego + 10.))
   ocp.model.con_h_expr = constraints
 
   x0 = np.zeros(X_DIM)
