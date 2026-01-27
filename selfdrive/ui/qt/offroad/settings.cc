@@ -882,12 +882,8 @@ TUNINGPanel::TUNINGPanel(QWidget* parent) : QWidget(parent) {
     toggleLayout->addWidget(new LabelControl("〓〓〓〓〓〓〓〓【 롱컨메뉴 】〓〓〓〓〓〓〓〓", ""));
     toggleLayout->addWidget(new CValueControl("StopDistance", "StopDistance(600cm)", "선행차와 정지하는 거리를 입력합니다.", "../assets/offroad/icon_road.png", 200, 1000, 50));
 
-    // ✅ FIX: 실시간 반영을 위해 InitMyDrivingMode 대신 MyDrivingMode를 직접 조정
     toggleLayout->addWidget(new CValueControl("MyDrivingMode", "DRIVEMODE: LIVE(3)", "1:ECO,2:SAFE,3:NORMAL,4:HIGH,5:AUTO", "../assets/offroad/icon_road.png", 1, 5, 1));
-
-    // (원하면 부팅 초기값도 따로 유지 가능)
-    // toggleLayout->addWidget(new CValueControl("InitMyDrivingMode", "DRIVEMODE: On boot(3)", "부팅 시 1회 적용용", "../assets/offroad/icon_road.png", 1, 5, 1));
-
+    toggleLayout->addWidget(new CValueControl("InitMyDrivingMode", "DRIVEMODE: On boot(3)", "부팅 시 1회 적용용", "../assets/offroad/icon_road.png", 1, 5, 1));
     toggleLayout->addWidget(new CValueControl("SoftHoldMode", "SoftHold(1)", "0:Not used,1:Use,2: with SCC(단,사이드가 걸리는 차량이 있음)", "../assets/offroad/icon_road.png", 0, 2, 1));
     toggleLayout->addWidget(new CValueControl("TrafficStopMode", "STOPPING: Traffice Stop Mode (1)", "0:사용안함,1:사용함,2:APilot모드", "../assets/offroad/icon_road.png", 0, 2, 1));
     toggleLayout->addWidget(new CValueControl("MixRadarInfo", "MixRadarInfo for SCC Rardar", "0:Not used,1:Use", "../assets/offroad/icon_shell.png", 0, 1, 1));
