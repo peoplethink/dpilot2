@@ -386,23 +386,36 @@ class Controls:
     self.rk = Ratekeeper(100, print_delay_threshold=None)
     self.prof = Profiler(False)
 
-  # ✅ UI(Params)에서 MyDrivingMode + MySafeModeFactor 읽어 실시간 반영
   def _update_my_driving_mode_from_params(self, force: bool = False):
     # 너무 자주 읽지 않도록 10프레임(0.1s)마다 갱신
     if (not force) and (self._md_mode_read_cnt % 10 != 0):
       self._md_mode_read_cnt += 1
       return
 
-    # MyDrivingMode (1~5)
+    mode = None
+
+    # 1) InitMyDrivingMode (1~5)
     try:
-      v = self.params.get("MyDrivingMode", encoding="utf8")
+      v = self.params.get("InitMyDrivingMode", encoding="utf8")
       if v is not None and len(v):
-        self.myDrivingMode = int(v)
+        mode = int(v)
     except Exception:
       pass
+
+    # 2) fallback: MyDrivingMode (기존 키 호환)
+    if mode is None:
+      try:
+        v = self.params.get("MyDrivingMode", encoding="utf8")
+        if v is not None and len(v):
+          mode = int(v)
+      except Exception:
+        pass
+
+    if mode is not None:
+      self.myDrivingMode = int(mode)
     self.myDrivingMode = int(clip(int(self.myDrivingMode), 1, 5))
 
-    # MySafeModeFactor (10~100 [%]) -> 0.1~1.0
+    # --- MySafeModeFactor (10~100 [%]) -> 0.1~1.0 ---
     try:
       ms = self.params.get("MySafeModeFactor", encoding="utf8")
       if ms is not None and len(ms):
