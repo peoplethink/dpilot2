@@ -984,22 +984,24 @@ CValueControl::CValueControl(const QString& params, const QString& title, const 
 
 void CValueControl::refresh()
 {
-    std::string v = Params().get(m_params.toStdString());
-    if (v.empty()) {
-      // ✅ 파라미터별 기본값
-      if (m_params == "MyDrivingMode") {
-        v = "3";  // NORMAL 기본
-      } else if (m_params == "MySafeModeFactor") {
-        v = "80"; // 80% 기본 (너 UI 설명 기준)
-      } else {
-        v = "0";
-      }
-      Params().put(m_params.toStdString(), v);
+  std::string v = Params().get(m_params.toStdString());
+  if (v.empty()) {
+    // ✅ 파라미터별 기본값
+    if (m_params == "MyDrivingMode") {
+      v = "3";  // NORMAL 기본
+    } else if (m_params == "InitMyDrivingMode") {
+      v = "3";  // ✅ 부팅 1회 적용 기본 (A안)
+    } else if (m_params == "MySafeModeFactor") {
+      v = "80"; // 80% 기본
+    } else {
+      v = "0";
     }
+    Params().put(m_params.toStdString(), v);
+  }
 
-    label.setText(QString::fromStdString(v));
-    btnminus.setText("－");
-    btnplus.setText("＋");
+  label.setText(QString::fromStdString(v));
+  btnminus.setText("－");
+  btnplus.setText("＋");
 }
 
 // Lane Lines Width
