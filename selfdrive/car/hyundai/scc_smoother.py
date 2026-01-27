@@ -123,11 +123,11 @@ class SccSmoother:
     self.turnSpeed_prev = 300
     self.curvatureFilter = StreamingMovingAverage(20)
 
-    # ✅ 브레이크 해제 후 크루즈 ON (A->B 방식 최대 반영)
+    # ✅ 브레이크 해제 후 크루즈 ON
     self.prev_brake_pressed = False
     self.brake_release_frame = -10**9  # 충분히 과거로 초기화
 
-    # B(CruiseHelper) 파라미터들
+    # B(CruiseHelper) 파라미터들(가능한 범위 내 반영)
     self.autoResumeFromBrakeRelease = self.params.get_bool("AutoResumeFromBrakeRelease")
     try:
       self.autoResumeFromBrakeReleaseDist = float(int(self.params.get("AutoResumeFromBrakeReleaseDist", encoding="utf8") or b"0"))
@@ -151,11 +151,18 @@ class SccSmoother:
     self._brake_resume_prefer_set = False
 
     # -----------------------------
-    # ✅ (B안) DrivingMode는 controls에서 받음
+    # ✅ (A안) InitMyDrivingMode를 Params로 관리
     # -----------------------------
     self.drivingModeIndex = 0.0
-    self.myDrivingMode = 3           # 1:ECO 2:SAFE 3:NORMAL 4:HIGH 5:AUTO
-    self.mySafeModeFactor = 1.0      # 0.1~1.0 (원하면 이후 적용)
+    try:
+      self.initMyDrivingMode = int(self.params.get("InitMyDrivingMode", encoding="utf8") or b"3")
+    except Exception:
+      self.initMyDrivingMode = 3
+
+    # 1:ECO 2:SAFE 3:NORMAL 4:HIGH 5:AUTO
+    self.initMyDrivingMode = int(clip(self.initMyDrivingMode, 1, 5))
+    # 내부 현재 모드
+    self.myDrivingMode = self.initMyDrivingMode if self.initMyDrivingMode < 5 else 3
 
   def update_params_3(self, frame: int):
     if frame == self._params_frame:
@@ -174,7 +181,7 @@ class SccSmoother:
     except Exception:
       pass
 
-    # B(CruiseHelper) 브레이크해제 크루즈ON 파라미터 갱신
+    # 브레이크해제 크루즈ON 파라미터 갱신
     self.autoResumeFromBrakeRelease = self.params.get_bool("AutoResumeFromBrakeRelease")
     try:
       self.autoResumeFromBrakeReleaseDist = float(int(self.params.get("AutoResumeFromBrakeReleaseDist", encoding="utf8") or b"0"))
@@ -186,6 +193,30 @@ class SccSmoother:
     except Exception:
       pass
     self.autoResumeFromBrakeReleaseTrafficSign = self.params.get_bool("AutoResumeFromBrakeReleaseTrafficSign")
+
+    # -----------------------------
+    # ✅ (A안) InitMyDrivingMode 실시간 변경 반영
+    # -----------------------------
+    try:
+      new_init_mode = int(self.params.get("InitMyDrivingMode", encoding="utf8") or str(self.initMyDrivingMode).encode("utf8"))
+    except Exception:
+      new_init_mode = self.initMyDrivingMode
+
+    new_init_mode = int(clip(new_init_mode, 1, 5))
+
+    if new_init_mode != self.initMyDrivingMode:
+      self.initMyDrivingMode = new_init_mode
+
+      # 수동(1~4): 즉시 고정
+      if 1 <= self.initMyDrivingMode <= 4:
+        self.myDrivingMode = self.initMyDrivingMode
+
+      # AUTO(5): 기본값은 NORMAL(3)에서 시작, 단 현재가 SAFE(2)/HIGH(4)면 유지(원래 너 로직)
+      elif self.initMyDrivingMode == 5:
+        if self.myDrivingMode not in [2, 4]:
+          self.myDrivingMode = 3
+
+      self.drivingModeIndex = 0.0
 
   def reset(self):
     self.wait_timer = 0
@@ -230,29 +261,22 @@ class SccSmoother:
 
   def _decide_brake_release_auto_resume(self, CS, controls, dRel):
     """
-    B(CruiseHelper) check_brake_cruise_on 정책을 A(SccSmoother)에 최대 반영한 판정.
+    CruiseHelper check_brake_cruise_on 정책을 최대 반영한 판정.
     반환:
       (do_resume: bool, prefer_set: bool, block: bool)
-        - do_resume: 자동 크루즈 ON 시도
-        - prefer_set: True면 SET_DECEL로(현재속도 세트 근사), False면 RES_ACCEL
-        - block: True면 버튼출발 유도(자동재개 잠시 금지) 근사
     """
     if not self.autoResumeFromBrakeRelease:
       return False, False, False
 
-    # steer 조건(B와 동일)
     steer_angle = getattr(getattr(CS, "out", None), "steeringAngleDeg", getattr(CS, "steeringAngleDeg", 0.0))
     if abs(steer_angle) >= 20:
       return False, False, False
 
-    # blinker
     blinker = bool(getattr(CS, "rightBlinker", False) or getattr(CS, "leftBlinker", False))
 
-    # v_ego kph
     v_ego_ms = float(getattr(getattr(CS, "out", None), "vEgo", getattr(CS, "vEgo", 0.0)))
     v_ego_kph = v_ego_ms * CV.MS_TO_KPH
 
-    # longPlan에서 trafficState/xStop (있으면 사용)
     trafficState = 0
     xStop = 0.0
     try:
@@ -263,43 +287,35 @@ class SccSmoother:
       trafficState = 0
       xStop = 0.0
 
-    # gasTime(B 근사)
     gasTime = (controls.sm.frame - self.gasPressedFrame) * DT_CTRL
 
-    # --- 저속(<20kph) 분기 ---
     if v_ego_kph < 20.0:
       gasWaitTime = 5.0 if (self.slowSpeedFrameCount * DT_CTRL) > 10.0 else 0.0
       if gasTime < gasWaitTime:
         return False, False, False
 
-      # 앞차 + 깜빡이(끼어들기/회전)면 패스
       if (0 < dRel < 20.0) and blinker:
         return False, False, False
 
-      # 앞차 10m 이내는 옵션 켰을 때만
       if 0 < dRel < 10.0:
         if self.autoResumeFromBrakeReleaseLeadCar:
           return True, False, False  # RES
         return False, False, False
 
-      # 앞차 없이 신호 감지 정지
       if dRel == 0 and trafficState == 1:
         if blinker:
-          return False, False, True  # block(=버튼출발 유도 근사)
+          return False, False, True  # block
         if self.autoResumeFromBrakeReleaseTrafficSign:
           return True, False, False  # RES
         return False, False, False
 
       return False, False, False
 
-    # --- 주행(>=20kph) 분기 ---
-    # 전방차 있음: 설정거리 이상에서만(가까울 땐 패스)
     if dRel > 0:
       if dRel > self.autoResumeFromBrakeReleaseDist:
-        return True, True, False  # SET(현재속도 세트 근사)
+        return True, True, False  # SET
       return False, False, False
 
-    # 신호 감지: 70kph 미만 + 옵션 + stop_dist < xStop
     if trafficState == 1:
       if v_ego_kph < 70.0 and self.autoResumeFromBrakeReleaseTrafficSign:
         stop_dist = (v_ego_ms ** 2) / (2.5 * 2.0)
@@ -307,7 +323,6 @@ class SccSmoother:
           return True, True, False
       return False, False, False
 
-    # 그냥 감속: 설정속도 이상이면 ON + 현재속도 세트
     if self.autoResumeFromBrakeCarSpeed > 0 and v_ego_kph >= self.autoResumeFromBrakeCarSpeed:
       return True, True, False
 
@@ -318,18 +333,18 @@ class SccSmoother:
     apply_limit_speed, road_limit_speed, left_dist, first_started, cam_type, max_speed_log = \
       road_speed_limiter.get_max_speed(clu11_speed, self.is_metric)
 
-    # ✅ 매 프레임 커브 이벤트 초기화 (이번 프레임 계산 결과로 다시 세팅)
+    # ✅ 매 프레임 커브 이벤트 초기화
     self.curve_slowdown_alert = False
 
     curv_limit = 0
     self.curve_speed_ms = self.cal_curve_speed(sm, CS.out.vEgo, CS)
+
     if self.slow_on_curves and self.curve_speed_ms >= MIN_CURVE_SPEED:
       max_speed_clu = min(controls.v_cruise_kph * CV.KPH_TO_MS, self.curve_speed_ms) * self.speed_conv_to_clu
       curv_limit = int(max_speed_clu)
     else:
       max_speed_clu = self.kph_to_clu(controls.v_cruise_kph)
 
-    # ✅ 커브 제한이 실제로 걸렸고(=v_cruise보다 낮아짐), 현재속도도 그보다 높으면 "감속중" 표시
     if curv_limit > 0:
       curv_limit_ms = curv_limit * self.speed_conv_to_ms
       cruise_ms = controls.v_cruise_kph * CV.KPH_TO_MS
@@ -382,25 +397,9 @@ class SccSmoother:
     return road_limit_speed, left_dist, max_speed_log
 
   def update(self, enabled, can_sends, packer, CC, CS, frame, controls):
-    # ✅ 실시간 갱신 (모드 제외: B안은 controls에서 받음)
+    # ✅ 실시간 갱신 (A안: InitMyDrivingMode 포함)
     self.update_params_3(frame)
 
-    # -----------------------------
-    # ✅ (B안) 매 프레임 controls에서 모드/세이프팩터 동기화
-    # -----------------------------
-    try:
-      self.myDrivingMode = int(getattr(controls, "myDrivingMode", self.myDrivingMode))
-    except Exception:
-      pass
-    self.myDrivingMode = int(clip(self.myDrivingMode, 1, 5))
-
-    try:
-      self.mySafeModeFactor = float(getattr(controls, "mySafeModeFactor", self.mySafeModeFactor))
-    except Exception:
-      pass
-    self.mySafeModeFactor = float(clip(self.mySafeModeFactor, 0.1, 1.0))
-
-    # mph or kph
     clu11_speed = CS.clu11["CF_Clu_Vanz"]
 
     # ✅ 브레이크 해제 순간 감지
@@ -410,7 +409,6 @@ class SccSmoother:
 
     road_limit_speed, left_dist, max_speed_log = self.cal_max_speed(frame, CC, CS, controls.sm, clu11_speed, controls)
 
-    # kph
     controls.applyMaxSpeed = float(clip(CS.cruiseState_speed * CV.MS_TO_KPH, MIN_SET_SPEED_KPH,
                                         self.max_speed_clu * self.speed_conv_to_ms * CV.MS_TO_KPH))
     CC.sccSmoother.longControl = self.longcontrol
@@ -426,19 +424,15 @@ class SccSmoother:
     if lead is not None:
       dRel = lead.dRel
 
-    # ✅ AUTO(5)일 때만 지수 계산으로 ECO/일반 자동전환 (원 로직 유지)
+    # ✅ (A안) InitMyDrivingMode 기반 AUTO(5)면 자동전환
     self.apilot_driving_mode(CS, dRel)
 
-    # Auto-resume Cruise Set Speed by JangPoo (기존)
+    # Auto-resume Cruise Set Speed (기존)
     ascc_auto_set = enabled and (clu11_speed > 30 or (CS.obj_valid and dRel > 1)) \
                     and CS.gas_pressed and CS.prev_cruiseState_speed and not CS.cruiseState_speed
 
-    # -----------------------------
-    # ✅ 브레이크 해제 후 크루즈 ON (B 방식 최대 반영)
-    # -----------------------------
+    # ✅ 브레이크 해제 후 크루즈 ON
     brake_released_recent = (frame - self.brake_release_frame) < int(1.0 / DT_CTRL)
-
-    # B의 longActiveUser=13 근사: 일정시간 자동재개 금지
     if frame < self.brake_release_block_until:
       brake_released_recent = False
 
@@ -447,12 +441,11 @@ class SccSmoother:
 
     if (enabled and self.autoascc and brake_released_recent and
         (not CS.brake_pressed) and (not CS.gas_pressed) and
-        (not CS.cruiseState_speed)):  # OFF로 읽히는 상황에서만
+        (not CS.cruiseState_speed)):
 
       do_resume, prefer_set, block = self._decide_brake_release_auto_resume(CS, controls, dRel)
 
       if block:
-        # 3초간 자동재개 차단(버튼출발 유도 근사)
         self.brake_release_block_until = frame + int(3.0 / DT_CTRL)
         do_resume = False
 
@@ -483,7 +476,6 @@ class SccSmoother:
           if self.autoascc:
             self.btn = Buttons.SET_DECEL
         elif auto_resume_from_brake:
-          # B에서 "현재속도 세트" 성격은 SET_DECEL로 근사, 아니면 RES_ACCEL
           self.btn = Buttons.SET_DECEL if self._brake_resume_prefer_set else Buttons.RES_ACCEL
         else:
           self.btn = Buttons.RES_ACCEL
@@ -551,8 +543,6 @@ class SccSmoother:
     return 0
 
   def cal_curve_speed(self, sm, v_ego, CS):
-    # 회전속도/선속도 = 곡률
-    # 12:20 => 약 1.4~3.5초 미래의 curvature를 계산
     try:
       orientationRates = np.array(sm['modelV2'].orientationRate.z, dtype=np.float32)
     except Exception:
@@ -574,13 +564,11 @@ class SccSmoother:
     speed_diff = max(0, v_ego * 3.6 - turnSpeed)
     turnSpeed = turnSpeed - speed_diff * self.autoCurveSpeedFactorIn
 
-    # m/s 로 반환
     return float(turnSpeed * CV.KPH_TO_MS)
 
   def apilot_driving_mode(self, CS, dRel):
     a_ego = float(getattr(getattr(CS, "out", None), "aEgo", getattr(CS, "aEgo", 0.0)))
 
-    # v_ego_kph
     v_ego_ms = float(getattr(getattr(CS, "out", None), "vEgo", getattr(CS, "vEgo", 0.0)))
     v_ego_kph = v_ego_ms * CV.MS_TO_KPH
 
@@ -594,11 +582,11 @@ class SccSmoother:
 
     self.drivingModeIndex = self.drivingModeIndex * 0.999 + total_index * 0.001
 
-    # ✅ (B안) AUTO(5)일 때만 자동 전환 (controls에서 받은 myDrivingMode를 존중)
-    if self.myDrivingMode == 5 and self.drivingModeIndex > 0:
-      # 고정모드(2,4)로 쓰는 케이스면 유지
-      # (myDrivingMode==5일 때는 여기 들어오므로, 고정 로직은 필요 없지만,
-      #  기존 의도 보존하려면 아래처럼 유지해도 무방)
+    # ✅ (A안) InitMyDrivingMode가 AUTO(5)일 때만 자동 전환
+    if self.initMyDrivingMode == 5 and self.drivingModeIndex > 0:
+      # SAFE(2)/HIGH(4)로 고정해서 쓰는 케이스는 유지
+      if self.myDrivingMode in [2, 4]:
+        return
       if self.drivingModeIndex < 20:
         self.myDrivingMode = 3  # 일반
       elif self.drivingModeIndex > 80:
