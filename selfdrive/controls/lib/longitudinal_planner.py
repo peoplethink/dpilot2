@@ -76,6 +76,9 @@ class Planner:
     self.myEcoModeFactor = 1.0
     self.myDrivingMode = 3  # ✅ UI(Params) 기반으로만 사용할 driving mode (기본: 일반)
 
+    # ✅ A안: 부팅 1회 InitMyDrivingMode -> MyDrivingMode 이관 여부
+    self._init_md_applied = False
+
     self.params_count = 0
 
     # (초기값) 파라미터 없을 수 있으니 안전하게 기본값 세팅
@@ -113,9 +116,26 @@ class Planner:
 
     # ✅ UI에서만 실시간 반영: controlsState.myDrivingMode 무시하고 Params만 사용
     try:
-      self.myDrivingMode = int(self.params.get("MyDrivingMode", encoding="utf8"))
+      v = self.params.get("MyDrivingMode", encoding="utf8")
+      if v is not None and len(v):
+        self.myDrivingMode = int(v)
     except Exception:
       pass
+    self.myDrivingMode = int(clip(int(self.myDrivingMode), 1, 5))
+
+    # ✅ A안: 부팅 1회 InitMyDrivingMode -> MyDrivingMode 이관(Planner가 Params 직접 읽는 구조라서 여기서 보장)
+    if not self._init_md_applied:
+      try:
+        init_md = self.params.get("InitMyDrivingMode", encoding="utf8")
+        if init_md is not None and len(init_md):
+          init_md_i = int(init_md)
+          init_md_i = int(clip(int(init_md_i), 1, 5))
+          # LIVE 값으로 복사
+          self.params.put("MyDrivingMode", str(init_md_i))
+          self.myDrivingMode = init_md_i
+      except Exception:
+        pass
+      self._init_md_applied = True
 
   def get_max_accel(self, v_ego):
     cruiseMaxVals = [
