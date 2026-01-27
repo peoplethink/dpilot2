@@ -135,8 +135,11 @@ class SccSmoother:
     self._brake_resume_prefer_set = False
 
     self.drivingModeIndex = 0.0
-    self.initMyDrivingMode = int(self.params.get("InitMyDrivingMode"))
-    self.initMyDrivingMode = 3
+    try:
+      self.initMyDrivingMode = int(self.params.get("InitMyDrivingMode", encoding="utf8"))
+    except Exception:
+      self.initMyDrivingMode = 3
+
     self.myDrivingMode = self.initMyDrivingMode if self.initMyDrivingMode < 5 else 3
 
   def update_params_3(self, frame: int):
