@@ -134,6 +134,11 @@ class SccSmoother:
     # 브레이크 해제 자동재개에서 SET/RES 선택
     self._brake_resume_prefer_set = False
 
+    self.drivingModeIndex = 0.0
+    self.initMyDrivingMode = int(self.params.get("InitMyDrivingMode"))
+    self.initMyDrivingMode = 3
+    self.myDrivingMode = self.initMyDrivingMode if self.initMyDrivingMode < 5 else 3
+
   def update_params_3(self, frame: int):
     if frame == self._params_frame:
       return
@@ -151,6 +156,20 @@ class SccSmoother:
     self.autoResumeFromBrakeReleaseLeadCar = self.params.get_bool("AutoResumeFromBrakeReleaseLeadCar")
     self.autoResumeFromBrakeCarSpeed = float(int(self.params.get("AutoResumeFromBrakeCarSpeed", encoding="utf8")))
     self.autoResumeFromBrakeReleaseTrafficSign = self.params.get_bool("AutoResumeFromBrakeReleaseTrafficSign")
+    try:
+      new_init_mode = int(self.params.get("InitMyDrivingMode"))
+    except Exception:
+      new_init_mode = self.initMyDrivingMode
+
+    if new_init_mode != self.initMyDrivingMode:
+      self.initMyDrivingMode = new_init_mode
+      if 1 <= self.initMyDrivingMode <= 4:
+        self.myDrivingMode = self.initMyDrivingMode
+      elif self.initMyDrivingMode == 5:
+        if self.myDrivingMode not in [2, 4]:
+          self.myDrivingMode = 3
+
+      self.drivingModeIndex = 0.0
 
   def reset(self):
     self.wait_timer = 0
@@ -376,6 +395,8 @@ class SccSmoother:
     if lead is not None:
       dRel = lead.dRel
 
+    self.apilot_driving_mode(CS, dRel)
+    
     # Auto-resume Cruise Set Speed by JangPoo (기존)
     ascc_auto_set = enabled and (clu11_speed > 30 or (CS.obj_valid and dRel > 1)) \
                     and CS.gas_pressed and CS.prev_cruiseState_speed and not CS.cruiseState_speed
@@ -456,9 +477,6 @@ class SccSmoother:
       if self.longcontrol:
         self.target_speed = 0.
 
-    # -----------------------------
-    # ✅ B식 보조 상태 업데이트 (gasTime/slowSpeedFrameCount 근사)
-    # -----------------------------
     v_ego_kph = float(getattr(CS.out, "vEgo", getattr(CS, "vEgo", 0.0))) * CV.MS_TO_KPH
     if v_ego_kph < 20.0:
       self.slowSpeedFrameCount += 1
@@ -526,6 +544,33 @@ class SccSmoother:
 
     # m/s 로 반환
     return float(turnSpeed * CV.KPH_TO_MS)
+
+  def apilot_driving_mode(self, CS, dRel):
+    a_ego = float(getattr(getattr(CS, "out", None), "aEgo", getattr(CS, "aEgo", 0.0)))
+
+    # v_ego_kph
+    v_ego_ms = float(getattr(getattr(CS, "out", None), "vEgo", getattr(CS, "vEgo", 0.0)))
+    v_ego_kph = v_ego_ms * CV.MS_TO_KPH
+
+    accel_index = interp(a_ego, [-3.0, -1.0, 0.0, 1.0, 3.0], [100.0, 0, 0, 0, 100.0])
+    velocity_index = interp(v_ego_kph, [0, 5.0, 50.0], [100.0, 80.0, 0.0])
+
+    if 0 < dRel < 50:
+      total_index = accel_index * 3. + velocity_index
+    else:
+      total_index = 0.0
+
+    self.drivingModeIndex = self.drivingModeIndex * 0.999 + total_index * 0.001
+
+    # AUTO(5)일 때만 자동 전환
+    if self.initMyDrivingMode == 5 and self.drivingModeIndex > 0:
+      # CruiseHelper와 동일: myDrivingMode가 [2,4]면 고정(안전/스포츠 등 고정모드로 쓰는 케이스)
+      if self.myDrivingMode in [2, 4]:
+        pass
+      elif self.drivingModeIndex < 20:
+        self.myDrivingMode = 3  # 일반
+      elif self.drivingModeIndex > 80:
+        self.myDrivingMode = 1  # 연비
 
   def cal_target_speed(self, CS, clu11_speed, controls):
     if not self.longcontrol:
