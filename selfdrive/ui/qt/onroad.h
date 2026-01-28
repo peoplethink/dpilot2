@@ -36,17 +36,13 @@ private:
   void drawIcon(QPainter &p, int x, int y, QPixmap &img, QBrush bg, float opacity, bool rotation = false, float angle = 0 );
   //void drawText(QPainter &p, int x, int y, const QString &text, int alpha = 255);
   //void drawTextWithColor(QPainter &p, int x, int y, const QString &text, QColor& color);
-  void drawCompass(QPainter &p, int x, int y, QPixmap &img, QBrush bg, float opacity, float bearing_deg = 0);
   void paintEvent(QPaintEvent *event) override;
   void drawCenteredText(QPainter &p, int x, int y, const QString &text, QColor color);
   void drawVisionTurnControllerUI(QPainter &p, int x, int y, int size, const QColor &color, const QString &speed,
                                   int alpha);
-  void drawCarrotHud_ByPath(QPainter &p);
   
   QPixmap engage_img;
   QPixmap experimental_img;
-  QPixmap compass_inner_img;
-  QPixmap compass_outer_img;
   QString vtcSpeed;
   QColor vtcColor;
   QPixmap traffic_green_img;
@@ -141,9 +137,7 @@ protected:
   void drawTextWithColor(QPainter &p, int x, int y, const QString &text, const QColor &color);
   void drawText2(QPainter &p, int x, int y, int flags, const QString &text, const QColor& color);
   void drawMaxSpeed(QPainter &p);
-  void drawSpeed(QPainter &p);
   void drawBottomIcons(QPainter &p);
-  void drawCgear(QPainter &p);//기어
   void drawTpms(QPainter &p);
   void drawBrake(QPainter &p);
   void drawCommunity(QPainter &p);
