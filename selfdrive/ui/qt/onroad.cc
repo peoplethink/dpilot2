@@ -18,35 +18,25 @@ static void drawGapBars(QPainter &p, int x, int y, int gap, bool active_long) {
 
   int bars = std::clamp(gap, 0, 4);
 
-  // === 막대 레이아웃 ===
   const int bar_w   = 26;
-  const int bar_h   = 24;   // 아래로 더 크게
+  const int bar_h   = 24;
   const int bar_gap = 8;
   const int radius  = 4;
 
-  // === 색상 ===
-  QColor onColor  = QColor(0, 255, 0, 255);   // 진한 녹색
-  QColor offColor = QColor(0, 200, 0, 60);    // 비활성 (연한 녹색)
+  QColor onColor  = QColor(0, 255, 0, 255);   // 활성: 진한 녹색
+  QColor offColor = QColor(0, 200, 0, 60);    // 비활성: 연한 녹색
+  QColor borderColor = QColor(0, 120, 0, 200);  // 테두리도 항상 녹색
 
-  // longControl OFF
-  if (!active_long) {
-    onColor  = QColor(0, 80, 200, 230);
-    offColor = QColor(0, 80, 200, 60);
-  }
+  p.setPen(QPen(borderColor, 1));
 
-  // === 테두리 (가독성 강화) ===
-  QColor borderColor = active_long
-    ? QColor(0, 120, 0, 200)
-    : QColor(0, 60, 160, 200);
-
-  p.setPen(QPen(borderColor, 1));	
-
-  // === 막대 그리기 ===
   for (int i = 0; i < 4; i++) {
-    QRect r(x + i * (bar_w + bar_gap), y, bar_w, bar_h);
+    int yy = y - i * (bar_h + bar_gap);
+
+    QRect r(x, yy, bar_w, bar_h);
     p.setBrush(i < bars ? onColor : offColor);
     p.drawRoundedRect(r, radius, radius);
   }
+
   p.restore();
 }
 
