@@ -578,18 +578,13 @@ void OnroadHud::drawCarrotHud_ByPath(QPainter &p) {
   float path_fx = width() / 2.f;
   float path_fy = height() - 400.f;
 
-  bool has_path_end =
-      ui->scene.path_end_left_vertices.size() > 0 &&
-      ui->scene.path_end_right_vertices.size() > 0;
+  // track 끝점(가장 먼 지점)으로 HUD 기준점 잡기
+  const auto &tv = ui->scene.track_vertices;
+  if (tv.cnt > 0) {
+    const QPointF end(tv.v[tv.cnt - 1].x(), tv.v[tv.cnt - 1].y());
 
-  if (has_path_end) {
-    float lex = ui->scene.path_end_left_vertices[0].x();
-    float rex = ui->scene.path_end_right_vertices[0].x();
-    float ley = ui->scene.path_end_left_vertices[0].y();
-    float rey = ui->scene.path_end_right_vertices[0].y();
-
-    float cx = (lex + rex) / 2.f;
-    float cy = (ley + rey) / 2.f;
+    float cx = end.x();
+    float cy = end.y();
 
     cx = std::clamp(cx, 550.f, (float)width() - 550.f);
     cy = std::clamp(cy, 200.f, (float)height() - 100.f);
@@ -665,7 +660,9 @@ void OnroadHud::drawCarrotHud_ByPath(QPainter &p) {
 
   dxGap -= 60;
 
-  bool active_long = cs.getLongActiveUser() > 0;
+  const int long_state = (int)cs.getLongControlState();
+  bool active_long = cs.getEnabled() && (long_state != 0);
+
   drawGapBars(p, x + dxGap, y + 5 + 64, gap, active_long);
 
   configFont(p, "Open Sans", 25, "Bold");
