@@ -13,36 +13,6 @@
 #include "selfdrive/ui/qt/maps/map_helpers.h"
 #endif
 
-static void drawGapBars(QPainter &p, int x, int y, int gap, bool active_long) {
-  p.save();
-
-  int bars = std::clamp(gap, 0, 4);
-
-  const int bar_w   = 26;
-  const int bar_h   = 24;
-  const int bar_gap = 8;
-  const int radius  = 4;
-
-  QColor onColor  = QColor(0, 255, 0, 255);   // 활성: 진한 녹색
-  QColor offColor = QColor(0, 200, 0, 60);    // 비활성: 연한 녹색
-  QColor borderColor = QColor(0, 120, 0, 200);  // 테두리도 항상 녹색
-
-  p.setPen(QPen(borderColor, 1));
-
-  for (int i = 0; i < 4; i++) {
-    int yy = y - i * (bar_h + bar_gap);
-
-    QRect r(x, yy, bar_w, bar_h);
-    p.setBrush(i < bars ? onColor : offColor);
-    p.drawRoundedRect(r, radius, radius);
-  }
-
-  p.restore();
-}
-
-// (기존) static void drawGapBars(...)
-// ...
-
 // ====== [ADD] Animated Text (ported from paint.h ui_draw_text_a/ui_draw_text_a2) ======
 struct AnimTextState {
   float x = 0.f;
