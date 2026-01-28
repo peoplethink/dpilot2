@@ -136,7 +136,6 @@ protected:
   void drawText(QPainter &p, int x, int y, const QString &text, int alpha = 255);
   void drawTextWithColor(QPainter &p, int x, int y, const QString &text, const QColor &color);
   void drawText2(QPainter &p, int x, int y, int flags, const QString &text, const QColor& color);
-  void drawMaxSpeed(QPainter &p);
   void drawBottomIcons(QPainter &p);
   void drawTpms(QPainter &p);
   void drawBrake(QPainter &p);
