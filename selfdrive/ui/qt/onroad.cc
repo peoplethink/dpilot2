@@ -680,128 +680,6 @@ void OnroadHud::drawCompass(QPainter &p, int x, int y, QPixmap &img, QBrush bg, 
   drawDirection("N", 292.5, 360, Qt::AlignTop | Qt::AlignHCenter, {});
 }
 
-// ================= Carrot HUD (paint.h 위치 기준) =================
-void OnroadHud::drawCarrotHud_ByPath(QPainter &p) {
-  auto *ui = uiState();
-  if (!ui || !ui->sm || !ui->sm->alive("carState") ||
-      !ui->sm->alive("controlsState") || !ui->sm->alive("longitudinalPlan")) {
-    return;
-  }
-
-  const SubMaster &sm = *(ui->sm);
-  const auto car_state = sm["carState"].getCarState();
-  const auto cs = sm["controlsState"].getControlsState();
-  const auto lp = sm["longitudinalPlan"].getLongitudinalPlan();
-
-  // ---------- paint.h 기준점 계산 ----------
-  float path_fx = width() / 2.f;
-  float path_fy = height() - 400.f;
-
-  // track 끝점(가장 먼 지점)으로 HUD 기준점 잡기
-  const auto &tv = ui->scene.track_vertices;
-  if (tv.cnt > 0) {
-    const QPointF end(tv.v[tv.cnt - 1].x(), tv.v[tv.cnt - 1].y());
-
-    float cx = end.x();
-    float cy = end.y();
-
-    cx = std::clamp(cx, 550.f, (float)width() - 550.f);
-    cy = std::clamp(cy, 200.f, (float)height() - 100.f);
-
-    path_fx = cx;
-    path_fy = cy;
-  }
-
-  int x = (int)path_fx;
-  int y = (int)(path_fy - 135.f);
-
-  // ---------- 현재 속도 ----------
-  float v_ego = car_state.getVEgoCluster();
-  float cur_speed = v_ego * (ui->scene.is_metric ? MS_TO_KPH : MS_TO_MPH);
-  if (cur_speed < 0) cur_speed = 0;
-
-  int bx = x;
-  int by = y + 270;
-
-  QPixmap speed_bg("../assets/images/speed_bg.png");
-  if (!speed_bg.isNull()) {
-    p.drawPixmap(bx - 100, by - 60, 350, 150, speed_bg);
-  }
-
-  configFont(p, "Open Sans", 120, "Bold");
-  p.setPen(Qt::white);
-  p.drawText(QRect(bx - 200, by - 80, 400, 200),
-             Qt::AlignCenter,
-             QString::number((int)std::nearbyint(cur_speed)));
-
-  // ---------- 기어 ----------
-  QString gear = "D";
-  switch (car_state.getGearShifter()) {
-    case cereal::CarState::GearShifter::PARK: gear = "P"; break;
-    case cereal::CarState::GearShifter::REVERSE: gear = "R"; break;
-    case cereal::CarState::GearShifter::NEUTRAL: gear = "N"; break;
-    case cereal::CarState::GearShifter::SPORT: gear = "S"; break;
-    case cereal::CarState::GearShifter::LOW: gear = "L"; break;
-    default: break;
-  }
-
-  static QString prev_gear = "";
-  if (prev_gear != gear) {
-    // 기어 텍스트가 찍히는 위치(현재 코드 기준)를 목표점으로 사용
-    const float gx = (float)(bx + 120);   // 기존 drawText QRect 기준
-    const float gy = (float)(by + 55 + 50); // baseline 느낌으로 약간 보정(취향)
-    startAnimText(gx, gy,
-                  gear,                 // 바뀐 기어 1글자
-                  140.0f,               // 팝업 크기 (원하면 110~160 조절)
-                  QColor(0, 255, 0, 240),
-                  "KaiGenGothicKR-Bold");
-    prev_gear = gear;
-  }
-	
-  configFont(p, "Open Sans", 44, "Bold");
-  p.setPen(QColor(0,255,0,230));
-  p.drawText(QRect(bx + 120, by + 55, 140, 70),
-             Qt::AlignLeft | Qt::AlignVCenter, gear);
-
-  // ---------- Driving Mode + GAP ----------
-  int dxGap = -128 - 10 - 40;
-
-  QString mode = "GAP";
-  switch (cs.getMyDrivingMode()) {
-    case 1: mode = "연비"; break;
-    case 2: mode = "안전"; break;
-    case 3: mode = "일반"; break;
-    case 4: mode = "고속"; break;
-  }
-
-  float tFollow = lp.getTFollow();
-  int gap = std::clamp((int)std::nearbyint(lp.getCruiseGap()), 0, 4);
-
-  configFont(p, "Open Sans", 30, "Bold");
-  p.setPen(Qt::white);
-
-  p.drawText(QRect(x + dxGap - 165, y + 80, 300, 50),
-             Qt::AlignCenter, QString::number(tFollow, 'f', 2));
-
-  p.drawText(QRect(x + dxGap - 165, y + 120, 300, 50),
-             Qt::AlignCenter,
-             QString("%1M").arg(QString::number(tFollow * v_ego + 6.f, 'f', 0)));
-
-  p.drawText(QRect(x + dxGap - 165, y + 160, 300, 50),
-             Qt::AlignCenter, mode);
-
-  dxGap -= 60;
-
-  const int long_state = (int)cs.getLongControlState();
-  bool active_long = cs.getEnabled() && (long_state != 0);
-
-  drawGapBars(p, x + dxGap, y + 5 + 64, gap, active_long);
-
-  configFont(p, "Open Sans", 25, "Bold");
-  p.drawText(QRect(x + dxGap - 40, y + 90, 160, 60),
-             Qt::AlignCenter, "GAP");
-}
-
 // NvgWindow
 
 NvgWindow::NvgWindow(VisionStreamType type, QWidget* parent) : last_update_params(0), fps_filter(UI_FREQ, 3, 1. / UI_FREQ), CameraViewWidget("camerad", type, true, parent) {
@@ -1119,10 +997,10 @@ void NvgWindow::drawCommunity(QPainter &p) {
     drawLead(p, lead_two, s->scene.lead_vertices[1], 1);
   }
 	
-  drawMaxSpeed(p);
   drawGpsStatus(p);
   drawBrake(p);
   drawMisc(p);
+  drawLeftStatusPanel(p);
 	
   if(s->show_steer)
     drawSteer(p);	
@@ -1188,38 +1066,6 @@ void NvgWindow::drawCommunity(QPainter &p) {
   drawBottomIcons(p);
 	
   p.setOpacity(1.);
-}
-
-void NvgWindow::drawSpeed(QPainter &p) {
-  UIState *s = uiState();
-  const SubMaster &sm = *(s->sm);
-  float cur_speed = std::max(0.0, sm["carState"].getCarState().getCluSpeedMs() * (s->scene.is_metric ? MS_TO_KPH : MS_TO_MPH));
-  m_cur_speed = cur_speed;
-  auto car_state = sm["carState"].getCarState();
-  float accel = car_state.getAEgo();
-
-  QColor color = QColor(255, 255, 255, 250);
-
-  if(accel > 0) {
-    int a = (int)(255.f - (180.f * (accel/2.f)));
-    a = std::min(a, 255);
-    a = std::max(a, 80);
-    color = QColor(a, a, 255, 250);
-  }
-  else {
-    int a = (int)(255.f - (255.f * (-accel/3.f)));
-    a = std::min(a, 255);
-    a = std::max(a, 60);
-    color = QColor(255, a, a, 250);
-  }
-
-  QString speed;
-  speed.sprintf("%.0f", cur_speed);
-  configFont(p, "Open Sans", 176, "Bold");
-  drawTextWithColor(p, rect().center().x(), 250, speed, color);
-
-  configFont(p, "Open Sans", 66, "Regular");
-  //drawText(p, rect().center().x(), 310, s->scene.is_metric ? "km/h" : "mph", 200)
 }
 
 static const QColor get_tpms_color(float tpms) {
@@ -1300,6 +1146,191 @@ void NvgWindow::drawBottomIcons(QPainter &p) {
   }
 	
   p.setOpacity(1.);
+}
+
+void NvgWindow::drawLeftStatusPanel(QPainter &p) {
+  UIState *s = uiState();
+  const SubMaster &sm = *(s->sm);
+
+  const auto car_state = sm["carState"].getCarState();
+  const auto cs = sm["controlsState"].getControlsState();
+  const auto lp = sm["longitudinalPlan"].getLongitudinalPlan();
+  const auto device = sm["deviceState"].getDeviceState();
+
+  // ===== 위치 / 크기 =====
+  const int x = 40;
+  const int y = height() - 560;
+  const int w = 420;
+  const int h = 520;
+
+  p.save();
+  p.setRenderHint(QPainter::Antialiasing);
+
+  // ===== 배경 카드 =====
+  p.setPen(QPen(QColor(255, 255, 255, 50), 2));
+  p.setBrush(QColor(0, 0, 0, 170));
+  p.drawRoundedRect(x, y, w, h, 28, 28);
+
+  // ===== 상단 박스 공통 =====
+  auto drawTopBox = [&](int bx, const QString &txt, QColor c) {
+    QRect r(bx, y + 18, 110, 48);
+    p.setPen(Qt::NoPen);
+    p.setBrush(c);
+    p.drawRoundedRect(r, 12, 12);
+    configFont(p, "Inter", 20, "Bold");
+    p.setPen(Qt::black);
+    p.drawText(r, Qt::AlignCenter, txt);
+  };
+
+  // ===== CPU 온도 =====
+  int cpuTemp = 0;
+  for (auto t : device.getCpuTempC()) cpuTemp += t;
+  if (device.getCpuTempC().size()) cpuTemp /= device.getCpuTempC().size();
+
+  // ===== ACC / E2E 텍스트만 변경 =====
+  // 기본: ACC, E2E면 E2E
+  QString acc_txt = "ACC";
+  if (cs.getEnabled()) {
+    if (lp.getLongitudinalPlanSource() ==
+        cereal::LongitudinalPlan::LongitudinalPlanSource::E2E) {
+      acc_txt = "E2E";
+    }
+  }
+
+  // ===== SoftHold: 작동 시 깜빡임 =====
+  bool soft_hold = calc_soft_hold_active(cs, car_state);
+  const int blink_period_ms = 350;
+  const bool blink_on = ((millis_since_boot() / blink_period_ms) % 2) == 0;
+
+  QColor soft_col = soft_hold ? QColor(255, 80, 80, blink_on ? 255 : 80)
+                              : QColor(80, 80, 80, 200);
+  QString soft_txt = soft_hold ? "SOFT HOLD" : "HOLD OFF";
+
+  drawTopBox(x + 20,  QString("CPU %1°").arg(cpuTemp), QColor(0, 200, 0));
+  drawTopBox(x + 155, acc_txt, QColor(0, 160, 255, 230));
+  drawTopBox(x + 290, soft_txt, soft_col);
+
+  // ===== 현재속도 / 목표속도 =====
+  float cur_speed = car_state.getVEgoCluster() * (s->scene.is_metric ? MS_TO_KPH : MS_TO_MPH);
+  if (cur_speed < 0) cur_speed = 0;
+
+  float set_speed = cs.getVCruise() * (s->scene.is_metric ? 1.0 : KM_TO_MILE);
+
+  configFont(p, "Inter", 110, "Bold");
+  p.setPen(Qt::white);
+  p.drawText(QRect(x + 40, y + 100, 220, 150),
+             Qt::AlignLeft | Qt::AlignVCenter,
+             QString::number((int)std::nearbyint(cur_speed)));
+
+  configFont(p, "Inter", 48, "Bold");
+  p.setPen(QColor(0, 255, 0));
+  p.drawText(QRect(x + 220, y + 140, 160, 80),
+             Qt::AlignLeft | Qt::AlignVCenter,
+             QString::number((int)std::nearbyint(set_speed)));
+
+  // 곡선 강조선
+  QPainterPath path;
+  path.moveTo(x + 40, y + 250);
+  path.cubicTo(x + 160, y + 200, x + 260, y + 320, x + 360, y + 260);
+  p.setPen(QPen(QColor(0, 255, 0, 180), 4));
+  p.drawPath(path);
+
+  // ===== 기어: D면 1~8단 표시 =====
+  QString gear = "D";
+  switch (car_state.getGearShifter()) {
+    case cereal::CarState::GearShifter::PARK:    gear = "P"; break;
+    case cereal::CarState::GearShifter::REVERSE: gear = "R"; break;
+    case cereal::CarState::GearShifter::NEUTRAL: gear = "N"; break;
+    default: break; // DRIVE는 D 유지
+  }
+
+  int cur_gear = (int)std::nearbyint(car_state.getCurrentGear());
+  bool show_gear_num = (gear == "D") && (cur_gear >= 1 && cur_gear <= 8);
+
+  QRect gr(x + w - 95, y + 155, 70, 110);
+  p.setPen(QPen(Qt::white, 2));
+  p.setBrush(QColor(0, 0, 0, 150));
+  p.drawRoundedRect(gr, 12, 12);
+
+  if (show_gear_num) {
+    configFont(p, "Inter", 44, "Bold");
+    p.setPen(Qt::white);
+    p.drawText(QRect(gr.x(), gr.y() + 6, gr.width(), 50),
+               Qt::AlignCenter, "D");
+
+    configFont(p, "Inter", 42, "Black");
+    p.setPen(QColor(0, 255, 0, 240));
+    p.drawText(QRect(gr.x(), gr.y() + 55, gr.width(), 50),
+               Qt::AlignCenter, QString::number(cur_gear));
+  } else {
+    configFont(p, "Inter", 46, "Bold");
+    p.setPen(Qt::white);
+    p.drawText(gr, Qt::AlignCenter, gear);
+  }
+
+  // ===== Driving Mode =====
+  QString mode = "일반";
+  switch (cs.getMyDrivingMode()) {
+    case 1: mode = "연비"; break;
+    case 2: mode = "안전"; break;
+    case 3: mode = "일반"; break;
+    case 4: mode = "고속"; break;
+    default: break;
+  }
+
+  configFont(p, "Inter", 28, "Bold");
+  p.setPen(QColor(255, 255, 255, 230));
+  p.drawText(QRect(x + 30, y + h - 140, 160, 50),
+             Qt::AlignCenter, mode);
+
+  // ===== LIMIT: roadLimitSpeed 연동 (cam > section > road) =====
+  int limit_speed = 0;
+  QString limit_kind = "LIMIT";
+
+  if (sm.alive("roadLimitSpeed")) {
+    const auto rls = sm["roadLimitSpeed"].getRoadLimitSpeed();
+
+    const int roadLimitSpeed = rls.getRoadLimitSpeed();
+    const int camLimitSpeed = rls.getCamLimitSpeed();
+    const int camLeftDist = rls.getCamLimitSpeedLeftDist();
+    const int sectionLimitSpeed = rls.getSectionLimitSpeed();
+    const int sectionLeftDist = rls.getSectionLeftDist();
+
+    if (camLimitSpeed > 0 && camLeftDist > 0) {
+      limit_speed = camLimitSpeed;
+      limit_kind = "CAM";
+    } else if (sectionLimitSpeed > 0 && sectionLeftDist > 0) {
+      limit_speed = sectionLimitSpeed;
+      limit_kind = "SEC";
+    } else if (roadLimitSpeed > 0 && roadLimitSpeed < 200) {
+      limit_speed = roadLimitSpeed;
+      limit_kind = "LIM";
+    }
+  }
+
+  QRect lr(x + 200, y + h - 150, 120, 70);
+  p.setBrush(QColor(50, 50, 50, 200));
+  p.setPen(QPen(Qt::white, 2));
+  p.drawRoundedRect(lr, 12, 12);
+
+  configFont(p, "Inter", 22, "Bold");
+  p.setPen(QColor(255, 255, 255, 230));
+  if (limit_speed > 0) {
+    p.drawText(lr, Qt::AlignCenter, QString("%1\n%2").arg(limit_kind).arg(limit_speed));
+  } else {
+    p.drawText(lr, Qt::AlignCenter, "LIMIT\n--");
+  }
+
+  // ===== GAP 점 표시 =====
+  int gap = std::clamp((int)std::nearbyint(lp.getCruiseGap()), 0, 4);
+  for (int i = 0; i < 4; i++) {
+    QRect r(x + 340, y + h - 140 + i * 22, 16, 16);
+    p.setBrush(i < gap ? QColor(0, 255, 0) : QColor(0, 255, 0, 60));
+    p.setPen(Qt::NoPen);
+    p.drawEllipse(r);
+  }
+
+  p.restore();
 }
 
 void NvgWindow::drawBrake(QPainter &p) {
