@@ -609,6 +609,7 @@ void OnroadHud::paintEvent(QPaintEvent *event) {
       p.drawPixmap(x, y, w, h, traffic_green_img);
     }
   }
+  drawCarrotHud_ByPath(p);
 }
 
 void OnroadHud::drawCenteredText(QPainter &p, int x, int y, const QString &text, QColor color) {
@@ -701,6 +702,118 @@ void OnroadHud::drawCompass(QPainter &p, int x, int y, QPixmap &img, QBrush bg, 
   drawDirection("S", 112.5, 247.5, Qt::AlignBottom | Qt::AlignHCenter, {});
   drawDirection("W", 202.5, 337.5, Qt::AlignLeft | Qt::AlignVCenter, {});
   drawDirection("N", 292.5, 360, Qt::AlignTop | Qt::AlignHCenter, {});
+}
+
+// ================= Carrot HUD (paint.h 위치 기준) =================
+void OnroadHud::drawCarrotHud_ByPath(QPainter &p) {
+  auto *ui = uiState();
+  if (!ui || !ui->sm || !ui->sm->alive("carState") ||
+      !ui->sm->alive("controlsState") || !ui->sm->alive("longitudinalPlan")) {
+    return;
+  }
+
+  const SubMaster &sm = *(ui->sm);
+  const auto car_state = sm["carState"].getCarState();
+  const auto cs = sm["controlsState"].getControlsState();
+  const auto lp = sm["longitudinalPlan"].getLongitudinalPlan();
+
+  // ---------- paint.h 기준점 계산 ----------
+  float path_fx = width() / 2.f;
+  float path_fy = height() - 400.f;
+
+  bool has_path_end =
+      ui->scene.path_end_left_vertices.size() > 0 &&
+      ui->scene.path_end_right_vertices.size() > 0;
+
+  if (has_path_end) {
+    float lex = ui->scene.path_end_left_vertices[0].x();
+    float rex = ui->scene.path_end_right_vertices[0].x();
+    float ley = ui->scene.path_end_left_vertices[0].y();
+    float rey = ui->scene.path_end_right_vertices[0].y();
+
+    float cx = (lex + rex) / 2.f;
+    float cy = (ley + rey) / 2.f;
+
+    cx = std::clamp(cx, 550.f, (float)width() - 550.f);
+    cy = std::clamp(cy, 200.f, (float)height() - 100.f);
+
+    path_fx = cx;
+    path_fy = cy;
+  }
+
+  int x = (int)path_fx;
+  int y = (int)(path_fy - 135.f);
+
+  // ---------- 현재 속도 ----------
+  float v_ego = car_state.getVEgoCluster();
+  float cur_speed = v_ego * (ui->scene.is_metric ? MS_TO_KPH : MS_TO_MPH);
+  if (cur_speed < 0) cur_speed = 0;
+
+  int bx = x;
+  int by = y + 270;
+
+  QPixmap speed_bg("../assets/images/speed_bg.png");
+  if (!speed_bg.isNull()) {
+    p.drawPixmap(bx - 100, by - 60, 350, 150, speed_bg);
+  }
+
+  configFont(p, "Open Sans", 120, "Bold");
+  p.setPen(Qt::white);
+  p.drawText(QRect(bx - 200, by - 80, 400, 200),
+             Qt::AlignCenter,
+             QString::number((int)std::nearbyint(cur_speed)));
+
+  // ---------- 기어 ----------
+  QString gear = "D";
+  switch (car_state.getGearShifter()) {
+    case cereal::CarState::GearShifter::PARK: gear = "P"; break;
+    case cereal::CarState::GearShifter::REVERSE: gear = "R"; break;
+    case cereal::CarState::GearShifter::NEUTRAL: gear = "N"; break;
+    case cereal::CarState::GearShifter::SPORT: gear = "S"; break;
+    case cereal::CarState::GearShifter::LOW: gear = "L"; break;
+    default: break;
+  }
+
+  configFont(p, "Open Sans", 44, "Bold");
+  p.setPen(QColor(0,255,0,230));
+  p.drawText(QRect(bx + 120, by + 55, 140, 70),
+             Qt::AlignLeft | Qt::AlignVCenter, gear);
+
+  // ---------- Driving Mode + GAP ----------
+  int dxGap = -128 - 10 - 40;
+
+  QString mode = "GAP";
+  switch (cs.getMyDrivingMode()) {
+    case 1: mode = "연비"; break;
+    case 2: mode = "안전"; break;
+    case 3: mode = "일반"; break;
+    case 4: mode = "고속"; break;
+  }
+
+  float tFollow = lp.getTFollow();
+  int gap = std::clamp((int)std::nearbyint(lp.getCruiseGap()), 0, 4);
+
+  configFont(p, "Open Sans", 30, "Bold");
+  p.setPen(Qt::white);
+
+  p.drawText(QRect(x + dxGap - 165, y + 80, 300, 50),
+             Qt::AlignCenter, QString::number(tFollow, 'f', 2));
+
+  p.drawText(QRect(x + dxGap - 165, y + 120, 300, 50),
+             Qt::AlignCenter,
+             QString("%1M").arg(QString::number(tFollow * v_ego + 6.f, 'f', 0)));
+
+  p.drawText(QRect(x + dxGap - 165, y + 160, 300, 50),
+             Qt::AlignCenter, mode);
+
+  dxGap -= 60;
+
+  bool active_long = cs.getLongActiveUser() > 0;
+  drawGapBars(p, x + dxGap, y + 5 + 64, gap, active_long);
+
+  configFont(p, "Open Sans", 25, "Bold");
+  p.drawText(QRect(x + dxGap - 40, y + 90, 160, 60),
+             Qt::AlignCenter, "GAP");
 }
 
 // NvgWindow
@@ -1021,7 +1134,6 @@ void NvgWindow::drawCommunity(QPainter &p) {
   }
 	
   drawMaxSpeed(p);
-  drawSpeed(p);
   drawGpsStatus(p);
   drawBrake(p);
   drawMisc(p);
@@ -1034,9 +1146,6 @@ void NvgWindow::drawCommunity(QPainter &p) {
 	
   if(s->show_tpms && width() > 1200)
     drawTpms(p);
-	
-  if(s->show_gear && width() > 1200)
-    drawCgear(p);//기어
   	
   char str[128];	
   const auto car_state = sm["carState"].getCarState();
@@ -1181,78 +1290,6 @@ void NvgWindow::drawBottomIcons(QPainter &p) {
 
   int x = radius / 2 + (bdr_s * 2) + (radius + 50);
   const int y = rect().bottom() - footer_h / 2 - 10;
-
-  // ========== Cruise Gap (항상 표시) ==========
-  int gap_cluster = (int)controls_state.getLongCruiseGap();
-  gap_cluster = std::clamp(gap_cluster, 0, 4);
-
-  // tFollow/거리표시 (planner 값은 참고용)
-  const float tFollow = lp.getTFollow();
-  const float v_ego = car_state.getVEgo();
-  const float dist_m = tFollow * v_ego + 6.0f;
-
-  // ✅ long active 판단: carControl.longActive 우선, 없으면 기존 scc_smoother
-  bool active_long = false;
-  {
-    const auto cc = sm["carControl"].getCarControl();
-    active_long = cc.getLongActive();
-  }
-
-  // GAP 막대 위치
-  const int gap_x = x - 350;
-  const int gap_y = y + 118;
-
-  // --- 항상 표시되는 Gap Info (tFollow / 거리) ---
-  QString tf_str = QString::asprintf("%.2f", tFollow);
-  QString dm_str = QString::asprintf("%.0fM", dist_m);
-
-  {
-    const int bar_w = 26;
-    const int bar_gap = 8;
-    const int max_bars = 4;
-
-    // 막대 위 텍스트 Y
-    const int info_y = gap_y - 6;
-
-    // 2칸 영역 폭(왼쪽2칸/오른쪽2칸)
-    const int half_block_w = (bar_w * 2) + bar_gap;
-
-    // 왼쪽 블록 중앙
-    const int tf_center_x = gap_x + (half_block_w / 2);
-
-    // 오른쪽 블록 시작(3번째 막대 위치) + 중앙
-    const int dm_block_x  = gap_x + (bar_w + bar_gap) * 2;
-    const int dm_center_x = dm_block_x + (half_block_w / 2);
-
-    configFont(p, "Open Sans", 22, "Bold");
-    QFontMetrics fm(p.font());
-
-    if (gap_cluster > 0) {
-      // t_follow (왼쪽)
-      const int tf_w = fm.horizontalAdvance(tf_str);
-      drawTextWithColor(p, tf_center_x - tf_w / 2, info_y, tf_str, QColor(255,255,255,255));
-
-      // dist_m (오른쪽)
-      const int dm_w = fm.horizontalAdvance(dm_str);
-      drawTextWithColor(p, dm_center_x - dm_w / 2, info_y, dm_str, QColor(255,255,255,255));
-    } else {
-      // gap 없음이면 전체 중앙에 N/A
-      const QString na = "N/A";
-      const int na_w = fm.horizontalAdvance(na);
-      const int total_w = (bar_w * max_bars) + (bar_gap * (max_bars - 1));
-      const int center_x = gap_x + total_w / 2;
-      drawTextWithColor(p, center_x - na_w / 2, info_y, na, QColor(255,255,255,220));
-    }
-  }
-
-  // --- GAP bar 그리기 (갭 값은 무조건 controlsState.longCruiseGap) ---
-  if (gap_cluster <= 0) {
-    configFont(p, "Open Sans", 28, "Bold");
-    drawTextWithColor(p, gap_x, y + 135, "N/A", QColor(255,255,255,220));
-  } else {
-    // ✅ active_long에 따라 색만 바뀜 (초록/파랑), 갭 값은 그대로
-    drawGapBars(p, gap_x, gap_y, gap_cluster, active_long);
-  }
 	
   // Accel표시
   float accel = car_state.getAEgo();  
@@ -1263,17 +1300,9 @@ void NvgWindow::drawBottomIcons(QPainter &p) {
   if (accel1 > 2.5) accel1 = -2.5;
   accel = accel1;
 #endif	
-  //QRect rectAccel(x + dx, y - 550, 35, 1100);
-  //painter.setPen(Qt::NoPen);
-  //p.setPen(QPen(Qt::white, 2));
-  //p.setBrush(blackColor(150));
-  //p.drawRect(rectAccel);
   QRect rectAccelPos(x + dx, y - 375, 35, -std::clamp((float)accel, -2.0f, 2.0f) / 2. * 550);
   p.setBrush((accel>=0.0)?greenColor(255):redColor(255));
   p.drawRect(rectAccelPos);
-  //textColor = whiteColor(200);
-  //configFont(p, "Inter", 25, "Bold");
-  //drawTextWithColor(p, x +dx+20, y - 135, "", textColor);
 	
  if (s->show_datetime && width() > 1200) {
      // ajouatom: 현재시간표시
