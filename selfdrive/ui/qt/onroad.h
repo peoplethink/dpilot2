@@ -57,6 +57,7 @@ private:
   void drawCenteredText(QPainter &p, int x, int y, const QString &text, QColor color);
   void drawVisionTurnControllerUI(QPainter &p, int x, int y, int size, const QColor &color, const QString &speed,
                                   int alpha);
+  void drawCarrotHud_ByPath(QPainter &p);
   
   QPixmap engage_img;
   QPixmap experimental_img;
