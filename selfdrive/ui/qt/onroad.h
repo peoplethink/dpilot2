@@ -179,7 +179,6 @@ private:
   OnroadHud *hud;
   OnroadAlerts *alerts;
   NvgWindow *nvg;
-  ButtonsWindow *buttons;
   QColor bg = bg_colors[STATUS_DISENGAGED];
   QWidget *map = nullptr;
   QHBoxLayout* split;
