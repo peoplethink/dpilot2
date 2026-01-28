@@ -1584,43 +1584,6 @@ void NvgWindow::drawGpsStatus(QPainter &p) {
   p.setOpacity(1.0);
 }
 
-void NvgWindow::drawCgear(QPainter &p) {
-  const SubMaster &sm = *(uiState()->sm);
-  auto car_state = sm["carState"].getCarState();
-
-  auto t_gear = car_state.getCurrentGear();
-  int shifter;
-
-  shifter = int(car_state.getGearShifter());
-
-  QString tgear, tgearshifter;
-
-  tgear.sprintf("%.0f", t_gear);
-  configFont(p, "Open Sans", 130, "Semi Bold");
-
-  //shifter = 1;
-	
-  QRect rc(30, 620, 182, 135);
-  p.setPen(QPen(QColor(0xff, 0xff, 0xff, 100), 10));
-  p.setBrush(QColor(0, 0, 0, 100));
-  p.drawRoundedRect(rc, 20, 20);
-  p.setPen(Qt::NoPen);
-	
-  if ((t_gear < 9) && (t_gear !=0)) { 
-    p.setPen(QColor(255, 255, 255, 255)); 
-    p.drawText(rc.center().x() - 38, rc.center().y() + 48, tgear);
-  } else if (t_gear == 14 ) { 
-    p.setPen(QColor(201, 34, 49, 255));
-    p.drawText(rc.center().x() - 38, rc.center().y() + 48, "R");
-  } else if (shifter == 1 ) { 
-    p.setPen(QColor(255, 255, 255, 255));
-    p.drawText(rc.center().x() - 38, rc.center().y() + 48, "P");
-  } else if (shifter == 3 ) {  
-    p.setPen(QColor(255, 255, 255, 255));
-    p.drawText(rc.center().x() - 40, rc.center().y() + 48, "N");
-  }
-}
-
 void NvgWindow::drawEngRpm(QPainter &p) {
   const SubMaster &sm = *(uiState()->sm);
   auto car_state = sm["carState"].getCarState();
