@@ -40,6 +40,124 @@ static void drawGapBars(QPainter &p, int x, int y, int gap, bool active_long) {
   p.restore();
 }
 
+// (기존) static void drawGapBars(...)
+// ...
+
+// ====== [ADD] Animated Text (ported from paint.h ui_draw_text_a/ui_draw_text_a2) ======
+struct AnimTextState {
+  float x = 0.f;
+  float y = 0.f;
+  float size = 0.f;
+  int   time = -1;          // <=0 이면 미표시
+  QString text;
+  QColor color = QColor(255, 255, 255, 255);
+  QString font = "Open Sans";
+};
+
+static AnimTextState g_anim_text;
+static constexpr int kAnimMax = 100;
+
+// QPainter 외곽선/그림자 텍스트 (Nanovg ui_draw_text() 대응)
+static void drawOutlinedText(QPainter &p, float x, float y,
+                             const QString &text,
+                             int pixelSize,
+                             const QColor &fg,
+                             const QString &family,
+                             int weight = QFont::Bold,
+                             float borderWidth = 3.0f,
+                             float shadowOffset = 0.0f,
+                             const QColor &borderColor = QColor(0,0,0,255),
+                             const QColor &shadowColor = QColor(0,0,0,255)) {
+  // paint.h에서 y += 6 하던 것과 비슷하게 약간 내려줌
+  y += 6.0f;
+
+  QFont f(family);
+  f.setPixelSize(pixelSize);
+  f.setWeight(weight);
+  p.setFont(f);
+
+  // baseline 기반으로 찍기
+  QFontMetrics fm(p.font());
+  const float baseX = x;
+  const float baseY = y; // 이미 baseline 느낌으로 쓰고 있으면 그대로, 아니면 필요시 조정
+
+  // 외곽선(8방향)
+  if (borderWidth > 0.0f) {
+    p.setPen(borderColor);
+    static const float angs[] = {0,45,90,135,180,225,270,315};
+    for (float a : angs) {
+      float rad = a * M_PI / 180.0f;
+      float ox = borderWidth * std::cos(rad);
+      float oy = borderWidth * std::sin(rad);
+      p.drawText(QPointF(baseX + ox, baseY + oy), text);
+    }
+  }
+
+  // 그림자
+  if (shadowOffset != 0.0f) {
+    p.setPen(shadowColor);
+    p.drawText(QPointF(baseX + shadowOffset, baseY + shadowOffset), text);
+  }
+
+  // 본문
+  p.setPen(fg);
+  p.drawText(QPointF(baseX, baseY), text);
+}
+
+static inline float lerp01(float a, float b, float t) {
+  return a * t + b * (1.0f - t);
+}
+
+// 애니메이션 시작 (paint.h ui_draw_text_a 대응)
+static void startAnimText(float x, float y, const QString &text, float size,
+                          const QColor &color, const QString &font) {
+  g_anim_text.x = x;
+  g_anim_text.y = y;
+  g_anim_text.size = size;
+  g_anim_text.text = text;
+  g_anim_text.color = color;
+  g_anim_text.font = font;
+  g_anim_text.time = 130;   // paint.h 동일
+}
+
+// 매 프레임 그리기 (paint.h ui_draw_text_a2 대응)
+static void drawAnimText(QPainter &p, const UIState *s) {
+  if (g_anim_text.time <= 0) return;
+
+  g_anim_text.time -= 10;   // paint.h 동일
+  int t1 = g_anim_text.time;
+  if (t1 > 100) t1 = 100;
+
+  // paint.h 보간식 동일 (센터 -> 목표)
+  const float cx0 = (s->fb_w / 2.0f);
+  const float cy0 = (s->fb_h - 400.0f);
+
+  const float t = (float)t1 / (float)kAnimMax;          // 0~1
+  const float x = lerp01(cx0, g_anim_text.x, t);
+  const float y = lerp01(cy0, g_anim_text.y, t);
+  const float sz = lerp01(350.0f, g_anim_text.size, t);
+
+  // 처음(>=100)엔 두껍게, 이후엔 기본
+  if (g_anim_text.time >= 100) {
+    drawOutlinedText(p, x, y, g_anim_text.text, (int)sz,
+                     g_anim_text.color, g_anim_text.font,
+                     QFont::Black,
+                     /*borderWidth=*/9.0f,
+                     /*shadowOffset=*/8.0f,
+                     QColor(0,0,0,255),
+                     QColor(0,0,0,255));
+  } else {
+    drawOutlinedText(p, x, y, g_anim_text.text, (int)sz,
+                     g_anim_text.color, g_anim_text.font,
+                     QFont::Bold,
+                     /*borderWidth=*/3.0f,
+                     /*shadowOffset=*/0.0f,
+                     QColor(0,0,0,255),
+                     QColor(0,0,0,255));
+  }
+}
+// ====== [ADD END] ================================================================
+
 static inline bool calc_soft_hold_active(const cereal::ControlsState::Reader &cs,
                                          const cereal::CarState::Reader &car_state) {
   const float v_ego = car_state.getVEgo();
@@ -467,6 +585,7 @@ void OnroadHud::paintEvent(QPaintEvent *event) {
     }
   }
   drawCarrotHud_ByPath(p);
+  drawAnimText(p, uiState());
 }
 
 void OnroadHud::drawCenteredText(QPainter &p, int x, int y, const QString &text, QColor color) {
@@ -626,6 +745,19 @@ void OnroadHud::drawCarrotHud_ByPath(QPainter &p) {
     default: break;
   }
 
+  static QString prev_gear = "";
+  if (prev_gear != gear) {
+    // 기어 텍스트가 찍히는 위치(현재 코드 기준)를 목표점으로 사용
+    const float gx = (float)(bx + 120);   // 기존 drawText QRect 기준
+    const float gy = (float)(by + 55 + 50); // baseline 느낌으로 약간 보정(취향)
+    startAnimText(gx, gy,
+                  gear,                 // 바뀐 기어 1글자
+                  140.0f,               // 팝업 크기 (원하면 110~160 조절)
+                  QColor(0, 255, 0, 240),
+                  "KaiGenGothicKR-Bold");
+    prev_gear = gear;
+  }
+	
   configFont(p, "Open Sans", 44, "Bold");
   p.setPen(QColor(0,255,0,230));
   p.drawText(QRect(bx + 120, by + 55, 140, 70),
