@@ -1262,14 +1262,47 @@ void NvgWindow::drawLeftStatusPanel(QPainter &p) {
                Qt::AlignCenter, QString::number(roadLimitSpeed));
   }
 
-  // ===== GAP 점 표시 =====
-  int gap = std::clamp((int)std::nearbyint(lp.getCruiseGap()), 0, 4);
+  // ===== GAP 표시 (위 나노VG 스타일 동일 반영: 세로바+4칸+채움+"GAP"+숫자) =====
+  float gap_f = lp.getCruiseGap();                         // 채움 높이용 (0~4 float)
+  int gap1 = controls_state.getLongCruiseGap();            // 숫자 표시용 (1~4 int라고 가정)
+
+  gap_f = std::clamp(gap_f, 0.0f, 4.0f);
+  gap1  = std::clamp(gap1, 0, 4);
+
+  // 기존 점 위치 기준 (필요하면 좌표만 살짝 조정)
+  const int bar_x   = x + 340;
+  const int bar_top = y + h - 140;
+
+  const int bar_w = 40;
+  const int bar_h = 64;
+  const int seg_h = bar_h / 4;
+
+  // 1) 채움(아래에서 위로 올라가는 초록바)  --- nanovg ui_fill_rect와 동일한 개념
+  int fill_h = (int)(gap_f / 4.0f * (float)bar_h);
+
+  p.setPen(Qt::NoPen);
+  p.setBrush(QColor(0, 255, 0, 255));
+  p.drawRect(QRect(bar_x + 2, bar_top + bar_h, bar_w - 4, -fill_h));
+
+  // 2) 4칸 테두리 (nanovg ui_draw_rect 4번과 동일)
+  p.setBrush(Qt::NoBrush);
+  p.setPen(QPen(QColor(255,255,255,255), 4));
+
   for (int i = 0; i < 4; i++) {
-    QRect r(x + 340, y + h - 140 + i * 22, 16, 16);
-    p.setBrush(i < gap ? QColor(0, 255, 0) : QColor(0, 255, 0, 60));
-    p.setPen(Qt::NoPen);
-    p.drawEllipse(r);
+    p.drawRoundedRect(QRect(bar_x, bar_top + i * seg_h, bar_w, seg_h), 6, 6);
   }
+
+  // 3) "GAP" 라벨 (nanovg ui_draw_text(... "GAP")와 동일 위치감)
+  configFont(p, "Inter", 25, "Bold");
+  p.setPen(QColor(255,255,255,230));
+  p.drawText(QRect(bar_x - 10, bar_top + bar_h + 18, bar_w + 20, 30),
+             Qt::AlignCenter, "GAP");
+
+  // 4) 중앙 큰 숫자 표시 (nanovg: ui_draw_text(s, x+dxGap+15+60, y+60, ...))
+  configFont(p, "Inter", 50, "Bold");
+  p.setPen(QColor(255,255,255,230));
+  p.drawText(QRect(bar_x + 60, bar_top - 5, 90, 80),
+             Qt::AlignCenter, QString::number(gap1));
 
   p.restore();
 }
