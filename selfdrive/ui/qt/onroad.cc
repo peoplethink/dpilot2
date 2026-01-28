@@ -455,8 +455,6 @@ OnroadHud::OnroadHud(QWidget *parent) : QWidget(parent) {
   engage_img = QPixmap("../assets/img_chffr_wheel.png").scaled(img_size, img_size, Qt::KeepAspectRatio, Qt::SmoothTransformation);
   experimental_img = loadPixmap("../assets/img_experimental.svg", {img_size - 5, img_size - 5});
   //dm_img = QPixmap("../assets/img_driver_face.png").scaled(img_size, img_size, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-  compass_inner_img = QPixmap("../assets/images/compass_inner.png").scaled(img_size, img_size, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-  compass_outer_img = QPixmap("../assets/images/compass_outer.png").scaled(img_size, img_size, Qt::KeepAspectRatio, Qt::SmoothTransformation);
   traffic_green_img = QPixmap("../assets/img_traffic_green.png");
   traffic_red_img = QPixmap("../assets/img_traffic_red.png");
   connect(this, &OnroadHud::valueChanged, [=] { update(); });
@@ -513,65 +511,6 @@ void OnroadHud::paintEvent(QPaintEvent *event) {
     drawIcon(p, rect().right() - radius / 2 - bdr_s * 2, radius / 2 + bdr_s,
              sm["controlsState"].getControlsState().getExperimentalMode() ? experimental_img : engage_img, bg_colors[status], 5.0, true, ang_str );
   }
-  // compass
-  if (compass && bearingAccuracyDeg != 180.00) {
-    drawCompass(p, rect().right() - radius / 2 - bdr_s * 2, radius / 2 + bdr_s + 530,
-                compass_outer_img, blackColor(180), 5.0, bearingDeg);
-  }
-
-  {
-    const SubMaster &sm = *(uiState()->sm);
-    const auto cs = sm["controlsState"].getControlsState();
-    const auto car_state = sm["carState"].getCarState();
-
-    const bool soft_hold_active = calc_soft_hold_active(cs, car_state);
-
-    if (soft_hold_active) {
-      p.save();
-
-      const int cx = rect().right() - radius / 2 - bdr_s * 2;
-      const int cy = radius / 2 + bdr_s + 530;
-
-      const int r = radius;
-      p.setPen(Qt::NoPen);
-
-      p.setBrush(QColor(220, 0, 0, 200));   // R,G,B,Alpha (알파는 취향대로 180~220)
-      p.drawEllipse(cx - r / 2, cy - r / 2, r, r);
-
-      const QColor textColor(255, 255, 255, 255);   // ✅ 가독성 좋게 흰색 추천
-      const QColor shadow(0, 0, 0, 220);
-
-      configFont(p, "Open Sans", 34, "Black");       // 기존 26 -> 34, Bold -> Black
-      QFont f = p.font();
-      f.setWeight(QFont::Black);                     // ✅ 더 두껍게 강제
-      p.setFont(f);
-
-      QFontMetrics fm(p.font());
-
-      const QString line1 = "SOFT";
-      const QString line2 = "HOLD";
-
-      const int line_gap = fm.height() - 4;          // 글자 커졌으니 간격도 살짝 조정
-      const int total_h = line_gap * 2;
-      const int y_start = cy - total_h / 2 + fm.ascent();
-
-      // SOFT
-      const int w1 = fm.horizontalAdvance(line1);
-      p.setPen(shadow);
-      p.drawText(cx - w1 / 2 + 3, y_start + 3, line1);   // ✅ 그림자도 조금 더 두껍게(오프셋 증가)
-      p.setPen(textColor);
-      p.drawText(cx - w1 / 2, y_start, line1);
-
-      // HOLD
-      const int w2 = fm.horizontalAdvance(line2);
-      p.setPen(shadow);
-      p.drawText(cx - w2 / 2 + 3, y_start + line_gap + 3, line2);
-      p.setPen(textColor);
-      p.drawText(cx - w2 / 2, y_start + line_gap, line2);
-
-      p.restore();
-	}
-  }
 
   if (traffic_state >= 0) {
     int w = 200;
@@ -584,7 +523,6 @@ void OnroadHud::paintEvent(QPaintEvent *event) {
       p.drawPixmap(x, y, w, h, traffic_green_img);
     }
   }
-  drawCarrotHud_ByPath(p);
   drawAnimText(p, uiState());
 }
 
@@ -641,43 +579,6 @@ void OnroadHud::drawIcon(QPainter &p, int x, int y, QPixmap &img, QBrush bg, flo
     p.setOpacity(opacity);
     p.drawPixmap(x - img.size().width() / 2, y - img.size().height() / 2, img);
   }
-}
-
-void OnroadHud::drawCompass(QPainter &p, int x, int y, QPixmap &img, QBrush bg, float opacity, float bearing_Deg) {
-  // Draw the circle background
-  p.setBrush(bg);
-  p.drawEllipse(x - radius / 2, y - radius / 2, radius, radius);
-
-  // Rotate the compass_inner_img image
-  p.save();
-  p.translate(x, y);
-  p.rotate(bearing_Deg);
-  p.drawPixmap(-compass_inner_img.width() / 2, -compass_inner_img.height() / 2, compass_inner_img);
-  p.restore();
-
-  // Display compass_outer_img
-  //QPixmap imgScaled = img.scaled(img.width() * 2, img.height() * 2, Qt::KeepAspectRatio);
-  p.drawPixmap(x - img_size / 2, y - img_size / 2, img);
-
-  // Set the font for the direction labels
-  QFont font = p.font();
-  font.setFamily("Inter");
-  font.setBold(true);
-  font.setPointSize(10);
-  p.setFont(font);
-  p.setPen(Qt::white);
-
-  // Draw the cardinal directions
-  const auto drawDirection = [&](const QString &text, float from, float to, int hAlign, int vAlign) {
-    // Set the opacity based on whether the direction label is currently being pointed at
-    p.setOpacity((bearing_Deg >= from && bearing_Deg < to) ? 1.0 : 0.2);
-    p.drawText(x - radius / 2, y - radius / 2, radius, radius, hAlign | vAlign, text);
-  };
-  drawDirection("N", 0, 67.5, Qt::AlignTop | Qt::AlignHCenter, {});
-  drawDirection("E", 22.5, 157.5, Qt::AlignRight | Qt::AlignVCenter, {});
-  drawDirection("S", 112.5, 247.5, Qt::AlignBottom | Qt::AlignHCenter, {});
-  drawDirection("W", 202.5, 337.5, Qt::AlignLeft | Qt::AlignVCenter, {});
-  drawDirection("N", 292.5, 360, Qt::AlignTop | Qt::AlignHCenter, {});
 }
 
 // NvgWindow
