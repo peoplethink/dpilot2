@@ -1058,8 +1058,7 @@ void NvgWindow::drawLeftStatusPanel(QPainter &p) {
   for (auto t : device.getCpuTempC()) cpuTemp += t;
   if (device.getCpuTempC().size()) cpuTemp /= device.getCpuTempC().size();
 
-  // ===== ACC / E2E 텍스트만 변경 =====
-  // 기본: ACC, E2E면 E2E
+  // ===== ACC / E2E 텍스트 =====
   QString acc_txt = "ACC";
   if (cs.getEnabled()) {
     if (lp.getLongitudinalPlanSource() ==
@@ -1099,20 +1098,20 @@ void NvgWindow::drawLeftStatusPanel(QPainter &p) {
              Qt::AlignLeft | Qt::AlignVCenter,
              QString::number((int)std::nearbyint(set_speed)));
 
-  // 곡선 강조선
+  // 곡선 강조선(기존 유지)
   QPainterPath path;
   path.moveTo(x + 40, y + 250);
   path.cubicTo(x + 160, y + 200, x + 260, y + 320, x + 360, y + 260);
   p.setPen(QPen(QColor(0, 255, 0, 180), 4));
   p.drawPath(path);
 
-  // ===== 기어: D면 1~8단 표시 =====
+  // ===== 기어 =====
   QString gear = "D";
   switch (car_state.getGearShifter()) {
     case cereal::CarState::GearShifter::PARK:    gear = "P"; break;
     case cereal::CarState::GearShifter::REVERSE: gear = "R"; break;
     case cereal::CarState::GearShifter::NEUTRAL: gear = "N"; break;
-    default: break; // DRIVE는 D 유지
+    default: break;
   }
 
   int cur_gear = (int)std::nearbyint(car_state.getCurrentGear());
@@ -1154,42 +1153,113 @@ void NvgWindow::drawLeftStatusPanel(QPainter &p) {
   p.drawText(QRect(x + 30, y + h - 140, 160, 50),
              Qt::AlignCenter, mode);
 
-  // ===== LIMIT: roadLimitSpeed 연동 (cam > section > road) =====
+  // =============================================================================
+  // [반영] nanovg 로직: limit_speed/left_dist/roadLimitSpeed (턴인포 제거)
+  // cam > section > road 우선
+  // =============================================================================
   int limit_speed = 0;
-  QString limit_kind = "LIMIT";
+  int left_dist = 0;
+
+  int roadLimitSpeed = 0;
+  int camLimitSpeed = 0;
+  int camLeftDist = 0;
+  int sectionLimitSpeed = 0;
+  int sectionLeftDist = 0;
+
+  int camType = 0;
+  int xSignType = 0;   // 포크에 필드 없으면 이 변수/대입 줄 삭제
 
   if (sm.alive("roadLimitSpeed")) {
     const auto rls = sm["roadLimitSpeed"].getRoadLimitSpeed();
 
-    const int roadLimitSpeed = rls.getRoadLimitSpeed();
-    const int camLimitSpeed = rls.getCamLimitSpeed();
-    const int camLeftDist = rls.getCamLimitSpeedLeftDist();
-    const int sectionLimitSpeed = rls.getSectionLimitSpeed();
-    const int sectionLeftDist = rls.getSectionLeftDist();
+    roadLimitSpeed = rls.getRoadLimitSpeed();
+    camLimitSpeed = rls.getCamLimitSpeed();
+    camLeftDist = rls.getCamLimitSpeedLeftDist();
+    sectionLimitSpeed = rls.getSectionLimitSpeed();
+    sectionLeftDist = rls.getSectionLeftDist();
 
-    if (camLimitSpeed > 0 && camLeftDist > 0) {
-      limit_speed = camLimitSpeed;
-      limit_kind = "CAM";
-    } else if (sectionLimitSpeed > 0 && sectionLeftDist > 0) {
-      limit_speed = sectionLimitSpeed;
-      limit_kind = "SEC";
-    } else if (roadLimitSpeed > 0 && roadLimitSpeed < 200) {
-      limit_speed = roadLimitSpeed;
-      limit_kind = "LIM";
-    }
+    // camType은 drawMaxSpeed에서도 쓰던 필드라 대부분 존재
+    camType = rls.getCamType();
+
+    // 포크에 없으면 아래 1줄 삭제
+    if (rls.hasXSignType()) xSignType = rls.getXSignType();
   }
 
-  QRect lr(x + 200, y + h - 150, 120, 70);
-  p.setBrush(QColor(50, 50, 50, 200));
-  p.setPen(QPen(Qt::white, 2));
-  p.drawRoundedRect(lr, 12, 12);
+  if (camLimitSpeed > 0 && camLeftDist > 0) {
+    limit_speed = camLimitSpeed;
+    left_dist = camLeftDist;
+  } else if (sectionLimitSpeed > 0 && sectionLeftDist > 0) {
+    limit_speed = sectionLimitSpeed;
+    left_dist = sectionLeftDist;
+  }
 
-  configFont(p, "Inter", 22, "Bold");
-  p.setPen(QColor(255, 255, 255, 230));
+  // 패널 내부 표지판 위치(원 중심)
+  int bx = x + 260;
+  int by = y + h - 115;
+
+  // --- left_dist 텍스트 (있으면 항상 표시) ---
+  if (left_dist > 0) {
+    QString dist_txt;
+    if (left_dist < 1000) dist_txt = QString("%1 m").arg(left_dist);
+    else dist_txt = QString::asprintf("%.1f km", left_dist / 1000.f);
+
+    configFont(p, "Inter", 30, "Bold");
+    p.setPen(QColor(255,255,255,230));
+    QRect dr(x + 200, y + h - 70, 200, 40);
+    p.drawText(dr, Qt::AlignLeft | Qt::AlignVCenter, dist_txt);
+  }
+
+  // --- limit_speed 표시 (있으면 우선) ---
   if (limit_speed > 0) {
-    p.drawText(lr, Qt::AlignCenter, QString("%1\n%2").arg(limit_kind).arg(limit_speed));
-  } else {
-    p.drawText(lr, Qt::AlignCenter, "LIMIT\n--");
+    // speed bump (xSignType==124 or camType==22)
+    if (xSignType == 124 || camType == 22) {
+      QRect ir(bx - 40, by - 45, 80, 90);
+
+      // 이미 가지고 있는 ic_safety_speed_bump 쓰고 싶으면 ic_speed_bump 대신 그걸로 교체 가능
+      if (!ic_safety_speed_bump.isNull()) {
+        p.drawPixmap(ir, ic_safety_speed_bump);
+      } else {
+        p.setPen(Qt::NoPen);
+        p.setBrush(QColor(255,255,255,200));
+        p.drawRoundedRect(ir, 14, 14);
+        configFont(p, "Inter", 18, "Bold");
+        p.setPen(Qt::black);
+        p.drawText(ir, Qt::AlignCenter, "BUMP");
+      }
+    } else {
+      // 원형 속도 표지(흰-빨-흰) + 숫자
+      p.setPen(Qt::NoPen);
+
+      p.setBrush(QColor(255,255,255,255));
+      p.drawEllipse(QPoint(bx, by), 70, 70);
+
+      p.setBrush(QColor(255,0,0,255));
+      p.drawEllipse(QPoint(bx, by), 65, 65);
+
+      p.setBrush(QColor(255,255,255,255));
+      p.drawEllipse(QPoint(bx, by), 55, 55);
+
+      configFont(p, "Inter", 46, "Black");
+      p.setPen(Qt::black);
+      p.drawText(QRect(bx - 60, by - 30, 120, 70),
+                 Qt::AlignCenter, QString::number(limit_speed));
+    }
+  }
+  // --- limit_speed 없으면 roadLimitSpeed(도로 제한) ---
+  else if (roadLimitSpeed > 0 && roadLimitSpeed < 200) {
+    // 아이콘 없으면 박스로 fallback
+    QRect rr(bx - 70, by - 50, 140, 100);
+    p.setPen(QPen(Qt::white, 2));
+    p.setBrush(QColor(0,0,0,150));
+    p.drawRoundedRect(rr, 16, 16);
+
+    configFont(p, "Inter", 20, "Bold");
+    p.setPen(QColor(255,255,255,230));
+    p.drawText(QRect(rr.x(), rr.y()+10, rr.width(), 30), Qt::AlignCenter, "ROAD");
+
+    configFont(p, "Inter", 36, "Black");
+    p.drawText(QRect(rr.x(), rr.y()+38, rr.width(), 50),
+               Qt::AlignCenter, QString::number(roadLimitSpeed));
   }
 
   // ===== GAP 점 표시 =====
@@ -1263,254 +1333,6 @@ static QRect getRect(QPainter &p, int flags, QString text) {
   QFontMetrics fm(p.font());
   QRect init_rect = fm.boundingRect(text);
   return fm.boundingRect(init_rect, flags, text);
-}
-
-void NvgWindow::drawMaxSpeed(QPainter &p) {
-  p.save();
-
-  UIState *s = uiState();
-  const SubMaster &sm = *(s->sm);
-  const auto scc_smoother = sm["carControl"].getCarControl().getSccSmoother();
-  const auto road_limit_speed = sm["roadLimitSpeed"].getRoadLimitSpeed();
-  const auto car_params = sm["carParams"].getCarParams();
-
-  bool is_metric = s->scene.is_metric;
-  bool long_control = scc_smoother.getLongControl();
-
- // kph
-  float applyMaxSpeed = scc_smoother.getApplyMaxSpeed();
-  float cruiseMaxSpeed = scc_smoother.getCruiseMaxSpeed();
-
-  bool is_cruise_set = (cruiseMaxSpeed > 0 && cruiseMaxSpeed < 255);
-
-  int activeNDA = road_limit_speed.getActive();
-  int roadLimitSpeed = road_limit_speed.getRoadLimitSpeed();
-  int camLimitSpeed = road_limit_speed.getCamLimitSpeed();
-  int camLimitSpeedLeftDist = road_limit_speed.getCamLimitSpeedLeftDist();
-  int sectionLimitSpeed = road_limit_speed.getSectionLimitSpeed();
-  int sectionLeftDist = road_limit_speed.getSectionLeftDist();
-
-  int limit_speed = 0;
-  int left_dist = 0;
-
-  if(camLimitSpeed > 0 && camLimitSpeedLeftDist > 0) {
-    limit_speed = camLimitSpeed;
-    left_dist = camLimitSpeedLeftDist;
-  }
-  else if(sectionLimitSpeed > 0 && sectionLeftDist > 0) {
-    limit_speed = sectionLimitSpeed;
-    left_dist = sectionLeftDist;
-  }
-
-  if(activeNDA > 0)
-  {
-      int w = 150;
-      int h = 54;
-      int x = (width() + (bdr_s*2))/2 - w/2 - bdr_s;
-      int y = 40 - bdr_s;
-
-      p.setOpacity(1.f);
-      p.drawPixmap(x, y, w, h, activeNDA == 1 ? ic_nda : ic_hda);
-  }
-  
-  const int x_start = 30;
-  const int y_start = 30;
-
-  int board_width = 210;
-  int board_height = 384;
-
-  const int corner_radius = 32;
-  int max_speed_height = 210;
-
-  QColor bgColor = QColor(0, 0, 0, 166);
-
-  {
-    // draw board
-    QPainterPath path;
-    path.setFillRule(Qt::WindingFill);
-
-    if(limit_speed > 0 && left_dist > 0) {
-      board_width = limit_speed < 100 ? 210 : 230;
-      board_height = max_speed_height + board_width;
-
-      path.addRoundedRect(QRectF(x_start, y_start, board_width, board_height-board_width/2), corner_radius, corner_radius);
-      path.addRoundedRect(QRectF(x_start, y_start+corner_radius, board_width, board_height-corner_radius), board_width/2, board_width/2);
-    }
-    else if(roadLimitSpeed > 0 && roadLimitSpeed < 200) {
-      board_height = 485;
-      path.addRoundedRect(QRectF(x_start, y_start, board_width, board_height), corner_radius, corner_radius);
-    }
-    else {
-      max_speed_height = 235;
-      board_height = max_speed_height;
-      path.addRoundedRect(QRectF(x_start, y_start, board_width, board_height), corner_radius, corner_radius);
-    }
-
-    p.setPen(Qt::NoPen);
-    p.fillPath(path.simplified(), bgColor);
-  }
-	
-  QString str;
-	
-  // Max Speed
-  {
-    p.setPen(QColor(255, 255, 255, 230));
-     
-    if(is_cruise_set) {
-      configFont(p, "Inter", 80, "Bold");
-
-      if(is_metric)
-        str.sprintf( "%d", (int)(cruiseMaxSpeed + 0.5));
-      else
-        str.sprintf( "%d", (int)(cruiseMaxSpeed*KM_TO_MILE + 0.5));
-    }
-    else {
-      configFont(p, "Inter", 60, "Bold");
-      str = "N/A";
-    }
-
-    QRect speed_rect = getRect(p, Qt::AlignCenter, str);
-    QRect max_speed_rect(x_start, y_start, board_width, max_speed_height/2);
-    speed_rect.moveCenter({max_speed_rect.center().x(), 0});
-    speed_rect.moveTop(max_speed_rect.top() + 35);
-    p.drawText(speed_rect, Qt::AlignCenter | Qt::AlignVCenter, str);
-  } 
-
-    
-  // applyMaxSpeed
-  {
-    p.setPen(QColor(255, 255, 255, 180));
-
-    configFont(p, "Inter", 50, "Bold");
-    if(is_cruise_set && applyMaxSpeed > 0) {
-      if(is_metric)
-        str.sprintf( "%d", (int)(applyMaxSpeed + 0.5));
-      else
-        str.sprintf( "%d", (int)(applyMaxSpeed*KM_TO_MILE + 0.5));
-    }
-    else {
-      str = long_control ? "OP" : "MAX";
-    }
-
-    QRect speed_rect = getRect(p, Qt::AlignCenter, str);
-    QRect max_speed_rect(x_start, y_start + max_speed_height/2, board_width, max_speed_height/2);
-    speed_rect.moveCenter({max_speed_rect.center().x(), 0});
-    speed_rect.moveTop(max_speed_rect.top() + 24);
-    p.drawText(speed_rect, Qt::AlignCenter | Qt::AlignVCenter, str);  
-  }
-	
-  //
-  if(limit_speed > 0 && left_dist > 0) {
-    QRect board_rect = QRect(x_start, y_start+board_height-board_width, board_width, board_width);
-
-    if(road_limit_speed.getCamType() == 22) {
-      int padding = 25;
-      board_rect.adjust(padding, padding, -padding, -padding);
-      p.drawPixmap(board_rect.x(), board_rect.y()-10, board_rect.width(), board_rect.height(), ic_safety_speed_bump);
-    }
-    else {
-      int padding = 14;
-      board_rect.adjust(padding, padding, -padding, -padding);
-      p.setBrush(QBrush(Qt::white));
-      p.drawEllipse(board_rect);
-
-      padding = 18;
-      board_rect.adjust(padding, padding, -padding, -padding);
-
-      p.setBrush(Qt::NoBrush);
-      p.setPen(QPen(Qt::red, 25));
-      p.drawEllipse(board_rect);
-
-      p.setPen(QPen(Qt::black, padding));
-
-      str.sprintf("%d", limit_speed);
-      p.setFont(InterFont(70, QFont::Bold));
-
-      QRect text_rect = getRect(p, Qt::AlignCenter, str);
-      QRect b_rect = board_rect;
-      text_rect.moveCenter({b_rect.center().x(), 0});
-      text_rect.moveTop(b_rect.top() + (b_rect.height() - text_rect.height()) / 2);
-      p.drawText(text_rect, Qt::AlignCenter, str);
-    }
-	  
-    // left dist
-    QRect rcLeftDist;
-    QString strLeftDist;
-
-    if(left_dist < 1000)
-      strLeftDist.sprintf("%dm", left_dist);
-    else
-      strLeftDist.sprintf("%.1fkm", left_dist / 1000.f);
-
-    QFont font("Inter");
-    font.setPixelSize(55);
-    font.setStyleName("Bold");
-
-    QFontMetrics fm(font);
-    int width = fm.width(strLeftDist);
-
-    int padding = 10;
-
-    int center_x = x_start + board_width / 2;
-    rcLeftDist.setRect(center_x - width / 2, y_start+board_height+15, width, font.pixelSize()+10);
-    rcLeftDist.adjust(-padding*2, -padding, padding*2, padding);
-
-    p.setPen(Qt::NoPen);
-    p.setBrush(bgColor);
-    p.drawRoundedRect(rcLeftDist, 20, 20);
-
-    configFont(p, "Inter", 55, "Bold");
-    p.setBrush(Qt::NoBrush);
-    p.setPen(QColor(255, 255, 255, 230));
-    p.drawText(rcLeftDist, Qt::AlignCenter|Qt::AlignVCenter, strLeftDist);  
-  }
-  else if(roadLimitSpeed > 0 && roadLimitSpeed < 200) {
-    QRectF board_rect = QRectF(x_start, y_start+max_speed_height, board_width, board_height-max_speed_height);
-    int padding = 14;
-    board_rect.adjust(padding, padding, -padding, -padding);
-    p.setBrush(QBrush(Qt::white));
-    p.drawRoundedRect(board_rect, corner_radius-padding/2, corner_radius-padding/2);
-
-    padding = 10;
-    board_rect.adjust(padding, padding, -padding, -padding);
-    p.setBrush(Qt::NoBrush);
-    p.setPen(QPen(Qt::black, padding));
-    p.drawRoundedRect(board_rect, corner_radius-12, corner_radius-12);
-
-    {
-      str = "SPEED\nLIMIT";
-      configFont(p, "Inter", 35, "Bold");
-
-      QRect text_rect = getRect(p, Qt::AlignCenter, str);
-      QRect b_rect(board_rect.x(), board_rect.y(), board_rect.width(), board_rect.height()/2);
-      text_rect.moveCenter({b_rect.center().x(), 0});
-      text_rect.moveTop(b_rect.top() + 20);
-      p.drawText(text_rect, Qt::AlignCenter, str);
-    }
-
-    {
-      str.sprintf("%d", roadLimitSpeed);
-      configFont(p, "Inter", 75, "Bold");
-
-      QRect text_rect = getRect(p, Qt::AlignCenter, str);
-      QRect b_rect(board_rect.x(), board_rect.y()+board_rect.height()/2, board_rect.width(), board_rect.height()/2);
-      text_rect.moveCenter({b_rect.center().x(), 0});
-      text_rect.moveTop(b_rect.top() + 3);
-      p.drawText(text_rect, Qt::AlignCenter, str);
-    }
-
-    {
-      configFont(p, "Inter", 10, "Bold");
-
-      QRect text_rect = getRect(p, Qt::AlignCenter, str);
-      QRect b_rect(board_rect.x(), board_rect.y(), board_rect.width(), board_rect.height()/2);
-      text_rect.moveCenter({b_rect.center().x(), 0});
-      text_rect.moveTop(b_rect.top() + 20);
-      p.drawText(text_rect, Qt::AlignCenter, str);
-    } 
-  }
-
-  p.restore();
 }
 
 void NvgWindow::drawMisc(QPainter &p) {
