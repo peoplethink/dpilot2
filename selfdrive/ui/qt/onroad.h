@@ -2,7 +2,6 @@
 
 #include <QStackedLayout>
 #include <QWidget>
-#include <QPushButton>
 #include <QElapsedTimer>
 #include "selfdrive/common/util.h"
 #include "selfdrive/ui/qt/widgets/cameraview.h"
@@ -15,21 +14,6 @@
 #endif
 
 // ***** onroad widgets *****
-
-class ButtonsWindow : public QWidget {
-  Q_OBJECT
-
-public:
-  ButtonsWindow(QWidget* parent = 0);
-  void updateState(const UIState &s);
-
-private:
-  QPushButton *dlpBtn;
-  QPushButton *modeBtn;   // ✅ 추가
-
-  //int dlpStatus = -1;
-  const QStringList dlpBtnColors = {"#87ceeb", "#00ff16", "#808080"};
-};
 
 class OnroadHud : public QWidget {
   Q_OBJECT
