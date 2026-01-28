@@ -143,6 +143,7 @@ protected:
   void drawGpsStatus(QPainter &p);
   void drawSteer(QPainter &p);
   void drawMisc(QPainter &p);
+  void drawLeftStatusPanel(QPainter &p);
   void drawEngRpm(QPainter &p);
   
   const int radius = 192;
