@@ -69,10 +69,6 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   road_view_layout->addWidget(hud);
 
   nvg->hud = hud;
-	
-  buttons = new ButtonsWindow(this);
-  stacked_layout->addWidget(buttons);
-
 
   QWidget * split_wrapper = new QWidget;
   split = new QHBoxLayout(split_wrapper);
@@ -118,7 +114,6 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 }
 
 void OnroadWindow::updateState(const UIState &s) {
-  buttons->updateState(s);
 	
   QColor bgColor = bg_colors[s.status];
   Alert alert = Alert::get(*(s.sm), s.scene.started_frame);
@@ -133,6 +128,10 @@ void OnroadWindow::updateState(const UIState &s) {
   }
 	
   UIState *my_s = uiState();
+
+  my_s->scene.dynamic_lane_profile = 2;
+  Params().put("DynamicLaneProfile", "2", 1);
+	
   if (s.scene.blinkerstatus || my_s->scene.prev_blinkerstatus) {
     update();
     my_s->scene.prev_blinkerstatus = s.scene.blinkerstatus;
@@ -275,138 +274,6 @@ void OnroadWindow::paintEvent(QPaintEvent *event) {
     p.drawRect(r);
   }
   // End AleSato Blinker Indicator	
-}
-
-// ***** onroad widgets *****
-// ***** onroad widgets *****
-
-ButtonsWindow::ButtonsWindow(QWidget *parent) : QWidget(parent) {
-  QVBoxLayout *main_layout  = new QVBoxLayout(this);
-
-  QWidget *btns_wrapper = new QWidget(this);
-  QHBoxLayout *btns_layout  = new QHBoxLayout(btns_wrapper);
-
-  // ===== 레이아웃 기본 =====
-  btns_layout->setContentsMargins(0, 770, 30, 30);
-  btns_layout->setSpacing(14);
-  btns_layout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
-  main_layout->addWidget(btns_wrapper, 0, Qt::AlignTop | Qt::AlignLeft);
-
-  dlpBtn = new QPushButton("");
-  dlpBtn->setFixedWidth(186);
-  dlpBtn->setFixedHeight(140);
-
-  QObject::connect(dlpBtn, &QPushButton::clicked, [=]() {
-    uiState()->scene.dynamic_lane_profile = uiState()->scene.dynamic_lane_profile + 1;
-    if (uiState()->scene.dynamic_lane_profile > 2) {
-      uiState()->scene.dynamic_lane_profile = 0;
-    }
-
-    if (uiState()->scene.dynamic_lane_profile == 0) {
-      Params().put("DynamicLaneProfile", "0", 1);
-      dlpBtn->setText("Lane\nonly");
-    } else if (uiState()->scene.dynamic_lane_profile == 1) {
-      Params().put("DynamicLaneProfile", "1", 1);
-      dlpBtn->setText("Lane\nless");
-    } else if (uiState()->scene.dynamic_lane_profile == 2) {
-      Params().put("DynamicLaneProfile", "2", 1);
-      dlpBtn->setText("Auto\nLane");
-    }
-  });
-
-  btns_layout->addWidget(dlpBtn, 0, Qt::AlignLeft);
-
-  // 2) E2E/ACC 표시 박스 (표시 전용)
-  modeBtn = new QPushButton("ACC");
-  modeBtn->setFixedWidth(186);
-  modeBtn->setFixedHeight(140);
-  modeBtn->setEnabled(false);
-  modeBtn->setFocusPolicy(Qt::NoFocus);
-
-  btns_layout->addWidget(modeBtn, 0, Qt::AlignLeft);
-  btns_layout->addStretch(1);
-
-  setStyleSheet(R"(
-    QPushButton {
-      color: white;
-      text-align: center;
-      padding: 0px;
-      border-width: 9px;
-      border-style: solid;
-      background-color: rgba(0, 0, 0, 0.3);
-    }
-  )");
-}
-
-void ButtonsWindow::updateState(const UIState &s) {
-  if (uiState()->scene.dynamic_lane_profile == 0) {
-    dlpBtn->setStyleSheet(QString(
-      "font-size: 45px;"
-      "border-radius: 100px;"
-      "border-width: 9px;"
-      "border-style: solid;"
-      "border-color: %1;"
-      "color: white;"
-      "background-color: rgba(0,0,0,0.30);"
-    ).arg(dlpBtnColors.at(0)));
-    dlpBtn->setText("Lane\nonly");
-
-  } else if (uiState()->scene.dynamic_lane_profile == 1) {
-    dlpBtn->setStyleSheet(QString(
-      "font-size: 45px;"
-      "border-radius: 100px;"
-      "border-width: 9px;"
-      "border-style: solid;"
-      "border-color: %1;"
-      "color: white;"
-      "background-color: rgba(0,0,0,0.30);"
-    ).arg(dlpBtnColors.at(1)));
-    dlpBtn->setText("Lane\nless");
-
-  } else if (uiState()->scene.dynamic_lane_profile == 2) {
-    dlpBtn->setStyleSheet(QString(
-      "font-size: 45px;"
-      "border-radius: 100px;"
-      "border-width: 9px;"
-      "border-style: solid;"
-      "border-color: %1;"
-      "color: white;"
-      "background-color: rgba(0,0,0,0.30);"
-    ).arg(dlpBtnColors.at(2)));
-    dlpBtn->setText("Auto\nLane");
-  }
-
-  // 2) E2E / ACC 표시 업데이트
-  bool is_e2e = false;
-
-  if (s.sm && s.sm->alive("longitudinalPlan")) {
-    const auto lp = (*s.sm)["longitudinalPlan"].getLongitudinalPlan();
-    is_e2e = (lp.getMpcMode() == 1);
-  }
-
-  if (is_e2e) {
-    modeBtn->setText("E2E");
-    modeBtn->setStyleSheet(
-      "font-size: 54px;"
-      "border-radius: 100px;"
-      "border-width: 9px;"
-      "border-style: solid;"
-      "border-color: rgba(0,160,255,0.90);"   // E2E: 파란 테두리
-      "color: white;"
-      "background-color: rgba(0,0,0,0.30);"
-    );
-  } else {
-    modeBtn->setText("ACC");
-    modeBtn->setStyleSheet(
-      "font-size: 54px;"
-      "border-radius: 100px;"
-      "border-width: 9px;"
-      "border-style: solid;"
-      "border-color: rgba(0,220,0,0.85);"    // ACC: 초록 테두리
-      "color: white;"
-      "background-color: rgba(0,0,0,0.30);"
-    );
-  }
 }
 
 // OnroadAlerts
