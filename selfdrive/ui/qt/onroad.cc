@@ -1049,18 +1049,40 @@ void NvgWindow::drawLeftStatusPanel(QPainter &p) {
   const auto cs = sm["controlsState"].getControlsState();
   const auto device = sm["deviceState"].getDeviceState();
 
+  // ---------- Params helper (Params에는 getInt가 없어서 파싱) ----------
   Params params;
-  const int boot_mode = params.getInt("InitMyDrivingMode");
+  auto paramsGetInt = [&](const char *key, int def = 0) -> int {
+    std::string v = params.get(key);
+    if (v.empty()) return def;
+    return std::atoi(v.c_str());
+  };
+
+  // ---------- Boot 1회 적용: InitMyDrivingMode(1~5) -> MyDrivingMode ----------
+  const int boot_mode = paramsGetInt("InitMyDrivingMode", 0);
   if (boot_mode >= 1 && boot_mode <= 5) {
     params.put("MyDrivingMode", std::to_string(boot_mode));
     params.remove("InitMyDrivingMode");
   }
 
-  myDrivingMode = params.getInt("MyDrivingMode");
+  int myDrivingMode = paramsGetInt("MyDrivingMode", 3);
   if (myDrivingMode < 1 || myDrivingMode > 5) myDrivingMode = 3;
-  const int show_device_state = params.getInt("ShowDeviceState");
 
-  // ===== NanoVG drawHud() 좌표계 그대로 =====
+  // ---------- traffic state (longitudinalPlan 기반) ----------
+  int trafficState = 0;
+  int trafficState_carrot = 0;  // carrot 필드 없으면 0 고정
+  float lp_cruise_gap = 0.0f;
+  if (sm.alive("longitudinalPlan")) {
+    const auto lp = sm["longitudinalPlan"].getLongitudinalPlan();
+    trafficState = lp.getTrafficState();
+    lp_cruise_gap = lp.getCruiseGap();
+  }
+
+  // ---------- Apply/Target (변수 없어서 컴파일 에러 나던 부분: 로컬 기본값) ----------
+  QString apply_source;            // 기본: 빈 값 -> 표시 안 함
+  float apply_speed = 0.0f;        // 기본 0
+  float cruiseTarget = cs.getVCruise();  // 기본: 현재 크루즈와 동일
+
+  // ---------- NanoVG drawHud() 좌표계 그대로 ----------
   const int bx = 140;
   const int by = height() - 230;
   const int panel_x = bx - 120;
@@ -1071,16 +1093,17 @@ void NvgWindow::drawLeftStatusPanel(QPainter &p) {
 
   const int64_t ms = (int64_t)millis_since_boot();
   const int blink_timer = (int)((ms / 80) % 16);
-  const int disp_timer  = (int)((ms / 120) % 64);
 
-  // ===== roadLimitSpeed -> CAM 감지 =====
-  int nRoadLimitSpeed_ = nRoadLimitSpeed; // 기존 멤버 있으면 그대로, 없으면 0
+  // ---------- roadLimitSpeed -> CAM 감지 ----------
+  int nRoadLimitSpeed_ = 0;   // 멤버 nRoadLimitSpeed 없으면 0 시작
   int camLimitSpeed = 0;
   int camLeftDist = 0;
   int sectionLimitSpeed = 0;
   int sectionLeftDist = 0;
   int camType = 0;
   int xSignType = 0;
+
+  int activeNDA = 0;  // NDA 표시용
 
   if (sm.alive("roadLimitSpeed")) {
     const auto rls = sm["roadLimitSpeed"].getRoadLimitSpeed();
@@ -1090,12 +1113,13 @@ void NvgWindow::drawLeftStatusPanel(QPainter &p) {
     sectionLimitSpeed = rls.getSectionLimitSpeed();
     sectionLeftDist = rls.getSectionLeftDist();
     camType = rls.getCamType();
-    // if (rls.hasXSignType()) xSignType = rls.getXSignType();
+    // xSignType는 포크 필드 없으면 0 유지
+    activeNDA = rls.getActive();
   }
 
   const bool cam_detected = (camLimitSpeed > 0 && xSignType != 22 && xSignType != 4);
 
-  // ===== 공용 helper (중복 제거) =====
+  // ---------- 공용 helper (중복 제거) ----------
   auto badgeRect = [](int cx, int cy, int w, int h) {
     return QRectF(cx - w/2, cy - h/2, w, h);
   };
@@ -1118,31 +1142,31 @@ void NvgWindow::drawLeftStatusPanel(QPainter &p) {
 
   auto drawTextCenter = [&](float cx, float cy, const QString &txt, int px, const QColor &col,
                             bool shadow = true, int dx = 3, int dy = 3) {
-    // baseline/정렬이 난해해서 drawOutlinedText를 쓰면 NanoVG 느낌이 제일 비슷함
     if (shadow) {
-      drawOutlinedText(p, cx, cy, txt, px, col, "Inter", QFont::Bold, 0.0f, (float)dx, QColor(0,0,0,255), QColor(0,0,0,255));
+      drawOutlinedText(p, cx, cy, txt, px, col, "Inter", QFont::Bold,
+                       0.0f, (float)dx, QColor(0,0,0,255), QColor(0,0,0,255));
     } else {
-      drawOutlinedText(p, cx, cy, txt, px, col, "Inter", QFont::Bold, 0.0f, 0.0f, QColor(0,0,0,0), QColor(0,0,0,0));
+      drawOutlinedText(p, cx, cy, txt, px, col, "Inter", QFont::Bold,
+                       0.0f, 0.0f, QColor(0,0,0,0), QColor(0,0,0,0));
     }
   };
 
-  // ====== draw start ======
+  // ---------- draw start ----------
   p.save();
   p.setRenderHint(QPainter::Antialiasing);
 
-  // ===== 배경 (NanoVG: ui_fill_rect) =====
+  // 배경 (show_device_state 조건 제거하고 항상 전체 배경 사용해도 되지만,
+  // 기존 레이아웃 유지 위해 "컷"은 그대로 두고, show_device_state는 의미만 제거)
   QColor stroke_col(255,255,255,255);
   QColor bg_col = (cam_detected && blink_timer > 8) ? QColor(201,34,49,180) : QColor(0,0,0,90);
 
-  if (show_device_state > 0) {
-    qp_fill_rect(p, QRectF(panel_x, panel_y_full, panel_w, panel_h), &bg_col, 30.f, 2.f, &stroke_col);
-  } else {
-    qp_fill_rect(p, QRectF(panel_x, panel_y_full + cut_h, panel_w, panel_h - cut_h), &bg_col, 30.f, 2.f, &stroke_col);
-  }
+  // 기존 레이아웃 그대로(상단 컷은 유지)
+  qp_fill_rect(p, QRectF(panel_x, panel_y_full + cut_h, panel_w, panel_h - cut_h),
+               &bg_col, 30.f, 2.f, &stroke_col);
 
   // ===== (1) 교통신호 아이콘 =====
   {
-    int icon_size = 80; // 기존 icon_size 멤버 있으면 사용
+    int icon_size = 80;
     int icon_red = icon_size;
     int icon_green = icon_size;
 
@@ -1183,18 +1207,16 @@ void NvgWindow::drawLeftStatusPanel(QPainter &p) {
     QString cruise_txt = longActive ? QString::number((int)std::nearbyint(s->scene.is_metric ? v_cruise : (v_cruise * KM_TO_MILE)))
                                     : "--";
 
-    // NanoVG: 값 바뀌면 ui_draw_text_a
     if (cruise_txt != last_cruise) {
       last_cruise = cruise_txt;
       if (cruise_txt != "--") {
         startAnimText((float)(bx + 170), (float)(by + 15), cruise_txt, 60.f, QColor(0,255,0,255), "Inter");
       }
     }
-
     drawTextCenter((float)(bx + 170), (float)(by + 15), cruise_txt, 60, QColor(0,255,0,255), true, 2, 2);
   }
 
-  // ===== (4) Apply speed (기존 그대로, 중복 최소화) =====
+  // ===== (4) Apply speed (값 없으면 자연히 미표시) =====
   {
     const int apply_x = bx + 250;
     const int apply_y = by - 50;
@@ -1215,44 +1237,40 @@ void NvgWindow::drawLeftStatusPanel(QPainter &p) {
     }
   }
 
-  // ===== (5) Driving Mode 배지 (1:ECO,2:SAFE,3:NORMAL,4:HIGH,5:AUTO) =====
+  // ===== (5) Driving Mode 배지 (GPS 제거 완료) =====
   {
     static QString last_mode;
 
     int dx = bx - 50;
     int dy = by + 175;
 
-    const int driving_mode = myDrivingMode;  // 위에서 Params로 갱신됨
-    QString mode_txt = "NORMAL";
+    QString mode_txt = "일반";
     QColor mode_fill(128,128,128,210);
     QColor mode_text(255,255,255,255);
 
-    switch (driving_mode) {
-      case 1: mode_txt="연비";    mode_fill=QColor(0, 255, 0, 210);     break;
-      case 2: mode_txt="안전";   mode_fill=QColor(255, 165, 0, 210);   break;
-      case 3: mode_txt="일반"; mode_fill=QColor(128, 128, 128, 210); break;
-      case 4: mode_txt="고속";   mode_fill=QColor(201, 34, 49, 210);   break;
-      case 5: mode_txt="AUTO";   mode_fill=QColor(0, 160, 255, 210);   break;
+    switch (myDrivingMode) {
+      case 1: mode_txt="연비";  mode_fill=QColor(0, 255, 0, 210);     break;
+      case 2: mode_txt="안전";  mode_fill=QColor(255, 165, 0, 210);   break;
+      case 3: mode_txt="일반";  mode_fill=QColor(128, 128, 128, 210); break;
+      case 4: mode_txt="고속";  mode_fill=QColor(201, 34, 49, 210);   break;
+      case 5: mode_txt="AUTO";  mode_fill=QColor(0, 160, 255, 210);   break;
       default: break;
     }
 
-    // 배지
     drawBadge(dx, dy - 14, 140, 48, 15.f, mode_fill, 2.f, QColor(0,0,0,0),
               mode_txt, 30, mode_text, false);
 
-    // 값 변경 시 애니
     if (mode_txt != last_mode) {
       last_mode = mode_txt;
       startAnimText((float)dx, (float)dy, mode_txt, 30.f, QColor(255,255,255,255), "Inter");
     }
   }
 
-
-  // ===== (6) GAP 숫자 + 세로바 (중복 제거) =====
+  // ===== (6) GAP 숫자 + 세로바 (위치 그대로, lp.getCruiseGap 기반) =====
   {
     static int last_gap = -999;
 
-    float gap_f = lp.getCruiseGap();
+    float gap_f = std::clamp(lp_cruise_gap, 0.0f, 4.0f);
     int gap = std::clamp((int)std::nearbyint(gap_f), 0, 4);
 
     // 숫자
@@ -1265,7 +1283,7 @@ void NvgWindow::drawLeftStatusPanel(QPainter &p) {
       startAnimText((float)dx_num, (float)dy_num, QString::number(gap), 40.f, QColor(255,255,255,255), "Inter");
     }
 
-    // 바
+    // 바(기존과 동일)
     int dx = bx + 270;
     int dy = by + 185;
     float ddy = 80.f / 4.f;
@@ -1314,20 +1332,17 @@ void NvgWindow::drawLeftStatusPanel(QPainter &p) {
     }
   }
 
-  // ===== (8) NDA =====
+  // ===== (8) NDA (roadLimitSpeed.getActive() 기반만) =====
   {
     int dx = bx + 200;
     int dy = by + 175;
 
-    const auto road_limit_speed = sm["roadLimitSpeed"].getRoadLimitSpeed();
-    const int activeNDA = road_limit_speed.getActive();   // 0=비활성, 1=NDA, 2=HDA 등
-
-    // NDA 활성 시만 표시
     if (activeNDA > 0) {
+      const char *txt = (activeNDA == 1) ? "NDA" : "HDA";
       drawBadge(dx, dy, 110, 48, 15.f,
                 QColor(0, 255, 0, 255),
                 2.f, QColor(0,0,0,0),
-                "NDA", 40, QColor(255,255,255,255), false);
+                txt, 40, QColor(255,255,255,255), false);
     }
   }
 
@@ -1355,8 +1370,7 @@ void NvgWindow::drawLeftStatusPanel(QPainter &p) {
               QString::number(disp_speed), 40, QColor(255,255,255,255), false);
   }
 
-  // ===== (10) Device State 3칸 =====
-  // ===== (10) Device State: CPU TEMP always =====
+  // ===== (10) Device State: CPU TEMP always (조건 없이 항상) =====
   {
     int cpuTempAvg = 0;
     for (auto t : device.getCpuTempC()) cpuTempAvg += (int)t;
@@ -1381,9 +1395,9 @@ void NvgWindow::drawLeftStatusPanel(QPainter &p) {
       p.drawText(QRect(cx - 65, dy + 5, 130, 50), Qt::AlignCenter, val);
     };
 
-    // CPU 온도만 표시 (항상)
     devBox(dx, "CPU", QString("%1°C").arg(cpuTempAvg), cpuTempAvg > 80);
   }
+
   p.restore();
 }
 
