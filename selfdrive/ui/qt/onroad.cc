@@ -1207,7 +1207,7 @@ void NvgWindow::drawLeftStatusPanel(QPainter &p) {
     }
   }
 
-  // ===== (5) Driving Mode 배지 + GPS =====
+  // ===== (5) Driving Mode
   {
     static QString last_mode;
 
@@ -1235,13 +1235,6 @@ void NvgWindow::drawLeftStatusPanel(QPainter &p) {
     if (mode_txt != last_mode) {
       last_mode = mode_txt;
       startAnimText((float)dx, (float)dy, mode_txt, 30.f, QColor(255,255,255,255), "Inter");
-    }
-
-    // GPS
-    auto gps = (s->ublox_avaliable) ? sm["gpsLocationExternal"].getGpsLocationExternal()
-                                    : sm["gpsLocation"].getGpsLocation();
-    if (gps.getHasFix()) {
-      drawTextCenter((float)dx, (float)(dy - 45), "GPS", 30, QColor(0,255,0,255), true, 2, 2);
     }
   }
 
