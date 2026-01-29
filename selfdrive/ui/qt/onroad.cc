@@ -1252,8 +1252,8 @@ void NvgWindow::drawLeftStatusPanel(QPainter &p) {
   {
     static int last_gap = -999;
 
-    int gap = params.getInt("LongitudinalPersonality") + 1;
-    gap = std::clamp(gap, 0, 4);
+    float gap_f = lp.getCruiseGap();
+    int gap = std::clamp((int)std::nearbyint(gap_f), 0, 4);
 
     // 숫자
     int dx_num = bx + 220;
@@ -1314,21 +1314,20 @@ void NvgWindow::drawLeftStatusPanel(QPainter &p) {
     }
   }
 
-  // ===== (8) APN/APM + ROUTE =====
+  // ===== (8) NDA =====
   {
     int dx = bx + 200;
     int dy = by + 175;
 
-    if (active_carrot >= 2) {
-      drawBadge(dx, dy, 110, 48, 15.f, QColor(0,255,0,255), 2.f, QColor(0,0,0,0),
-                "APN", 40, QColor(255,255,255,255), false);
-    } else if (active_carrot >= 1) {
-      drawBadge(dx, dy, 110, 48, 15.f, QColor(0,160,255,210), 2.f, QColor(0,0,0,0),
-                "APM", 40, QColor(255,255,255,255), false);
-    }
+    const auto road_limit_speed = sm["roadLimitSpeed"].getRoadLimitSpeed();
+    const int activeNDA = road_limit_speed.getActive();   // 0=비활성, 1=NDA, 2=HDA 등
 
-    if (nav_path_vertex_count > 1) {
-      drawTextCenter((float)dx, (float)(dy - 45), "ROUTE", 30, QColor(255,255,255,255), true, 2, 2);
+    // NDA 활성 시만 표시
+    if (activeNDA > 0) {
+      drawBadge(dx, dy, 110, 48, 15.f,
+                QColor(0, 255, 0, 255),
+                2.f, QColor(0,0,0,0),
+                "NDA", 40, QColor(255,255,255,255), false);
     }
   }
 
@@ -1357,14 +1356,11 @@ void NvgWindow::drawLeftStatusPanel(QPainter &p) {
   }
 
   // ===== (10) Device State 3칸 =====
-  if (show_device_state) {
+  // ===== (10) Device State: CPU TEMP always =====
+  {
     int cpuTempAvg = 0;
     for (auto t : device.getCpuTempC()) cpuTempAvg += (int)t;
     if (device.getCpuTempC().size()) cpuTempAvg /= (int)device.getCpuTempC().size();
-
-    int memPct = memoryUsage;
-    float freePct = freeSpace;
-    float volt = voltage;
 
     int dx = bx - 35;
     int dy = by - 200;
@@ -1385,18 +1381,11 @@ void NvgWindow::drawLeftStatusPanel(QPainter &p) {
       p.drawText(QRect(cx - 65, dy + 5, 130, 50), Qt::AlignCenter, val);
     };
 
-    devBox(dx, "CPU", QString("%1° C").arg(cpuTempAvg), cpuTempAvg > 80);
-    dx += 150;
-    devBox(dx, "MEM", QString("%1%").arg(memPct), memPct > 85);
-    dx += 150;
-
-    if (disp_timer < 32) devBox(dx, "DISK", QString("%1%").arg((int)std::nearbyint(100.0f - freePct)), false);
-    else devBox(dx, "VOLT", QString::asprintf("%.1fV", volt), false);
+    // CPU 온도만 표시 (항상)
+    devBox(dx, "CPU", QString("%1°C").arg(cpuTempAvg), cpuTempAvg > 80);
   }
-
   p.restore();
 }
-
 
 void NvgWindow::drawBrake(QPainter &p) {
   const SubMaster &sm = *(uiState()->sm);
