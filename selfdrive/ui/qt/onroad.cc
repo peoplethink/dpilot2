@@ -1070,7 +1070,8 @@ void NvgWindow::drawLeftStatusPanel(QPainter &p) {
   // ===== SoftHold: 작동 시 깜빡임 =====
   bool soft_hold = calc_soft_hold_active(cs, car_state);
   const int blink_period_ms = 350;
-  const bool blink_on = ((millis_since_boot() / blink_period_ms) % 2) == 0;
+  const int64_t ms = (int64_t)millis_since_boot();
+  const bool blink_on = ((ms / blink_period_ms) % 2) == 0;
 
   QColor soft_col = soft_hold ? QColor(255, 80, 80, blink_on ? 255 : 80)
                               : QColor(80, 80, 80, 200);
@@ -1182,7 +1183,7 @@ void NvgWindow::drawLeftStatusPanel(QPainter &p) {
     camType = rls.getCamType();
 
     // 포크에 없으면 아래 1줄 삭제
-    if (rls.hasXSignType()) xSignType = rls.getXSignType();
+    //if (rls.hasXSignType()) xSignType = rls.getXSignType();
   }
 
   if (camLimitSpeed > 0 && camLeftDist > 0) {
@@ -1212,7 +1213,7 @@ void NvgWindow::drawLeftStatusPanel(QPainter &p) {
   // --- limit_speed 표시 (있으면 우선) ---
   if (limit_speed > 0) {
     // speed bump (xSignType==124 or camType==22)
-    if (xSignType == 124 || camType == 22) {
+    if (camType == 22) {
       QRect ir(bx - 40, by - 45, 80, 90);
 
       // 이미 가지고 있는 ic_safety_speed_bump 쓰고 싶으면 ic_speed_bump 대신 그걸로 교체 가능
@@ -1264,7 +1265,7 @@ void NvgWindow::drawLeftStatusPanel(QPainter &p) {
 
   // ===== GAP 표시 (위 나노VG 스타일 동일 반영: 세로바+4칸+채움+"GAP"+숫자) =====
   float gap_f = lp.getCruiseGap();                         // 채움 높이용 (0~4 float)
-  int gap1 = controls_state.getLongCruiseGap();            // 숫자 표시용 (1~4 int라고 가정)
+  int gap1 = std::clamp((int)std::nearbyint(lp.getCruiseGap()), 0, 4);
 
   gap_f = std::clamp(gap_f, 0.0f, 4.0f);
   gap1  = std::clamp(gap1, 0, 4);
