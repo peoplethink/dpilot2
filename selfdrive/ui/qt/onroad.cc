@@ -1304,20 +1304,18 @@ void NvgWindow::drawLeftStatusPanel(QPainter &p) {
     int dx = bx + 305;
     int dy = by + 60;
 
-    QString gear_str = "D";
-    auto gs = car_state.getGearShifter();
-    if (gs == cereal::CarState::GearShifter::UNKNOWN) gear_str = "U";
-    else if (gs == cereal::CarState::GearShifter::PARK) gear_str = "P";
-    else if (gs == cereal::CarState::GearShifter::NEUTRAL) gear_str = "N";
-    else if (gs == cereal::CarState::GearShifter::REVERSE) gear_str = "R";
-    else if (gs == cereal::CarState::GearShifter::SPORT) gear_str = "S";
-    else if (gs == cereal::CarState::GearShifter::LOW) gear_str = "L";
-    else if (gs == cereal::CarState::GearShifter::BRAKE) gear_str = "B";
-    else if (gs == cereal::CarState::GearShifter::ECO) gear_str = "E";
-    else {
-      if (gs == cereal::CarState::GearShifter::DRIVE && car_state.getGearStep() > 0) gear_str = QString::number(car_state.getGearStep());
-      else gear_str = "D";
+    QString gear = "D";
+    switch (car_state.getGearShifter()) {
+      case cereal::CarState::GearShifter::PARK:    gear = "P"; break;
+      case cereal::CarState::GearShifter::REVERSE: gear = "R"; break;
+      case cereal::CarState::GearShifter::NEUTRAL: gear = "N"; break;
+      default: break;
     }
+
+    int cur_gear = (int)std::nearbyint(car_state.getCurrentGear());
+    bool show_gear_num = (gear == "D") && (cur_gear >= 1 && cur_gear <= 8);
+
+    QString draw_txt = show_gear_num ? QString::number(cur_gear) : gear;
 
     QRectF gr(dx - 35, dy - 70, 70, 80);
     QColor fill(0,255,0,210);
@@ -1326,9 +1324,9 @@ void NvgWindow::drawLeftStatusPanel(QPainter &p) {
 
     drawTextCenter((float)dx, (float)dy, gear_str, 70, QColor(255,255,255,255), true, 2, 2);
 
-    if (gear_str != last_gear) {
-      last_gear = gear_str;
-      startAnimText((float)dx, (float)dy, gear_str, 70.f, QColor(255,255,255,255), "Inter");
+    if (draw_txt != last_gear) {
+      last_gear = draw_txt;
+      startAnimText((float)dx, (float)dy, draw_txt, 70.f, QColor(255,255,255,255), "Inter");
     }
   }
 
