@@ -1108,7 +1108,8 @@ void NvgWindow::drawLeftStatusPanel(QPainter &p) {
   QPainterPath path;
   path.moveTo(x + 40, y + 250);
   path.cubicTo(x + 160, y + 200, x + 260, y + 320, x + 360, y + 260);
-  p.setPen(QPen(QColor(0, 255, 0, 18
+  p.setPen(QPen(QColor(0, 255, 0, 180), 4));
+  p.drawPath(path);
 
   // ===== 기어 =====
   QString gear = "D";
