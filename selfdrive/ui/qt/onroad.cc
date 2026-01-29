@@ -1186,8 +1186,9 @@ void NvgWindow::drawLeftStatusPanel(QPainter &p) {
   }
 
   // ===== (2) 현재속도 + speed_bg =====
-  const float v_ms = car_state.getCluSpeedMs();
-  const float cur_speed = std::max(0.0f, v_ms * (s->scene.is_metric ? (float)MS_TO_KPH : (float)MS_TO_MPH));
+  const float v = car_state.getCluSpeedMs() * (s->scene.is_metric ? (float)MS_TO_KPH : (float)MS_TO_MPH);
+  float cur_speed = std::max(0.0f, v);
+
 
   if (!ic_speed_bg.isNull()) {
     p.drawPixmap(QRect(bx - 100, by - 60, 350, 150), ic_speed_bg);
