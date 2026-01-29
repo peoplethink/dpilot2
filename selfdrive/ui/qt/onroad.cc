@@ -74,11 +74,49 @@ static void drawOutlinedText(QPainter &p, float x, float y,
   p.drawText(QPointF(baseX, baseY), text);
 }
 
-static inline float lerp01(float a, float b, float t) {
-  return a * t + b * (1.0f - t);
+
+// ================== [ADD] NanoVG rect helpers (Qt port) ==================
+static void qp_draw_rect(QPainter &p, const QRectF &r, const QColor &color,
+                         float stroke_w, float radius) {
+  if (stroke_w <= 0.f) return;
+  p.save();
+  p.setRenderHint(QPainter::Antialiasing);
+  p.setBrush(Qt::NoBrush);
+  p.setPen(QPen(color, stroke_w));
+  if (radius > 0.f) p.drawRoundedRect(r, radius, radius);
+  else p.drawRect(r);
+  p.restore();
 }
 
-// 애니메이션 시작 (paint.h ui_draw_text_a 대응)
+static void qp_fill_rect(QPainter &p, const QRectF &r, const QColor *fill_color,
+                         float radius, float stroke_w, const QColor *stroke_color) {
+  p.save();
+  p.setRenderHint(QPainter::Antialiasing);
+
+  // fill
+  p.setPen(Qt::NoPen);
+  p.setBrush(fill_color ? QBrush(*fill_color) : Qt::NoBrush);
+  if (radius > 0.f) p.drawRoundedRect(r, radius, radius);
+  else p.drawRect(r);
+
+  // stroke
+  if (stroke_w > 0.f) {
+    QColor sc = stroke_color ? *stroke_color : QColor(0, 0, 0, 255);  // NanoVG: 없으면 검정
+    p.setBrush(Qt::NoBrush);
+    p.setPen(QPen(sc, stroke_w));
+    if (radius > 0.f) p.drawRoundedRect(r, radius, radius);
+    else p.drawRect(r);
+  }
+
+  p.restore();
+}
+
+static inline float nvg_mix(float center, float target, int time1, int a_max) {
+  // NanoVG: (center*time1 + target*(a_max-time1)) / a_max
+  return (center * (float)time1 + target * (float)(a_max - time1)) / (float)a_max;
+}
+
+// 애니메이션 시작 (paint.h ui_draw_text_a 대응) - 그대로 사용
 static void startAnimText(float x, float y, const QString &text, float size,
                           const QColor &color, const QString &font) {
   g_anim_text.x = x;
@@ -90,24 +128,21 @@ static void startAnimText(float x, float y, const QString &text, float size,
   g_anim_text.time = 130;   // paint.h 동일
 }
 
-// 매 프레임 그리기 (paint.h ui_draw_text_a2 대응)
+// 매 프레임 그리기 (paint.h ui_draw_text_a2 대응) - "수식 동일"로 교체
 static void drawAnimText(QPainter &p, const UIState *s) {
   if (g_anim_text.time <= 0) return;
 
   g_anim_text.time -= 10;   // paint.h 동일
-  int t1 = g_anim_text.time;
-  if (t1 > 100) t1 = 100;
+  int time1 = g_anim_text.time;
+  if (time1 > 100) time1 = 100;
 
-  // paint.h 보간식 동일 (센터 -> 목표)
-  const float cx0 = (s->fb_w / 2.0f);
-  const float cy0 = (s->fb_h - 400.0f);
+  const float cx = (float)s->fb_w / 2.0f;
+  const float cy = (float)s->fb_h - 400.0f;
 
-  const float t = (float)t1 / (float)kAnimMax;          // 0~1
-  const float x = lerp01(cx0, g_anim_text.x, t);
-  const float y = lerp01(cy0, g_anim_text.y, t);
-  const float sz = lerp01(350.0f, g_anim_text.size, t);
+  const float x  = nvg_mix(cx,      g_anim_text.x,    time1, kAnimMax);
+  const float y  = nvg_mix(cy,      g_anim_text.y,    time1, kAnimMax);
+  const float sz = nvg_mix(350.0f,  g_anim_text.size, time1, kAnimMax);
 
-  // 처음(>=100)엔 두껍게, 이후엔 기본
   if (g_anim_text.time >= 100) {
     drawOutlinedText(p, x, y, g_anim_text.text, (int)sz,
                      g_anim_text.color, g_anim_text.font,
@@ -117,32 +152,15 @@ static void drawAnimText(QPainter &p, const UIState *s) {
                      QColor(0,0,0,255),
                      QColor(0,0,0,255));
   } else {
+    // NanoVG else는 "기본 텍스트"라 외곽선 없음에 가깝게
     drawOutlinedText(p, x, y, g_anim_text.text, (int)sz,
                      g_anim_text.color, g_anim_text.font,
                      QFont::Bold,
-                     /*borderWidth=*/3.0f,
+                     /*borderWidth=*/0.0f,
                      /*shadowOffset=*/0.0f,
                      QColor(0,0,0,255),
                      QColor(0,0,0,255));
   }
-}
-// ====== [ADD END] ================================================================
-
-// ===== [ADD] Gear animation state =====
-static QString g_prev_gear_draw_txt;
-static int64_t g_gear_anim_start_ms = 0;
-static constexpr int kGearAnimMs = 260;   // 애니 길이(ms)
-static inline bool calc_soft_hold_active(const cereal::ControlsState::Reader &cs,
-                                         const cereal::CarState::Reader &car_state) {
-  const float v_ego = car_state.getVEgo();
-
-  const int long_state = (int)cs.getLongControlState();
-  const bool enabled = cs.getEnabled();
-
-  const bool near_standstill = (v_ego < 0.08f);
-  const bool stopping_state  = (long_state == 2);
-
-  return enabled && near_standstill && stopping_state;
 }
 
 #define FONT_OPEN_SANS "Inter" //"Open Sans"
@@ -1029,268 +1047,239 @@ void NvgWindow::drawLeftStatusPanel(QPainter &p) {
 
   const auto car_state = sm["carState"].getCarState();
   const auto cs = sm["controlsState"].getControlsState();
-  const auto lp = sm["longitudinalPlan"].getLongitudinalPlan();
   const auto device = sm["deviceState"].getDeviceState();
 
-  // =========================
-  // NanoVG drawHud() 좌표계 그대로
-  // x=140, y=fb_h-500, bx=x, by=y+270
-  // 배경: {bx-120, by-270, 475, 495}, r=30
-  // ShowDeviceState==0 이면 y+140부터만 보이게 (높이 -140)
-  // =========================
   Params params;
   const int show_device_state = params.getInt("ShowDeviceState");
 
+  // ===== NanoVG drawHud() 좌표계 그대로 =====
   const int bx = 140;
-  const int by = height() - 230;          // by = (fb_h-500)+270 = fb_h-230
+  const int by = height() - 230;
   const int panel_x = bx - 120;
   const int panel_y_full = by - 270;
   const int panel_w = 475;
   const int panel_h = 495;
   const int cut_h = 140;
 
-  // NanoVG blink_timer (0..15), disp_timer (0..63) 느낌을 ms 기반으로 재현
   const int64_t ms = (int64_t)millis_since_boot();
-  const int blink_timer = (int)((ms / 80) % 16);     // 대략 프레임 느낌
+  const int blink_timer = (int)((ms / 80) % 16);
   const int disp_timer  = (int)((ms / 120) % 64);
 
-  // =========================
-  // roadLimitSpeed -> cam 판단용 (NanoVG: xSpdLimit/xSignType)
-  // 여기서는 "camLimitSpeed 유효"면 cam_detected로 취급
-  // =========================
-  int roadLimitSpeed = 0;
+  // ===== roadLimitSpeed -> CAM 감지 =====
+  int nRoadLimitSpeed_ = nRoadLimitSpeed; // 기존 멤버 있으면 그대로, 없으면 0
   int camLimitSpeed = 0;
   int camLeftDist = 0;
   int sectionLimitSpeed = 0;
   int sectionLeftDist = 0;
   int camType = 0;
-  int xSignType = 0;   // 포크에 없으면 유지/삭제
+  int xSignType = 0;
 
   if (sm.alive("roadLimitSpeed")) {
     const auto rls = sm["roadLimitSpeed"].getRoadLimitSpeed();
-    roadLimitSpeed = rls.getRoadLimitSpeed();
+    nRoadLimitSpeed_ = rls.getRoadLimitSpeed();
     camLimitSpeed = rls.getCamLimitSpeed();
     camLeftDist = rls.getCamLimitSpeedLeftDist();
     sectionLimitSpeed = rls.getSectionLimitSpeed();
     sectionLeftDist = rls.getSectionLeftDist();
     camType = rls.getCamType();
-    // xSignType 필드 없으면 이 줄(들) 제거
     // if (rls.hasXSignType()) xSignType = rls.getXSignType();
   }
 
-  bool cam_detected = false;
-  // NanoVG: (xSpdLimit>0 && xSignType!=22 && xSignType!=4)
-  // 여기서는 camLimitSpeed가 잡히면 동일 취급 + signType 필터 유지
-  if (camLimitSpeed > 0 && xSignType != 22 && xSignType != 4) cam_detected = true;
+  const bool cam_detected = (camLimitSpeed > 0 && xSignType != 22 && xSignType != 4);
 
-  // =========================
-  // 배경 카드 (NanoVG: fill_rect + 흰 stroke)
-  // bg_color = (cam_detected && blink_timer>8) ? red(180) : black(90)
-  // show_device_state==0 이면 아래쪽만 그리기 (y+140부터)
-  // =========================
-  QColor stroke_col(255, 255, 255, 255);
-  QColor bg_col = (cam_detected && blink_timer > 8) ? QColor(201, 34, 49, 180)
-                                                    : QColor(0, 0, 0, 90);
+  // ===== 공용 helper (중복 제거) =====
+  auto badgeRect = [](int cx, int cy, int w, int h) {
+    return QRectF(cx - w/2, cy - h/2, w, h);
+  };
 
+  auto drawBadge = [&](int cx, int cy, int w, int h, float radius,
+                       const QColor &fill, float stroke_w, const QColor &stroke,
+                       const QString &txt, int px, const QColor &txt_col,
+                       bool shadow = true) {
+    QRectF r = badgeRect(cx, cy, w, h);
+    qp_fill_rect(p, r, &fill, radius, stroke_w, &stroke);
+
+    configFont(p, "Inter", px, "Bold");
+    if (shadow) {
+      p.setPen(QColor(0,0,0,220));
+      p.drawText(r.translated(2,2).toRect(), Qt::AlignCenter, txt);
+    }
+    p.setPen(txt_col);
+    p.drawText(r.toRect(), Qt::AlignCenter, txt);
+  };
+
+  auto drawTextCenter = [&](float cx, float cy, const QString &txt, int px, const QColor &col,
+                            bool shadow = true, int dx = 3, int dy = 3) {
+    // baseline/정렬이 난해해서 drawOutlinedText를 쓰면 NanoVG 느낌이 제일 비슷함
+    if (shadow) {
+      drawOutlinedText(p, cx, cy, txt, px, col, "Inter", QFont::Bold, 0.0f, (float)dx, QColor(0,0,0,255), QColor(0,0,0,255));
+    } else {
+      drawOutlinedText(p, cx, cy, txt, px, col, "Inter", QFont::Bold, 0.0f, 0.0f, QColor(0,0,0,0), QColor(0,0,0,0));
+    }
+  };
+
+  // ====== draw start ======
   p.save();
   p.setRenderHint(QPainter::Antialiasing);
 
-  auto drawRoundedBox = [&](int x, int y, int w, int h, int r, int pen_w, QColor fill, QColor pen) {
-    p.setPen(QPen(pen, pen_w));
-    p.setBrush(fill);
-    p.drawRoundedRect(QRect(x, y, w, h), r, r);
-  };
+  // ===== 배경 (NanoVG: ui_fill_rect) =====
+  QColor stroke_col(255,255,255,255);
+  QColor bg_col = (cam_detected && blink_timer > 8) ? QColor(201,34,49,180) : QColor(0,0,0,90);
 
   if (show_device_state > 0) {
-    drawRoundedBox(panel_x, panel_y_full, panel_w, panel_h, 30, 2, bg_col, stroke_col);
+    qp_fill_rect(p, QRectF(panel_x, panel_y_full, panel_w, panel_h), &bg_col, 30.f, 2.f, &stroke_col);
   } else {
-    drawRoundedBox(panel_x, panel_y_full + cut_h, panel_w, panel_h - cut_h, 30, 2, bg_col, stroke_col);
+    qp_fill_rect(p, QRectF(panel_x, panel_y_full + cut_h, panel_w, panel_h - cut_h), &bg_col, 30.f, 2.f, &stroke_col);
   }
 
-  // =========================
-  // 공통: NanoVG ui_draw_text의 "그림자" 느낌 (간단 shadow)
-  // =========================
-  auto drawTextShadow = [&](const QRect &r, int px, const QString &txt, QColor col, int dx = 2, int dy = 2) {
-    configFont(p, "Inter", px, "Bold");
-    p.setPen(QColor(0, 0, 0, 220));
-    p.drawText(r.translated(dx, dy), Qt::AlignCenter, txt);
-    p.setPen(col);
-    p.drawText(r, Qt::AlignCenter, txt);
-  };
+  // ===== (1) 교통신호 아이콘 =====
+  {
+    int icon_size = 80; // 기존 icon_size 멤버 있으면 사용
+    int icon_red = icon_size;
+    int icon_green = icon_size;
 
-  // =========================
-  // (1) 교통신호 아이콘 (NanoVG: center at (x=140, y-? +270) => (bx,by))
-  // icon_size는 기존 멤버 사용 가정. 없으면 80 정도로
-  // trafficState / trafficState_carrot도 기존 변수 사용 가정
-  // =========================
-  int icon_size = 80; // 프로젝트에 icon_size 멤버 있으면 그걸로 교체
-  int icon_red = icon_size;
-  int icon_green = icon_size;
+    bool red_light = (trafficState == 1);
+    bool green_light = (trafficState == 2);
 
-  // trafficState/trafficState_carrot 는 기존 변수/멤버를 그대로 사용한다고 가정
-  bool red_light = (trafficState == 1);
-  bool green_light = (trafficState == 2);
+    if (trafficState_carrot == 1) { red_light = true; icon_red = (int)(icon_red * 1.5); }
+    else if (trafficState_carrot == 2) { green_light = true; icon_green = (int)(icon_green * 1.5); }
 
-  if (trafficState_carrot == 1) { red_light = true;  icon_red   = (int)(icon_red * 1.5); }
-  else if (trafficState_carrot == 2) { green_light = true; icon_green = (int)(icon_green * 1.5); }
+    auto drawIconCentered = [&](const QPixmap &pm, int cx, int cy, int sz) {
+      if (pm.isNull()) return;
+      p.drawPixmap(QRect(cx - sz/2, cy - sz/2, sz, sz), pm);
+    };
 
-  auto drawIconCentered = [&](const QPixmap &pm, int cx, int cy, int sz) {
-    if (pm.isNull()) return;
-    QRect r(cx - sz/2, cy - sz/2, sz, sz);
-    p.drawPixmap(r, pm);
-  };
+    if (red_light) drawIconCentered(ic_traffic_red, bx, by, icon_red);
+    else if (green_light) drawIconCentered(ic_traffic_green, bx, by, icon_green);
+  }
 
-  // ic_traffic_red / ic_traffic_green pixmap 멤버가 있다고 가정
-  if (red_light)   drawIconCentered(ic_traffic_red,   bx, by, icon_red);
-  else if (green_light) drawIconCentered(ic_traffic_green, bx, by, icon_green);
+  // ===== (2) 현재속도 + speed_bg =====
+  const float v_ms = car_state.getCluSpeedMs();
+  const float cur_speed = std::max(0.0f, v_ms * (s->scene.is_metric ? (float)MS_TO_KPH : (float)MS_TO_MPH));
 
-  // =========================
-  // (2) 현재속도 + speed_bg (NanoVG)
-  // speed: bx, by+50, size 120, WHITE
-  // bg: {bx-100, by-60, 350, 150} "ic_speed_bg"
-  // =========================
   if (!ic_speed_bg.isNull()) {
     p.drawPixmap(QRect(bx - 100, by - 60, 350, 150), ic_speed_bg);
   } else {
-    // fallback: 대충 박스
-    drawRoundedBox(bx - 100, by - 60, 350, 150, 18, 2, QColor(0,0,0,120), QColor(255,255,255,80));
+    QColor fill(0,0,0,120), st(255,255,255,80);
+    qp_fill_rect(p, QRectF(bx - 100, by - 60, 350, 150), &fill, 18.f, 2.f, &st);
   }
 
-  const float v_ms = car_state.getCluSpeedMs();
-  const float cur_speed = std::max(0.0f, v_ms * (s->scene.is_metric ? (float)MS_TO_KPH : (float)MS_TO_MPH));
+  drawTextCenter((float)bx, (float)(by + 50), QString::number((int)std::nearbyint(cur_speed)),
+                 120, QColor(255,255,255,255), true, 3, 3);
+
+  // ===== (3) 크루즈 속도 + 변경 시 애니 =====
   {
-    configFont(p, "Inter", 120, "Bold");
-    p.setPen(QColor(255,255,255,255));
-    // NanoVG는 baseline이 달라서 약간 위로 보정
-    QRect r(bx - 170, (by + 50) - 95, 340, 140);
-    // 그림자
-    p.setPen(QColor(0,0,0,220));
-    p.drawText(r.translated(3,3), Qt::AlignCenter, QString::number((int)std::nearbyint(cur_speed)));
-    p.setPen(QColor(255,255,255,255));
-    p.drawText(r, Qt::AlignCenter, QString::number((int)std::nearbyint(cur_speed)));
+    static QString last_cruise;
+    const bool longActive = cs.getEnabled();
+    float v_cruise = cs.getVCruise();
+    QString cruise_txt = longActive ? QString::number((int)std::nearbyint(s->scene.is_metric ? v_cruise : (v_cruise * KM_TO_MILE)))
+                                    : "--";
+
+    // NanoVG: 값 바뀌면 ui_draw_text_a
+    if (cruise_txt != last_cruise) {
+      last_cruise = cruise_txt;
+      if (cruise_txt != "--") {
+        startAnimText((float)(bx + 170), (float)(by + 15), cruise_txt, 60.f, QColor(0,255,0,255), "Inter");
+      }
+    }
+
+    drawTextCenter((float)(bx + 170), (float)(by + 15), cruise_txt, 60, QColor(0,255,0,255), true, 2, 2);
   }
 
-  // =========================
-  // (3) 크루즈 속도 (NanoVG)
-  // cruise_x=bx+170, cruise_y=by+15, size 60, GREEN
-  // longActive 없으면 "--"
-  // =========================
-  const bool longActive = cs.getEnabled();  // 기존 longActive가 따로 있으면 그걸로 교체
-  float v_cruise = cs.getVCruise();         // kph 기반(보통)
-  QString cruise_speed_txt = longActive ? QString::number((int)std::nearbyint(s->scene.is_metric ? v_cruise : (v_cruise * KM_TO_MILE)))
-                                       : "--";
-  {
-    QRect r((bx + 170) - 70, (by + 15) - 45, 140, 90);
-    drawTextShadow(r, 60, cruise_speed_txt, QColor(0,255,0,255));
-  }
-
-  // =========================
-  // (4) Apply speed (NanoVG)
-  // apply_x=bx+250, apply_y=by-50
-  // apply_source 있으면: 숫자(50) + source(30) 색 OCHRE
-  // 아니면 cruiseTarget != v_cruise면: 숫자 + "eco"
-  // =========================
+  // ===== (4) Apply speed (기존 그대로, 중복 최소화) =====
   {
     const int apply_x = bx + 250;
     const int apply_y = by - 50;
-
-    // 아래 3개는 기존 코드에 있는 멤버/변수 그대로 쓴다는 가정
-    // - apply_speed (float)
-    // - apply_source (QString)
-    // - cruiseTarget (float)
-    QColor ochre(218, 202, 37, 255);  // COLOR_OCHRE 근사
-    QColor green(0, 255, 0, 255);
+    const QColor ochre(218,202,37,255);
+    const QColor green(0,255,0,255);
 
     if (!apply_source.isEmpty()) {
       int as = (int)std::nearbyint(s->scene.is_metric ? apply_speed : (apply_speed * KM_TO_MILE));
-      drawTextShadow(QRect(apply_x - 60, apply_y - 35, 120, 70), 50, QString::number(as), ochre);
-      drawTextShadow(QRect(apply_x - 140, apply_y - 85, 280, 50), 30, apply_source, ochre);
-    } else if (std::fabs(cruiseTarget - v_cruise) > 0.5f) {
-      int ts = (int)std::nearbyint(s->scene.is_metric ? cruiseTarget : (cruiseTarget * KM_TO_MILE));
-      drawTextShadow(QRect(apply_x - 60, apply_y - 35, 120, 70), 50, QString::number(ts), green);
-      drawTextShadow(QRect(apply_x - 60, apply_y - 85, 120, 50), 30, "eco", green);
+      drawTextCenter((float)apply_x, (float)apply_y, QString::number(as), 50, ochre, true, 2, 2);
+      drawTextCenter((float)apply_x, (float)(apply_y - 50), apply_source, 30, ochre, true, 2, 2);
+    } else {
+      const float v_cruise = cs.getVCruise();
+      if (std::fabs(cruiseTarget - v_cruise) > 0.5f) {
+        int ts = (int)std::nearbyint(s->scene.is_metric ? cruiseTarget : (cruiseTarget * KM_TO_MILE));
+        drawTextCenter((float)apply_x, (float)apply_y, QString::number(ts), 50, green, true, 2, 2);
+        drawTextCenter((float)apply_x, (float)(apply_y - 50), "eco", 30, green, true, 2, 2);
+      }
     }
   }
 
-  // =========================
-  // (5) Driving Mode 배지 (NanoVG)
-  // dx=bx-50, dy=by+175
-  // rect: {dx-55, dy-38, 110, 48}, r=15
-  // text size 32
-  // GPS fix면 dy-45에 "GPS" 30 green
-  // =========================
+  // ===== (5) Driving Mode 배지 + GPS =====
   {
+    static QString last_mode;
+
     int dx = bx - 50;
     int dy = by + 175;
 
-    int driving_mode = myDrivingMode; // 기존 myDrivingMode 멤버 사용 가정
+    int driving_mode = myDrivingMode;
     QString mode_txt = "ERRM";
-    QColor mode_fill(0, 255, 0, 210);
-    QColor mode_text(255, 255, 255, 255);
+    QColor mode_fill(0,255,0,210);
+    QColor mode_text(255,255,255,255);
 
     switch (driving_mode) {
-      case 1: mode_txt = "ECO";  mode_fill = QColor(0,255,0,210); break;
-      case 2: mode_txt = "SAFE"; mode_fill = QColor(255,165,0,210); break;
-      case 3: mode_txt = "NORM"; mode_fill = QColor(128,128,128,210); break;
-      case 4: mode_txt = "FAST"; mode_fill = QColor(201,34,49,210); break;
-      default: mode_txt = "ERRM"; break;
+      case 1: mode_txt="ECO";  mode_fill=QColor(0,255,0,210); break;
+      case 2: mode_txt="SAFE"; mode_fill=QColor(255,165,0,210); break;
+      case 3: mode_txt="NORM"; mode_fill=QColor(128,128,128,210); break;
+      case 4: mode_txt="FAST"; mode_fill=QColor(201,34,49,210); break;
+      default: break;
     }
 
-    drawRoundedBox(dx - 55, dy - 38, 110, 48, 15, 2, mode_fill, QColor(255,255,255,0));
-    configFont(p, "Inter", 32, "Bold");
-    p.setPen(mode_text);
-    p.drawText(QRect(dx - 55, dy - 38, 110, 48), Qt::AlignCenter, mode_txt);
+    // 배지
+    drawBadge(dx, dy - 14, 110, 48, 15.f, mode_fill, 2.f, QColor(0,0,0,0),
+              mode_txt, 32, mode_text, false);
+
+    // 값 변경 시 애니 (NanoVG driving_mode_str_last 대응)
+    if (mode_txt != last_mode) {
+      last_mode = mode_txt;
+      startAnimText((float)dx, (float)dy, mode_txt, 30.f, QColor(255,255,255,255), "Inter");
+    }
 
     // GPS
     auto gps = (s->ublox_avaliable) ? sm["gpsLocationExternal"].getGpsLocationExternal()
                                     : sm["gpsLocation"].getGpsLocation();
     if (gps.getHasFix()) {
-      configFont(p, "Inter", 30, "Bold");
-      p.setPen(QColor(0,255,0,255));
-      p.drawText(QRect(dx - 55, (dy - 45) - 25, 110, 40), Qt::AlignCenter, "GPS");
+      drawTextCenter((float)dx, (float)(dy - 45), "GPS", 30, QColor(0,255,0,255), true, 2, 2);
     }
   }
 
-  // =========================
-  // (6) GAP 숫자 + 세로바 4칸 채움 (NanoVG)
-  // gap = Params("LongitudinalPersonality")+1
-  // 숫자: dx=bx+220, dy=by+77 size 40
-  // 바: dx=bx+270, dy=by+185, w=70, total h=80 (4칸)
-  // =========================
-  int gap = params.getInt("LongitudinalPersonality") + 1;
-  gap = std::clamp(gap, 0, 4);
-
+  // ===== (6) GAP 숫자 + 세로바 (중복 제거) =====
   {
-    int dx = bx + 220;
-    int dy = by + 77;
+    static int last_gap = -999;
 
-    configFont(p, "Inter", 40, "Bold");
-    p.setPen(QColor(255,255,255,255));
-    p.drawText(QRect(dx - 30, dy - 30, 60, 60), Qt::AlignCenter, QString::number(gap));
-  }
+    int gap = params.getInt("LongitudinalPersonality") + 1;
+    gap = std::clamp(gap, 0, 4);
 
-  {
-    int dx = bx + 300 - 30;   // bx+270
-    int dy = by + 175 + 10;   // by+185
-    float ddy = 80.0f / 4.0f; // 20
+    // 숫자
+    int dx_num = bx + 220;
+    int dy_num = by + 77;
+    drawTextCenter((float)dx_num, (float)dy_num, QString::number(gap), 40, QColor(255,255,255,255), true, 2, 2);
 
-    QColor fill_col(0,255,0,210);
+    if (gap != last_gap) {
+      last_gap = gap;
+      startAnimText((float)dx_num, (float)dy_num, QString::number(gap), 40.f, QColor(255,255,255,255), "Inter");
+    }
+
+    // 바
+    int dx = bx + 270;
+    int dy = by + 185;
+    float ddy = 80.f / 4.f;
+
+    QColor fill(0,255,0,210);
     QColor white(255,255,255,255);
 
     for (int i = 0; i < gap; i++) {
-      QRect r((int)dx, (int)(dy - ddy*(i+1) + 2), 70, (int)(ddy - 2));
-      p.setPen(QPen(white, 3));
-      p.setBrush(fill_col);
-      p.drawRoundedRect(r, 4, 4);
+      QRectF r(dx, (dy - ddy*(i+1) + 2), 70, (ddy - 2));
+      qp_fill_rect(p, r, &fill, 4.f, 3.f, &white);
     }
   }
 
-  // =========================
-  // (7) 기어 박스 (NanoVG)
-  // dx=bx+305, dy=by+60
-  // rect: {dx-35, dy-70, 70, 80}, r=15, stroke 3 white, fill green(210)
-  // =========================
+  // ===== (7) 기어 박스 + 변경시 애니 =====
   {
+    static QString last_gear;
+
     int dx = bx + 305;
     int dy = by + 60;
 
@@ -1305,106 +1294,71 @@ void NvgWindow::drawLeftStatusPanel(QPainter &p) {
     else if (gs == cereal::CarState::GearShifter::BRAKE) gear_str = "B";
     else if (gs == cereal::CarState::GearShifter::ECO) gear_str = "E";
     else {
-      // DRIVE일 때 gearStep 있으면 숫자 표시(원 코드)
-      if (gs == cereal::CarState::GearShifter::DRIVE && car_state.getGearStep() > 0) {
-        gear_str = QString::number(car_state.getGearStep());
-      } else {
-        gear_str = "D";
-      }
+      if (gs == cereal::CarState::GearShifter::DRIVE && car_state.getGearStep() > 0) gear_str = QString::number(car_state.getGearStep());
+      else gear_str = "D";
     }
 
-    QRect r(dx - 35, dy - 70, 70, 80);
-    p.setPen(QPen(QColor(255,255,255,255), 3));
-    p.setBrush(QColor(0,255,0,210));
-    p.drawRoundedRect(r, 15, 15);
+    QRectF gr(dx - 35, dy - 70, 70, 80);
+    QColor fill(0,255,0,210);
+    QColor white(255,255,255,255);
+    qp_fill_rect(p, gr, &fill, 15.f, 3.f, &white);
 
-    configFont(p, "Inter", 70, "Bold");
-    p.setPen(QColor(255,255,255,255));
-    p.drawText(r, Qt::AlignCenter, gear_str);
+    drawTextCenter((float)dx, (float)dy, gear_str, 70, QColor(255,255,255,255), true, 2, 2);
+
+    if (gear_str != last_gear) {
+      last_gear = gear_str;
+      startAnimText((float)dx, (float)dy, gear_str, 70.f, QColor(255,255,255,255), "Inter");
+    }
   }
 
-  // =========================
-  // (8) APN/APM + ROUTE (NanoVG)
-  // dx=bx+200, dy=by+175
-  // active_carrot>=2 -> APN green, >=1 -> APM blue(210)
-  // nav_path_vertex_count>1 -> "ROUTE" dy-45
-  // =========================
+  // ===== (8) APN/APM + ROUTE =====
   {
     int dx = bx + 200;
     int dy = by + 175;
 
     if (active_carrot >= 2) {
-      drawRoundedBox(dx - 55, dy - 38, 110, 48, 15, 2, QColor(0,255,0,255), QColor(255,255,255,0));
-      configFont(p, "Inter", 40, "Bold");
-      p.setPen(QColor(255,255,255,255));
-      p.drawText(QRect(dx - 55, dy - 38, 110, 48), Qt::AlignCenter, "APN");
+      drawBadge(dx, dy, 110, 48, 15.f, QColor(0,255,0,255), 2.f, QColor(0,0,0,0),
+                "APN", 40, QColor(255,255,255,255), false);
     } else if (active_carrot >= 1) {
-      drawRoundedBox(dx - 55, dy - 38, 110, 48, 15, 2, QColor(0,160,255,210), QColor(255,255,255,0));
-      configFont(p, "Inter", 40, "Bold");
-      p.setPen(QColor(255,255,255,255));
-      p.drawText(QRect(dx - 55, dy - 38, 110, 48), Qt::AlignCenter, "APM");
+      drawBadge(dx, dy, 110, 48, 15.f, QColor(0,160,255,210), 2.f, QColor(0,0,0,0),
+                "APM", 40, QColor(255,255,255,255), false);
     }
 
     if (nav_path_vertex_count > 1) {
-      configFont(p, "Inter", 30, "Bold");
-      p.setPen(QColor(255,255,255,255));
-      p.drawText(QRect(dx - 55, (dy - 45) - 25, 110, 40), Qt::AlignCenter, "ROUTE");
+      drawTextCenter((float)dx, (float)(dy - 45), "ROUTE", 30, QColor(255,255,255,255), true, 2, 2);
     }
   }
 
-  // =========================
-  // (9) CAM/LIMIT 박스 (NanoVG)
-  // dx=bx+75, dy=by+175
-  // CAM: 빨강/노랑 깜빡 + 상단 "CAM"
-  // LIMIT: 초과시 red(210) 아니면 white(210) + "LIMIT"
-  // =========================
+  // ===== (9) CAM/LIMIT 박스 =====
   {
     int dx = bx + 75;
     int dy = by + 175;
 
     int disp_speed = 0;
-    QColor limit_fill(0,255,0,210);
+    QColor fill(0,255,0,210);
 
-    // NanoVG: camLimit이 있으면 CAM, 아니면 nRoadLimitSpeed
     if (camLimitSpeed > 0 && xSignType != 22) {
       disp_speed = (int)std::nearbyint(camLimitSpeed * (s->scene.is_metric ? 1.0 : KM_TO_MILE));
-      limit_fill = (blink_timer <= 8) ? QColor(201,34,49,210) : QColor(218,202,37,210);
-
-      configFont(p, "Inter", 30, "Bold");
-      p.setPen(QColor(255,255,255,255));
-      p.drawText(QRect(dx - 55, (dy - 45) - 25, 110, 40), Qt::AlignCenter, "CAM");
+      fill = (blink_timer <= 8) ? QColor(201,34,49,210) : QColor(218,202,37,210);
+      drawTextCenter((float)dx, (float)(dy - 45), "CAM", 30, QColor(255,255,255,255), true, 2, 2);
     } else {
-      disp_speed = nRoadLimitSpeed;
+      disp_speed = nRoadLimitSpeed_;
       disp_speed = (int)std::nearbyint(disp_speed * (s->scene.is_metric ? 1.0 : KM_TO_MILE));
-
       const float v_kph = v_ms * 3.6f;
-      limit_fill = (v_kph > disp_speed + 2) ? QColor(201,34,49,210) : QColor(255,255,255,210);
-
-      configFont(p, "Inter", 30, "Bold");
-      p.setPen(QColor(255,255,255,255));
-      p.drawText(QRect(dx - 55, (dy - 45) - 25, 110, 40), Qt::AlignCenter, "LIMIT");
+      fill = (v_kph > disp_speed + 2) ? QColor(201,34,49,210) : QColor(255,255,255,210);
+      drawTextCenter((float)dx, (float)(dy - 45), "LIMIT", 30, QColor(255,255,255,255), true, 2, 2);
     }
 
-    drawRoundedBox(dx - 55, dy - 38, 110, 48, 15, 2, limit_fill, QColor(255,255,255,0));
-    configFont(p, "Inter", 40, "Bold");
-    p.setPen(QColor(255,255,255,255));
-    p.drawText(QRect(dx - 55, dy - 38, 110, 48), Qt::AlignCenter, QString::number(disp_speed));
+    drawBadge(dx, dy, 110, 48, 15.f, fill, 2.f, QColor(0,0,0,0),
+              QString::number(disp_speed), 40, QColor(255,255,255,255), false);
   }
 
-  // =========================
-  // (10) Device State 3칸 (NanoVG)
-  // dx=bx-35, dy=by-200
-  // CPU/MEM/DISK or VOLT (disp_timer<32면 DISK, 아니면 VOLT)
-  // 경고: cpuTemp>80 or mem>85면 blink red
-  // =========================
+  // ===== (10) Device State 3칸 =====
   if (show_device_state) {
     int cpuTempAvg = 0;
     for (auto t : device.getCpuTempC()) cpuTempAvg += (int)t;
     if (device.getCpuTempC().size()) cpuTempAvg /= (int)device.getCpuTempC().size();
 
-    // memoryUsage/freeSpace/voltage/cpuTemp 변수는 drawHud에서 가져왔던 값이었음
-    // 여기서는 deviceState로 대체(가능한 범위에서)
-    // memoryUsage: device.getMemoryUsagePercent() 같은게 포크마다 다름 -> 없으면 기존 멤버 유지
     int memPct = memoryUsage;
     float freePct = freeSpace;
     float volt = voltage;
@@ -1412,34 +1366,34 @@ void NvgWindow::drawLeftStatusPanel(QPainter &p) {
     int dx = bx - 35;
     int dy = by - 200;
 
-    QColor mode_fill(0,255,0,190);
-    QColor warn_red(255,0,0,255);
+    QColor normal(0,255,0,190);
+    QColor red(255,0,0,255);
 
-    auto drawDevBox = [&](int cx, const QString &title, const QString &val, bool warn) {
-      QColor fill = (warn && blink_timer <= 8) ? warn_red : mode_fill;
-      drawRoundedBox(cx - 65, dy - 38, 130, 90, 15, 2, fill, QColor(255,255,255,0));
+    auto devBox = [&](int cx, const QString &title, const QString &val, bool warn) {
+      QColor fill = (warn && blink_timer <= 8) ? red : normal;
+      QRectF r(cx - 65, dy - 38, 130, 90);
+      qp_fill_rect(p, r, &fill, 15.f, 2.f, nullptr);
+
       configFont(p, "Inter", 25, "Bold");
       p.setPen(QColor(255,255,255,255));
       p.drawText(QRect(cx - 65, dy - 38, 130, 40), Qt::AlignCenter, title);
+
       configFont(p, "Inter", 40, "Bold");
       p.drawText(QRect(cx - 65, dy + 5, 130, 50), Qt::AlignCenter, val);
     };
 
-    drawDevBox(dx, "CPU", QString("%1° C").arg(cpuTempAvg), cpuTempAvg > 80);
-
+    devBox(dx, "CPU", QString("%1° C").arg(cpuTempAvg), cpuTempAvg > 80);
     dx += 150;
-    drawDevBox(dx, "MEM", QString("%1%").arg(memPct), memPct > 85);
-
+    devBox(dx, "MEM", QString("%1%").arg(memPct), memPct > 85);
     dx += 150;
-    if (disp_timer < 32) {
-      drawDevBox(dx, "DISK", QString("%1%").arg((int)std::nearbyint(100.0f - freePct)), false);
-    } else {
-      drawDevBox(dx, "VOLT", QString::asprintf("%.1fV", volt), false);
-    }
+
+    if (disp_timer < 32) devBox(dx, "DISK", QString("%1%").arg((int)std::nearbyint(100.0f - freePct)), false);
+    else devBox(dx, "VOLT", QString::asprintf("%.1fV", volt), false);
   }
 
   p.restore();
 }
+
 
 void NvgWindow::drawBrake(QPainter &p) {
   const SubMaster &sm = *(uiState()->sm);
