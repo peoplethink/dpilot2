@@ -3,21 +3,43 @@
 #include <QStackedLayout>
 #include <QWidget>
 #include <QElapsedTimer>
+#include <QMap>
+#include <QTimer>
+
 #include "selfdrive/common/util.h"
+#include "selfdrive/common/params.h"
 #include "selfdrive/ui/qt/widgets/cameraview.h"
 #include "selfdrive/ui/ui.h"
 
 #ifdef QCOM2
-#include <QTimer>
-#include <QMap>
 #include "selfdrive/ui/qt/screenrecorder/screenrecorder.h"
 #endif
+
+// ============================================================================
+// [ADD] NanoVG 스타일 Rect1 (공용 유틸)
+// - NanoVG 쪽과 동일한 좌표/계산을 Qt로 옮길 때 중복 제거용
+// ============================================================================
+typedef struct Rect1 {
+  int x, y, w, h;
+  int centerX() const { return x + w / 2; }
+  int centerY() const { return y + h / 2; }
+  int right()   const { return x + w; }
+  int bottom()  const { return y + h; }
+  bool ptInRect(int px, int py) const {
+    return px >= x && px < (x + w) && py >= y && py < (y + h);
+  }
+} Rect1;
+
+// [ADD] Rect1 -> QRectF 변환 helper
+static inline QRectF qrectf_from_rect1(const Rect1 &r) {
+  return QRectF((float)r.x, (float)r.y, (float)r.w, (float)r.h);
+}
 
 // ***** onroad widgets *****
 
 class OnroadHud : public QWidget {
   Q_OBJECT
-  Q_PROPERTY(bool engageable MEMBER engageable NOTIFY valueChanged); 
+  Q_PROPERTY(bool engageable MEMBER engageable NOTIFY valueChanged);
   Q_PROPERTY(int status MEMBER status NOTIFY valueChanged);
   Q_PROPERTY(float ang_str MEMBER ang_str NOTIFY valueChanged);
   Q_PROPERTY(bool compass MEMBER compass);
@@ -33,14 +55,14 @@ public:
   void updateState(const UIState &s);
 
 private:
-  void drawIcon(QPainter &p, int x, int y, QPixmap &img, QBrush bg, float opacity, bool rotation = false, float angle = 0 );
-  //void drawText(QPainter &p, int x, int y, const QString &text, int alpha = 255);
-  //void drawTextWithColor(QPainter &p, int x, int y, const QString &text, QColor& color);
+  void drawIcon(QPainter &p, int x, int y, QPixmap &img, QBrush bg, float opacity,
+                bool rotation = false, float angle = 0);
   void paintEvent(QPaintEvent *event) override;
+
   void drawCenteredText(QPainter &p, int x, int y, const QString &text, QColor color);
-  void drawVisionTurnControllerUI(QPainter &p, int x, int y, int size, const QColor &color, const QString &speed,
-                                  int alpha);
-  
+  void drawVisionTurnControllerUI(QPainter &p, int x, int y, int size,
+                                  const QColor &color, const QString &speed, int alpha);
+
   QPixmap engage_img;
   QPixmap experimental_img;
   QString vtcSpeed;
@@ -58,10 +80,10 @@ private:
   float bearingAccuracyDeg;
   bool showVTC = false;
   int traffic_state = 0;
-  
+
 protected:
   inline QColor blackColor(int alpha = 200) { return QColor(0, 0, 0, alpha); }
-  
+
 signals:
   void valueChanged();
 };
@@ -70,7 +92,7 @@ class OnroadAlerts : public QWidget {
   Q_OBJECT
 
 public:
-  OnroadAlerts(QWidget *parent = 0) : QWidget(parent) {};
+  OnroadAlerts(QWidget *parent = 0) : QWidget(parent) {}
   void updateAlert(const Alert &a);
 
 protected:
@@ -89,35 +111,41 @@ public:
   explicit NvgWindow(VisionStreamType type, QWidget* parent = 0);
   void updateState(const UIState &s);
   OnroadHud *hud;
- 
+
 private:
   void ui_draw_line(QPainter &painter, const line_vertices_data &vd);
-  
+
 protected:
   void paintGL() override;
   void initializeGL() override;
   void showEvent(QShowEvent *event) override;
   void updateFrameMat(int w, int h) override;
+
   void drawLaneLines(QPainter &painter, const UIState *s);
-  void drawLead(QPainter &painter, const cereal::RadarState::LeadData::Reader &lead_data, const QPointF &vd, int num);
+  void drawLead(QPainter &painter, const cereal::RadarState::LeadData::Reader &lead_data,
+                const QPointF &vd, int num);
+
   void drawIcon(QPainter &p, int x, int y, QPixmap &img, QBrush bg, float opacity);
-  
-  inline QColor redColor(int alpha = 200) { return QColor(201, 34, 49, alpha); }
-  inline QColor blackColor(int alpha = 200) { return QColor(0, 0, 0, alpha); }
-  inline QColor greenColor(int alpha = 200) { return QColor(49, 201, 34, alpha); }
-  inline QColor graceBlueColor(int alpha = 200) { return QColor (34, 49, 201, alpha); }
-  inline QColor skyBlueColor(int alpha = 200) { return QColor (135, 206, 230, alpha); }
-  inline QColor whiteColor(int alpha = 255) { return QColor(255, 255, 255, alpha); }
-  inline QColor tomatoColor(int alpha = 250) { return QColor (255, 99, 71, alpha); }
-  inline QColor yellowColor(int alpha = 255) { return QColor(255, 255, 0, alpha); }
-  inline QColor orangeColor(int alpha = 255) { return QColor(255, 165, 0, alpha); }
-  
+
+  inline QColor redColor(int alpha = 200)       { return QColor(201, 34, 49, alpha); }
+  inline QColor blackColor(int alpha = 200)     { return QColor(0, 0, 0, alpha); }
+  inline QColor greenColor(int alpha = 200)     { return QColor(49, 201, 34, alpha); }
+  inline QColor graceBlueColor(int alpha = 200) { return QColor(34, 49, 201, alpha); }
+  inline QColor skyBlueColor(int alpha = 200)   { return QColor(135, 206, 230, alpha); }
+  inline QColor whiteColor(int alpha = 255)     { return QColor(255, 255, 255, alpha); }
+  inline QColor tomatoColor(int alpha = 250)    { return QColor(255, 99, 71, alpha); }
+  inline QColor yellowColor(int alpha = 255)    { return QColor(255, 255, 0, alpha); }
+  inline QColor orangeColor(int alpha = 255)    { return QColor(255, 165, 0, alpha); }
+
   double prev_draw_t = 0;
   FirstOrderFilter fps_filter;
-  
+
   uint64_t last_update_params;
   QElapsedTimer leadPulseTimer;
-  
+
+  // ===== Params 캐시(중복 제거) =====
+  Params params;
+
   // neokii
   QPixmap ic_brake;
   QPixmap ic_autohold_warning;
@@ -129,13 +157,19 @@ protected:
   QPixmap ic_scc2;
   QPixmap ic_radar;
   QPixmap ic_radar_vision;
-  
+
   QPixmap ic_safety_speed_bump;
   QMap<QString, QPixmap> ic_oil_com;
-  
+
+  // [ADD] drawLeftStatusPanel에서 쓰는 아이콘들(기존 누락 보완)
+  QPixmap ic_speed_bg;
+  QPixmap ic_traffic_red;
+  QPixmap ic_traffic_green;
+
   void drawText(QPainter &p, int x, int y, const QString &text, int alpha = 255);
   void drawTextWithColor(QPainter &p, int x, int y, const QString &text, const QColor &color);
   void drawText2(QPainter &p, int x, int y, int flags, const QString &text, const QColor& color);
+
   void drawBottomIcons(QPainter &p);
   void drawTpms(QPainter &p);
   void drawBrake(QPainter &p);
@@ -143,16 +177,18 @@ protected:
   void drawGpsStatus(QPainter &p);
   void drawSteer(QPainter &p);
   void drawMisc(QPainter &p);
+
   void drawLeftStatusPanel(QPainter &p);
+
   void drawEngRpm(QPainter &p);
-  
+
   const int radius = 192;
   const int img_size = (radius / 2) * 1.5;
 
   float m_cur_speed = 0;
-  
+
 signals:
-  void resizeSignal(int w);  
+  void resizeSignal(int w);
 };
 
 // container for all onroad widgets
@@ -166,7 +202,6 @@ public:
 protected:
   void mousePressEvent(QMouseEvent* e) override;
   void mouseReleaseEvent(QMouseEvent* e) override;
-  
   void paintEvent(QPaintEvent *event) override;
 
 private:
@@ -177,7 +212,6 @@ private:
   QWidget *map = nullptr;
   QHBoxLayout* split;
 
-  // neokii
 #ifdef QCOM2
 private:
   ScreenRecoder* recorder;
