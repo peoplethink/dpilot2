@@ -1082,8 +1082,8 @@ void NvgWindow::drawLeftStatusPanel(QPainter &p) {
   drawTopBox(x + 290, soft_txt, soft_col);
 
   // ===== 현재속도 / 목표속도 =====
-  float cur_speed = std::max(0.0f,
-  car_state.getCluSpeedMs() * (s->scene.is_metric ? MS_TO_KPH : MS_TO_MPH));
+  const float v = car_state.getCluSpeedMs() * (s->scene.is_metric ? (float)MS_TO_KPH : (float)MS_TO_MPH);
+  float cur_speed = std::max(0.0f, v);
   if (cur_speed < 0) cur_speed = 0;
 
   float set_speed = cs.getVCruise() * (s->scene.is_metric ? 1.0 : KM_TO_MILE);
