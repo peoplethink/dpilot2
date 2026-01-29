@@ -64,6 +64,45 @@ class SccSmoother:
   def kph_to_clu(self, kph):
     return int(kph * CV.KPH_TO_MS * self.speed_conv_to_clu)
 
+  # =========================================================
+  # [ADD] DrivingMode 동기화 helper (UI는 Params("MyDrivingMode")만 읽음)
+  # =========================================================
+  def _set_my_driving_mode(self, mode: int):
+    mode = int(clip(int(mode), 1, 5))
+    if mode != getattr(self, "myDrivingMode", 3):
+      self.myDrivingMode = mode
+      # C++(onroad.cc)와 동기화
+      try:
+        self.params.put("MyDrivingMode", str(self.myDrivingMode))
+      except Exception:
+        pass
+
+  # =========================================================
+  # [ADD] Boot 1회 적용: InitMyDrivingMode(있으면) -> MyDrivingMode, remove
+  # - C++ drawLeftStatusPanel과 동일 정책
+  # =========================================================
+  def _apply_boot_init_mode_once(self):
+    try:
+      boot_mode = int(self.params.get("InitMyDrivingMode", encoding="utf8") or b"0")
+    except Exception:
+      boot_mode = 0
+
+    boot_mode = int(clip(boot_mode, 0, 5))
+    if 1 <= boot_mode <= 5:
+      try:
+        self.params.put("MyDrivingMode", str(boot_mode))
+        self.params.remove("InitMyDrivingMode")
+      except Exception:
+        pass
+
+      # 내부도 즉시 반영
+      if boot_mode == 5:
+        # AUTO는 기본 NORMAL(3) 시작 (원래 너 로직 유지)
+        if getattr(self, "myDrivingMode", 3) not in [2, 4]:
+          self.myDrivingMode = 3
+      else:
+        self.myDrivingMode = boot_mode
+
   def __init__(self):
     # Params 객체 재사용 (실시간 갱신용)
     self.params = Params()
@@ -164,6 +203,26 @@ class SccSmoother:
     # 내부 현재 모드
     self.myDrivingMode = self.initMyDrivingMode if self.initMyDrivingMode < 5 else 3
 
+    # =========================================================
+    # [ADD] Boot 1회 적용 우선 처리 (C++와 동일 정책)
+    # =========================================================
+    self._apply_boot_init_mode_once()
+
+    # =========================================================
+    # [ADD] UI와 초기 동기화: MyDrivingMode 파라미터가 있으면 그걸 우선
+    #      (없으면 내부값을 put)
+    # =========================================================
+    try:
+      p_mode = self.params.get("MyDrivingMode", encoding="utf8")
+      if p_mode is not None and len(p_mode) > 0:
+        try:
+          self.myDrivingMode = int(clip(int(p_mode), 1, 5))
+        except Exception:
+          pass
+    except Exception:
+      pass
+    self._set_my_driving_mode(self.myDrivingMode)
+
   def update_params_3(self, frame: int):
     if frame == self._params_frame:
       return
@@ -194,6 +253,19 @@ class SccSmoother:
       pass
     self.autoResumeFromBrakeReleaseTrafficSign = self.params.get_bool("AutoResumeFromBrakeReleaseTrafficSign")
 
+    # =========================================================
+    # [ADD] (옵션) 외부(UI/설정)에서 MyDrivingMode가 바뀌면 내부도 따라가게
+    #      - 수동 변경 반영용
+    # =========================================================
+    try:
+      p_mode = self.params.get("MyDrivingMode", encoding="utf8")
+      if p_mode is not None and len(p_mode) > 0:
+        p_mode_i = int(clip(int(p_mode), 1, 5))
+        if p_mode_i != self.myDrivingMode:
+          self.myDrivingMode = p_mode_i
+    except Exception:
+      pass
+
     # -----------------------------
     # ✅ (A안) InitMyDrivingMode 실시간 변경 반영
     # -----------------------------
@@ -207,14 +279,14 @@ class SccSmoother:
     if new_init_mode != self.initMyDrivingMode:
       self.initMyDrivingMode = new_init_mode
 
-      # 수동(1~4): 즉시 고정
+      # 수동(1~4): 즉시 고정 + UI 동기화
       if 1 <= self.initMyDrivingMode <= 4:
-        self.myDrivingMode = self.initMyDrivingMode
+        self._set_my_driving_mode(self.initMyDrivingMode)
 
-      # AUTO(5): 기본값은 NORMAL(3)에서 시작, 단 현재가 SAFE(2)/HIGH(4)면 유지(원래 너 로직)
+      # AUTO(5): 기본값은 NORMAL(3)에서 시작, 단 현재가 SAFE(2)/HIGH(4)면 유지
       elif self.initMyDrivingMode == 5:
         if self.myDrivingMode not in [2, 4]:
-          self.myDrivingMode = 3
+          self._set_my_driving_mode(3)
 
       self.drivingModeIndex = 0.0
 
@@ -566,6 +638,9 @@ class SccSmoother:
 
     return float(turnSpeed * CV.KPH_TO_MS)
 
+  # =========================================================
+  # [MOD] AUTO 모드 전환 시 _set_my_driving_mode()로 Params 동기화
+  # =========================================================
   def apilot_driving_mode(self, CS, dRel):
     a_ego = float(getattr(getattr(CS, "out", None), "aEgo", getattr(CS, "aEgo", 0.0)))
 
@@ -582,15 +657,15 @@ class SccSmoother:
 
     self.drivingModeIndex = self.drivingModeIndex * 0.999 + total_index * 0.001
 
-    # ✅ (A안) InitMyDrivingMode가 AUTO(5)일 때만 자동 전환
+    # ✅ InitMyDrivingMode가 AUTO(5)일 때만 자동 전환
     if self.initMyDrivingMode == 5 and self.drivingModeIndex > 0:
       # SAFE(2)/HIGH(4)로 고정해서 쓰는 케이스는 유지
       if self.myDrivingMode in [2, 4]:
         return
       if self.drivingModeIndex < 20:
-        self.myDrivingMode = 3  # 일반
+        self._set_my_driving_mode(3)  # 일반
       elif self.drivingModeIndex > 80:
-        self.myDrivingMode = 1  # 연비
+        self._set_my_driving_mode(1)  # 연비
 
   def cal_target_speed(self, CS, clu11_speed, controls):
     if not self.longcontrol:
