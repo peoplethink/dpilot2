@@ -128,6 +128,10 @@ static void drawAnimText(QPainter &p, const UIState *s) {
 }
 // ====== [ADD END] ================================================================
 
+// ===== [ADD] Gear animation state =====
+static QString g_prev_gear_draw_txt;
+static int64_t g_gear_anim_start_ms = 0;
+static constexpr int kGearAnimMs = 260;   // 애니 길이(ms)
 static inline bool calc_soft_hold_active(const cereal::ControlsState::Reader &cs,
                                          const cereal::CarState::Reader &car_state) {
   const float v_ego = car_state.getVEgo();
@@ -1104,8 +1108,7 @@ void NvgWindow::drawLeftStatusPanel(QPainter &p) {
   QPainterPath path;
   path.moveTo(x + 40, y + 250);
   path.cubicTo(x + 160, y + 200, x + 260, y + 320, x + 360, y + 260);
-  p.setPen(QPen(QColor(0, 255, 0, 180), 4));
-  p.drawPath(path);
+  p.setPen(QPen(QColor(0, 255, 0, 18
 
   // ===== 기어 =====
   QString gear = "D";
@@ -1119,23 +1122,48 @@ void NvgWindow::drawLeftStatusPanel(QPainter &p) {
   int cur_gear = (int)std::nearbyint(car_state.getCurrentGear());
   bool show_gear_num = (gear == "D") && (cur_gear >= 1 && cur_gear <= 8);
 
+  // D면 숫자만, 그 외는 P/R/N/D 문자
+  QString draw_txt = show_gear_num ? QString::number(cur_gear) : gear;
+
   QRect gr(x + w - 95, y + 155, 70, 110);
   p.setPen(QPen(Qt::white, 2));
   p.setBrush(QColor(0, 0, 0, 150));
   p.drawRoundedRect(gr, 12, 12);
 
-  if (show_gear_num) {
-    // D일 때 숫자만 표시
-    configFont(p, "Inter", 52, "Black");
-    p.setPen(QColor(0, 255, 0, 240));
-    p.drawText(gr, Qt::AlignCenter, QString::number(cur_gear));
-  }
-  else {
-    configFont(p, "Inter", 46, "Bold");
-    p.setPen(Qt::white);
-    p.drawText(gr, Qt::AlignCenter, gear);
+  // --- 기어 변경 감지 -> 애니메이션 시작 ---
+  if (g_prev_gear_draw_txt.isEmpty()) g_prev_gear_draw_txt = draw_txt;
+  if (draw_txt != g_prev_gear_draw_txt) {
+    g_prev_gear_draw_txt = draw_txt;
+    g_gear_anim_start_ms = (int64_t)millis_since_boot();
   }
 
+  // --- 애니메이션 파라미터 (팝 + 페이드) ---
+  const int64_t now_ms = (int64_t)millis_since_boot();
+  float t = 1.0f;
+  if (g_gear_anim_start_ms > 0) {
+    const float dt = (float)(now_ms - g_gear_anim_start_ms);
+    t = std::clamp(dt / (float)kGearAnimMs, 0.0f, 1.0f);
+    if (t >= 1.0f) g_gear_anim_start_ms = 0;
+  }
+
+  // easeOutBack 느낌의 "팝" (간단 버전)
+  // scale: 1.0 -> 1.18 -> 1.0
+  float pop = 1.0f + 0.18f * (1.0f - t) * std::sin((1.0f - t) * 3.1415926f);
+  // alpha: 255 -> 200 -> 255 (살짝 깜빡이는 느낌)
+  int a = (int)std::nearbyint(255.0f - 55.0f * (1.0f - t));
+
+  // --- 텍스트 스타일: D(숫자)면 초록, 그 외 흰색 ---
+  QColor txt_col = show_gear_num ? QColor(0, 255, 0, a) : QColor(255, 255, 255, a);
+
+  // 폰트 크기: 기존(숫자 52 / 문자 46) 기준으로 pop 스케일 적용
+  int base_px = show_gear_num ? 52 : 46;
+  int px = std::clamp((int)std::nearbyint(base_px * pop), base_px, base_px + 14);
+
+  // 중앙 정렬로 그리기
+  configFont(p, "Inter", px, show_gear_num ? "Black" : "Bold");
+  p.setPen(txt_col);
+  p.drawText(gr, Qt::AlignCenter, draw_txt);
+	
   // ===== Driving Mode =====
   QString mode = "일반";
   switch (cs.getMyDrivingMode()) {
