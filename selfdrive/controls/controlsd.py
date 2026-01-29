@@ -394,7 +394,7 @@ class Controls:
 
   mode = None
 
-  # ✅ 런타임( force=False )에는 MyDrivingMode를 우선 반영 (UI 변경 즉시 반영)
+  # 런타임에는 MyDrivingMode 우선
   try:
     v = self.params.get("MyDrivingMode", encoding="utf8")
     if v is not None and len(v):
@@ -402,7 +402,7 @@ class Controls:
   except Exception:
     pass
 
-  # ✅ 초기 1회(force=True)에는 MyDrivingMode가 없을 때만 InitMyDrivingMode를 fallback
+  # 초기 1회(force=True)일 때만 InitMyDrivingMode fallback
   if (mode is None) and force:
     try:
       v = self.params.get("InitMyDrivingMode", encoding="utf8")
