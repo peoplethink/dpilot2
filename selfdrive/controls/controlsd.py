@@ -387,14 +387,23 @@ class Controls:
     self.prof = Profiler(False)
 
   def _update_my_driving_mode_from_params(self, force: bool = False):
-    # 너무 자주 읽지 않도록 10프레임(0.1s)마다 갱신
-    if (not force) and (self._md_mode_read_cnt % 10 != 0):
-      self._md_mode_read_cnt += 1
-      return
+  # 너무 자주 읽지 않도록 10프레임(0.1s)마다 갱신
+  if (not force) and (self._md_mode_read_cnt % 10 != 0):
+    self._md_mode_read_cnt += 1
+    return
 
-    mode = None
+  mode = None
 
-    # 1) InitMyDrivingMode (1~5)
+  # ✅ 런타임( force=False )에는 MyDrivingMode를 우선 반영 (UI 변경 즉시 반영)
+  try:
+    v = self.params.get("MyDrivingMode", encoding="utf8")
+    if v is not None and len(v):
+      mode = int(v)
+  except Exception:
+    pass
+
+  # ✅ 초기 1회(force=True)에는 MyDrivingMode가 없을 때만 InitMyDrivingMode를 fallback
+  if (mode is None) and force:
     try:
       v = self.params.get("InitMyDrivingMode", encoding="utf8")
       if v is not None and len(v):
@@ -402,29 +411,26 @@ class Controls:
     except Exception:
       pass
 
-    # 2) fallback: MyDrivingMode (기존 키 호환)
-    if mode is None:
-      try:
-        v = self.params.get("MyDrivingMode", encoding="utf8")
-        if v is not None and len(v):
-          mode = int(v)
-      except Exception:
-        pass
+  if mode is not None:
+    self.myDrivingMode = int(mode)
 
-    if mode is not None:
-      self.myDrivingMode = int(mode)
-    self.myDrivingMode = int(clip(int(self.myDrivingMode), 1, 5))
+  # 범위 보정
+  try:
+    self.myDrivingMode = int(self.myDrivingMode)
+  except Exception:
+    self.myDrivingMode = 3
+  self.myDrivingMode = int(clip(int(self.myDrivingMode), 1, 5))
 
-    # --- MySafeModeFactor (10~100 [%]) -> 0.1~1.0 ---
-    try:
-      ms = self.params.get("MySafeModeFactor", encoding="utf8")
-      if ms is not None and len(ms):
-        self.mySafeModeFactor = float(int(ms)) / 100.0
-    except Exception:
-      pass
-    self.mySafeModeFactor = float(clip(float(self.mySafeModeFactor), 0.1, 1.0))
+  # --- MySafeModeFactor (10~100 [%]) -> 0.1~1.0 ---
+  try:
+    ms = self.params.get("MySafeModeFactor", encoding="utf8")
+    if ms is not None and len(ms):
+      self.mySafeModeFactor = float(int(ms)) / 100.0
+  except Exception:
+    pass
+  self.mySafeModeFactor = float(clip(float(self.mySafeModeFactor), 0.1, 1.0))
 
-    self._md_mode_read_cnt += 1
+  self._md_mode_read_cnt += 1
 
   def send_apilot_event(self, eventName, waiting=20.0):
     # CruiseHelper와 동일: 마지막 이벤트 후 waiting초 경과 시에만 발생
