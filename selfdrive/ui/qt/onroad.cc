@@ -1322,7 +1322,7 @@ void NvgWindow::drawLeftStatusPanel(QPainter &p) {
     QColor white(255,255,255,255);
     qp_fill_rect(p, gr, &fill, 15.f, 3.f, &white);
 
-    drawTextCenter((float)dx, (float)dy, gear_str, 70, QColor(255,255,255,255), true, 2, 2);
+    drawTextCenter((float)dx, (float)dy, draw_txt, 70, QColor(255,255,255,255), true, 2, 2);
 
     if (draw_txt != last_gear) {
       last_gear = draw_txt;
