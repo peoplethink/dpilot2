@@ -1125,16 +1125,12 @@ void NvgWindow::drawLeftStatusPanel(QPainter &p) {
   p.drawRoundedRect(gr, 12, 12);
 
   if (show_gear_num) {
-    configFont(p, "Inter", 44, "Bold");
-    p.setPen(Qt::white);
-    p.drawText(QRect(gr.x(), gr.y() + 6, gr.width(), 50),
-               Qt::AlignCenter, "D");
-
-    configFont(p, "Inter", 42, "Black");
+    // D일 때 숫자만 표시
+    configFont(p, "Inter", 52, "Black");
     p.setPen(QColor(0, 255, 0, 240));
-    p.drawText(QRect(gr.x(), gr.y() + 55, gr.width(), 50),
-               Qt::AlignCenter, QString::number(cur_gear));
-  } else {
+    p.drawText(gr, Qt::AlignCenter, QString::number(cur_gear));
+  }
+  else {
     configFont(p, "Inter", 46, "Bold");
     p.setPen(Qt::white);
     p.drawText(gr, Qt::AlignCenter, gear);
