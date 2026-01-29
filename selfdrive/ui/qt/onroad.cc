@@ -1166,23 +1166,41 @@ void NvgWindow::drawLeftStatusPanel(QPainter &p) {
   p.drawText(gr, Qt::AlignCenter, draw_txt);
 	
   // ===== Driving Mode =====
-  QString mode = "일반";
-  switch (cs.getMyDrivingMode()) {
-    case 1: mode = "연비"; break;
-    case 2: mode = "안전"; break;
-    case 3: mode = "일반"; break;
-    case 4: mode = "고속"; break;
+  // UI: Params "MyDrivingMode" (1:ECO,2:SAFE,3:NORMAL,4:HIGH,5:AUTO)
+  // controlsState.myDrivingMode 로 전달된 값을 표시
+  int dm = (int)cs.getMyDrivingMode();
+  dm = std::clamp(dm, 1, 5);
+
+  QString mode_txt = "NORMAL";
+  QString mode_kr  = "일반";
+  QColor  mode_col = QColor(255, 255, 255, 230);
+
+  switch (dm) {
+    case 1: mode_txt = "ECO";    mode_kr = "연비"; mode_col = QColor(  0, 255, 120, 240); break;
+    case 2: mode_txt = "SAFE";   mode_kr = "안전"; mode_col = QColor( 80, 200, 255, 240); break;
+    case 3: mode_txt = "NORMAL"; mode_kr = "일반"; mode_col = QColor(255, 255, 255, 235); break;
+    case 4: mode_txt = "HIGH";   mode_kr = "고속"; mode_col = QColor(255, 200,  80, 240); break;
+    case 5: mode_txt = "AUTO";   mode_kr = "AUTO"; mode_col = QColor(200, 120, 255, 240); break;
     default: break;
   }
 
-  configFont(p, "Inter", 28, "Bold");
-  p.setPen(QColor(255, 255, 255, 230));
-  p.drawText(QRect(x + 30, y + h - 140, 160, 50),
-             Qt::AlignCenter, mode);
+  // 표시 영역
+  QRect dm_rc(x + 30, y + h - 140, 160, 50);
 
-  // =============================================================================
-  // [반영] nanovg 로직: limit_speed/left_dist/roadLimitSpeed (턴인포 제거)
-  // cam > section > road 우선
+  // (선택) 배경 배지처럼 보이게
+  p.setPen(Qt::NoPen);
+  p.setBrush(QColor(0, 0, 0, 120));
+  p.drawRoundedRect(dm_rc.adjusted(-6, -4, +6, +4), 12, 12);
+
+  // 텍스트
+  configFont(p, "Inter", 26, "Bold");
+  p.setPen(mode_col);
+  // 1) 한글
+  p.drawText(dm_rc, Qt::AlignCenter, mode_kr);
+
+  // 2) 영문으로 쓰고 싶으면 위 줄 대신 이 줄
+  //p.drawText(dm_rc, Qt::AlignCenter, mode_txt);
+	
   // =============================================================================
   int limit_speed = 0;
   int left_dist = 0;
