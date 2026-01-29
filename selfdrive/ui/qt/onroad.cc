@@ -1050,6 +1050,14 @@ void NvgWindow::drawLeftStatusPanel(QPainter &p) {
   const auto device = sm["deviceState"].getDeviceState();
 
   Params params;
+  const int boot_mode = params.getInt("InitMyDrivingMode");
+  if (boot_mode >= 1 && boot_mode <= 5) {
+    params.put("MyDrivingMode", std::to_string(boot_mode));
+    params.remove("InitMyDrivingMode");
+  }
+
+  myDrivingMode = params.getInt("MyDrivingMode");
+  if (myDrivingMode < 1 || myDrivingMode > 5) myDrivingMode = 3;
   const int show_device_state = params.getInt("ShowDeviceState");
 
   // ===== NanoVG drawHud() 좌표계 그대로 =====
@@ -1207,36 +1215,38 @@ void NvgWindow::drawLeftStatusPanel(QPainter &p) {
     }
   }
 
-  // ===== (5) Driving Mode
+  // ===== (5) Driving Mode 배지 (1:ECO,2:SAFE,3:NORMAL,4:HIGH,5:AUTO) =====
   {
     static QString last_mode;
 
     int dx = bx - 50;
     int dy = by + 175;
 
-    int driving_mode = myDrivingMode;
-    QString mode_txt = "ERRM";
-    QColor mode_fill(0,255,0,210);
+    const int driving_mode = myDrivingMode;  // 위에서 Params로 갱신됨
+    QString mode_txt = "NORMAL";
+    QColor mode_fill(128,128,128,210);
     QColor mode_text(255,255,255,255);
 
     switch (driving_mode) {
-      case 1: mode_txt="ECO";  mode_fill=QColor(0,255,0,210); break;
-      case 2: mode_txt="SAFE"; mode_fill=QColor(255,165,0,210); break;
-      case 3: mode_txt="NORM"; mode_fill=QColor(128,128,128,210); break;
-      case 4: mode_txt="FAST"; mode_fill=QColor(201,34,49,210); break;
+      case 1: mode_txt="연비";    mode_fill=QColor(0, 255, 0, 210);     break;
+      case 2: mode_txt="안전";   mode_fill=QColor(255, 165, 0, 210);   break;
+      case 3: mode_txt="일반"; mode_fill=QColor(128, 128, 128, 210); break;
+      case 4: mode_txt="고속";   mode_fill=QColor(201, 34, 49, 210);   break;
+      case 5: mode_txt="AUTO";   mode_fill=QColor(0, 160, 255, 210);   break;
       default: break;
     }
 
     // 배지
-    drawBadge(dx, dy - 14, 110, 48, 15.f, mode_fill, 2.f, QColor(0,0,0,0),
-              mode_txt, 32, mode_text, false);
+    drawBadge(dx, dy - 14, 140, 48, 15.f, mode_fill, 2.f, QColor(0,0,0,0),
+              mode_txt, 30, mode_text, false);
 
-    // 값 변경 시 애니 (NanoVG driving_mode_str_last 대응)
+    // 값 변경 시 애니
     if (mode_txt != last_mode) {
       last_mode = mode_txt;
       startAnimText((float)dx, (float)dy, mode_txt, 30.f, QColor(255,255,255,255), "Inter");
     }
   }
+
 
   // ===== (6) GAP 숫자 + 세로바 (중복 제거) =====
   {
