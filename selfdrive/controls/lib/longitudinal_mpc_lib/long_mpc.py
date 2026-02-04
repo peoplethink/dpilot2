@@ -537,25 +537,30 @@ class LongitudinalMpc:
       
   def update_gap_tf(self, controls, v_ego, a_ego):
     v_ego_kph = v_ego * CV.MS_TO_KPH
-
     self.applyCruiseGap = clip(controls.longCruiseGap, 1, 4)
+
     if self.openpilotLongitudinalControl:
-      if v_ego_kph >= self.v_ego_kph_prev: # 감속일때는 t_follow(gap) 계산안함.
-        cruiseGap_dict = {
-          1: self.tFollowGap1,
-          2: self.tFollowGap2,
-          3: self.tFollowGap3,
-          4: self.tFollowGap4,
-          }
-        tf = cruiseGap_dict[self.applyCruiseGap]
-        cruiseGapRatio = interp(v_ego_kph, [0, 100], [tf, tf * self.tFollowSpeedRatio]) 
-        self.t_follow = max(0.6, cruiseGapRatio * (2.0 - self.mySafeModeFactor)) 
+      cruiseGap_dict = {
+        1: self.tFollowGap1,
+        2: self.tFollowGap2,
+        3: self.tFollowGap3,
+        4: self.tFollowGap4,
+      }
+      tf = cruiseGap_dict[int(self.applyCruiseGap)]
+
+      cruiseGapRatio = interp(v_ego_kph, [0, 100], [tf, tf * self.tFollowSpeedRatio])
+      target_t_follow = max(0.6, cruiseGapRatio * (2.0 - self.mySafeModeFactor))
+
+      alpha = 0.25
+      self.t_follow = (1.0 - alpha) * self.t_follow + alpha * target_t_follow
+
     else:
       if self.status:
         if v_ego_kph < 0.1:
           self.applyCruiseGap = 1
         else:
-          self.applyCruiseGap = int(interp(a_ego, [-1.5, -0.5], [4, self.applyCruiseGap]))
+          forced_gap = int(interp(a_ego, [-1.5, -0.5], [3, self.applyCruiseGap]))
+          self.applyCruiseGap = int(clip(forced_gap, 1, 3))
 
     self.v_ego_kph_prev = v_ego_kph
 
