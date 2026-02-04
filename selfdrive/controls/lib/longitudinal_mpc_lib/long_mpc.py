@@ -63,7 +63,7 @@ ACCEL_MIN = -4.0
 ACCEL_MAX = 2.0
 T_FOLLOW = 1.45
 COMFORT_BRAKE = 2.5
-STOP_DISTANCE = 6.5
+STOP_DISTANCE = 6.0
 
 def get_stopped_equivalence_factor(v_lead, v_ego, t_follow=T_FOLLOW, stop_distance=STOP_DISTANCE, krkeegan=False):
   if not krkeegan:
@@ -211,7 +211,7 @@ class LongitudinalMpc:
     self.trafficStopMode = 1
     self.softHoldMode = 1
     self.tFollowSpeedRatio = 1.2
-    self.tFollowGap1 = 1.1
+    self.tFollowGap1 = 1.0
     self.tFollowGap2 = 1.2
     self.tFollowGap3 = 1.4
     self.tFollowGap4 = 1.6
