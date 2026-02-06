@@ -803,35 +803,52 @@ void NvgWindow::drawLaneLines(QPainter &painter, const UIState *s) {
     //painter.drawPolygon(scene.road_edge_vertices[i].v, scene.road_edge_vertices[i].cnt);
   }
 	
-  // paint path
-  QLinearGradient bg(0, height(), 0, height() / 4);
-  float start_hue, end_hue;
-  if (sm["controlsState"].getControlsState().getExperimentalMode()) {
-    const auto &acceleration = sm["modelV2"].getModelV2().getAcceleration();
-    float acceleration_future = 0;
-    if (acceleration.getZ().size() > 16) {
-      acceleration_future = acceleration.getX()[16];  // 2.5 seconds
-    }
-    start_hue = 60;
-    // speed up: 120, slow down: 0
-    end_hue = fmax(fmin(start_hue + acceleration_future * 45, 148), 0);
+// paint path
+QLinearGradient bg(0, height(), 0, height() / 4);
+float start_hue, end_hue;
 
-    // FIXME: painter.drawPolygon can be slow if hue is not rounded
-    end_hue = int(end_hue * 100 + 0.5) / 100;
-
-    bg.setColorAt(0.0, QColor::fromHslF(start_hue / 360., 0.97, 0.56, 0.4));
-    bg.setColorAt(0.5, QColor::fromHslF(end_hue / 360., 1.0, 0.68, 0.35));
-    bg.setColorAt(1.0, QColor::fromHslF(end_hue / 360., 1.0, 0.68, 0.0));
-  } else {
-    bg.setColorAt(0.0, QColor::fromHslF(148 / 360., 0.94, 0.51, 0.4));
-    bg.setColorAt(0.5, QColor::fromHslF(112 / 360., 1.0, 0.68, 0.35));
-    bg.setColorAt(1.0, QColor::fromHslF(112 / 360., 1.0, 0.68, 0.0));
+if (sm["controlsState"].getControlsState().getExperimentalMode()) {
+  const auto &acceleration = sm["modelV2"].getModelV2().getAcceleration();
+  float acceleration_future = 0;
+  if (acceleration.getZ().size() > 16) {
+    acceleration_future = acceleration.getX()[16];  // 2.5 seconds
   }
-	  
-  painter.setBrush(bg);
-  ui_draw_line( painter, scene.track_vertices );
-	
-  painter.restore();
+
+  start_hue = 60;
+  // speed up: 120, slow down: 0
+  end_hue = fmax(fmin(start_hue + acceleration_future * 45, 148), 0);
+
+  // FIXME: painter.drawPolygon can be slow if hue is not rounded
+  end_hue = int(end_hue * 100 + 0.5) / 100;
+
+  // ✅ dynamicLaneProfileStatus 반영
+  bg.setColorAt(0.0, scene.lateralPlan.dynamicLaneProfileStatus
+                      ? QColor::fromHslF(start_hue / 360., 0.97, 0.56, 0.4)
+                      : QColor::fromHslF(216 / 360., 0.94, 0.51, 0.4));
+  bg.setColorAt(0.5, scene.lateralPlan.dynamicLaneProfileStatus
+                      ? QColor::fromHslF(end_hue / 360., 1.0, 0.68, 0.35)
+                      : QColor::fromHslF(190 / 360., 1.0, 0.68, 0.35));
+  bg.setColorAt(1.0, scene.lateralPlan.dynamicLaneProfileStatus
+                      ? QColor::fromHslF(end_hue / 360., 1.0, 0.68, 0.0)
+                      : QColor::fromHslF(190 / 360., 1.0, 0.68, 0.0));
+
+} else {
+  // ✅ non-experimental 색도 dynamicLaneProfileStatus 반영 (위 코드와 동일한 톤으로)
+  bg.setColorAt(0.0, scene.lateralPlan.dynamicLaneProfileStatus
+                      ? QColor::fromHslF(148 / 360., 0.94, 0.51, 0.4)
+                      : QColor::fromHslF(216 / 360., 0.94, 0.51, 0.4));
+  bg.setColorAt(0.5, scene.lateralPlan.dynamicLaneProfileStatus
+                      ? QColor::fromHslF(112 / 360., 1.0, 0.68, 0.35)
+                      : QColor::fromHslF(190 / 360., 1.0, 0.68, 0.35));
+  bg.setColorAt(1.0, scene.lateralPlan.dynamicLaneProfileStatus
+                      ? QColor::fromHslF(112 / 360., 1.0, 0.68, 0.0)
+                      : QColor::fromHslF(190 / 360., 1.0, 0.68, 0.0));
+}
+
+painter.setBrush(bg);
+ui_draw_line(painter, scene.track_vertices);
+
+painter.restore();
 }
 
 void NvgWindow::drawLead(QPainter &painter,
