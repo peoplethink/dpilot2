@@ -105,7 +105,8 @@ def manager_init() -> None:
     ("ALeadTau", "150"), 
     ("ALeadTauStart", "50"),
     ("ApplyLongDynamicCost", "0"),
-    ("TFollowSpeedRatio", "110"),
+    ("TFollowSpeedAdd", "0"),     # /100 => +0.00s @100kph
+    ("TFollowSpeedAddM", "0"),    # /100 => +0.00s @40kph
     ("TFollowGap1", "110"),
     ("TFollowGap2", "120"),
     ("TFollowGap3", "140"),
