@@ -301,11 +301,11 @@ class LongitudinalMpc:
   def get_cost_multipliers(self, v_lead0, v_lead1):
     v_ego = self.x0[1]
     v_ego_bps = [0.0, 10.0]
-    TFs = [1.2, 1.45, 1.8]
+    TFs = [0.8, 1.2, 1.45]
 
-    a_change_tf = interp(self.t_follow, TFs, [.8, 1., 1.1])
-    j_ego_tf = interp(self.t_follow, TFs, [.8, 1., 1.1])
-    d_zone_tf = interp(self.t_follow, TFs, [1.3, 1., 1.])
+    a_change_tf = interp(self.t_follow, TFs, [.9, 1., 1.0])
+    j_ego_tf = interp(self.t_follow, TFs, [.5, 1., 1.0])
+    d_zone_tf = interp(self.t_follow, TFs, [1.1, 1., 1.0])
 
     j_ego_v_ego = 1.0
     a_change_v_ego = 1.0
