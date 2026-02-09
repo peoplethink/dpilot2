@@ -249,6 +249,8 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"LaneChangeEnabled", PERSISTENT},
     {"ApplyLongDynamicCost", PERSISTENT},
     {"TFollowSpeedRatio", PERSISTENT},
+    {"TFollowSpeedAdd", PERSISTENT},     // 80 -> 0.80 (예: +0.80s @100kph)
+    {"TFollowSpeedAddM", PERSISTENT},    // 30 -> 0.30 (예: +0.30s @40kph)
     {"TFollowGap1", PERSISTENT},
     {"TFollowGap2", PERSISTENT},
     {"TFollowGap3", PERSISTENT},
