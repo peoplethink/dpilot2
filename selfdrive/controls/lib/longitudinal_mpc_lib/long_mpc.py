@@ -518,7 +518,6 @@ class LongitudinalMpc:
       self.trafficStopMode = int(Params().get("TrafficStopMode", encoding="utf8"))
       self.stopDistance = float(int(Params().get("StopDistance", encoding="utf8"))) / 100.0
 
-    # ✅ Add / AddM 파람 로드 (첫번째 코드와 동일)
     elif self.lo_timer == 100:
       self.tFollowSpeedAdd = float(int(Params().get("TFollowSpeedAdd", encoding="utf8"))) / 100.0
       self.tFollowSpeedAddM = float(int(Params().get("TFollowSpeedAddM", encoding="utf8"))) / 100.0
@@ -535,7 +534,6 @@ class LongitudinalMpc:
       self.applyModelDistOrder = int(Params().get("ApplyModelDistOrder", encoding="utf8"))
       self.trafficStopAdjustRatio = float(int(Params().get("TrafficStopAdjustRatio", encoding="utf8"))) / 100.0
 
-  # ✅ Add / AddM 버전 tfollow 계산 (첫번째 코드 그대로)
   def update_gap_tf(self, controls, v_ego, a_ego):
     v_ego_kph = v_ego * CV.MS_TO_KPH
 
@@ -551,12 +549,8 @@ class LongitudinalMpc:
         }
         tf = cruiseGap_dict[self.applyCruiseGap]
 
-        cruiseGapRatio = interp(
-          v_ego_kph,
-          [0, 40, 100],
-          [tf, tf + self.tFollowSpeedAddM, tf + self.tFollowSpeedAdd]
-        )
-        self.t_follow = max(0.6, cruiseGapRatio)
+        cruiseGapRatio = interp(v_ego_kph, [0, 40, 100], [tf, tf + self.tFollowSpeedAddM, tf + self.tFollowSpeedAdd])
+        self.t_follow = max(0.6, cruiseGapRatio * (2.0 - self.mySafeModeFactor))
     else:
       if self.status:
         if v_ego_kph < 0.1:
