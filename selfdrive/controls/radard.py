@@ -18,7 +18,7 @@ from common.params import Params
 import numpy as np
 
 # Default lead acceleration decay set to 50% at 1s
-_LEAD_ACCEL_TAU = 2.0
+_LEAD_ACCEL_TAU = 1.5
 
 # radar tracks
 SPEED, ACCEL = 0, 1   # Kalman filter states enum
