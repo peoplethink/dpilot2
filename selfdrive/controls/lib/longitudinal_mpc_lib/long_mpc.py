@@ -526,7 +526,7 @@ class LongitudinalMpc:
       self.tFollowGap4 = float(int(Params().get("TFollowGap4", encoding="utf8"))) / 100.0
 
     elif self.lo_timer == 120:
-      self.mySafeModeFactor = float(int(self.params.get("MySafeModeFactor", encoding="utf8"))) / 100.0
+      self.mySafeModeFactor = float(int(Params().get("MySafeModeFactor", encoding="utf8"))) / 100.0
     elif self.lo_timer == 140:
       self.softHoldMode = int(Params().get("SoftHoldMode", encoding="utf8"))
     elif self.lo_timer == 160:
