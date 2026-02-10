@@ -132,6 +132,7 @@ def manager_init() -> None:
     ("TrafficStopModelSpeed", "0"),         
     ("TrafficStopMode", "2"),
     ("InitMyDrivingMode", "3"),
+    ("MyDrivingMode", "3"),
     ("CruiseMaxVals1", "160"),
     ("CruiseMaxVals2", "120"),
     ("CruiseMaxVals3", "100"),
