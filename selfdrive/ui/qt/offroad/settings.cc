@@ -877,7 +877,7 @@ TUNINGPanel::TUNINGPanel(QWidget* parent) : QWidget(parent) {
 
     toggleLayout->addWidget(new LabelControl("〓〓〓〓〓〓〓〓【 롱컨메뉴 】〓〓〓〓〓〓〓〓", ""));
     toggleLayout->addWidget(new CValueControl("StopDistance", "StopDistance(600cm)", "선행차와 정지하는 거리를 입력합니다.", "../assets/offroad/icon_road.png", 200, 1000, 50));
-    toggleLayout->addWidget(new CValueControl("MyDrivingMode", "DRIVEMODE: LIVE(3)", "1:ECO,2:SAFE,3:NORMAL,4:HIGH,5:AUTO", "../assets/offroad/icon_road.png", 1, 5, 1)));
+    toggleLayout->addWidget(new CValueControl("MyDrivingMode", "DRIVEMODE: LIVE(3)", "1:ECO,2:SAFE,3:NORMAL,4:HIGH,5:AUTO", "../assets/offroad/icon_road.png", 1, 5, 1));
     toggleLayout->addWidget(new CValueControl("MySafeModeFactor", "DRIVEMODE: SAFE ratio(80%)", "Accel/StopDistance/DecelRatio/Gap control ratio", "../assets/offroad/icon_road.png", 10, 100, 5));
     toggleLayout->addWidget(new CValueControl("MyEcoModeFactor", "DRIVEMODE: ECO Accel ratio(80%)", "Acceleartion ratio in ECO mode", "../assets/offroad/icon_road.png", 10, 95, 5));
     toggleLayout->addWidget(new CValueControl("SoftHoldMode", "SoftHold(1)", "0:Not used,1:Use,2: with SCC(단,사이드가 걸리는 차량이 있음)", "../assets/offroad/icon_road.png", 0, 2, 1));
