@@ -356,14 +356,6 @@ class Controls:
     self.dRel = 0.0
     self.vRel = 0.0
 
-    # ✅ UI에서만 반영할 값들
-    self.myDrivingMode = 3          # 1:ECO 2:SAFE 3:NORMAL 4:HIGH 5:AUTO
-    self.mySafeModeFactor = 1.0     # 0.1~1.0
-    self._md_mode_read_cnt = 0      # param read counter
-
-    # 초기 1회 로드
-    self._update_my_driving_mode_from_params(force=True)
-
     # TODO: no longer necessary, aside from process replay
     self.sm['liveParameters'].valid = True
 
@@ -385,33 +377,6 @@ class Controls:
 
     self.rk = Ratekeeper(100, print_delay_threshold=None)
     self.prof = Profiler(False)
-
-  # ✅ UI(Params)에서 MyDrivingMode + MySafeModeFactor 읽어 실시간 반영
-  def _update_my_driving_mode_from_params(self, force: bool = False):
-    # 너무 자주 읽지 않도록 10프레임(0.1s)마다 갱신
-    if (not force) and (self._md_mode_read_cnt % 10 != 0):
-      self._md_mode_read_cnt += 1
-      return
-
-    # MyDrivingMode (1~5)
-    try:
-      v = self.params.get("MyDrivingMode", encoding="utf8")
-      if v is not None and len(v):
-        self.myDrivingMode = int(v)
-    except Exception:
-      pass
-    self.myDrivingMode = int(clip(int(self.myDrivingMode), 1, 5))
-
-    # MySafeModeFactor (10~100 [%]) -> 0.1~1.0
-    try:
-      ms = self.params.get("MySafeModeFactor", encoding="utf8")
-      if ms is not None and len(ms):
-        self.mySafeModeFactor = float(int(ms)) / 100.0
-    except Exception:
-      pass
-    self.mySafeModeFactor = float(clip(float(self.mySafeModeFactor), 0.1, 1.0))
-
-    self._md_mode_read_cnt += 1
 
   def send_apilot_event(self, eventName, waiting=20.0):
     # CruiseHelper와 동일: 마지막 이벤트 후 waiting초 경과 시에만 발생
@@ -706,19 +671,6 @@ class Controls:
     SccSmoother.update_cruise_buttons(self, CS, self.CP.openpilotLongitudinalControl)
 
     self._update_long_cruise_gap_from_buttons(CS.buttonEvents)
-
-    # myDrivingMode/mySafeModeFactor는 step()에서 Params로 갱신됨 (여긴 안전 캐스팅만)
-    try:
-      self.myDrivingMode = int(self.myDrivingMode)
-    except Exception:
-      self.myDrivingMode = 3
-    self.myDrivingMode = int(clip(self.myDrivingMode, 1, 5))
-
-    try:
-      self.mySafeModeFactor = float(self.mySafeModeFactor)
-    except Exception:
-      self.mySafeModeFactor = 1.0
-    self.mySafeModeFactor = float(clip(self.mySafeModeFactor, 0.1, 1.0))
 
     try:
       pref_gap = int(self.params.get("PrevCruiseGap"))
@@ -1069,10 +1021,6 @@ class Controls:
     controlsState.sccCurvatureFactor = ntune_scc_get('sccCurvatureFactor')
     controlsState.lateralControlSelect = int(self.lateral_control_select)
     controlsState.longCruiseGap = clip(int(self.longCruiseGap), 1, 4)
-
-    # ✅ UI(Params)에서만 반영된 값 publish
-    controlsState.myDrivingMode = int(self.myDrivingMode)
-    controlsState.mySafeModeFactor = float(self.mySafeModeFactor)
 
     if self.joystick_mode:
       controlsState.lateralControlState.debugState = lac_log
