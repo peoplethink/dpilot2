@@ -1067,9 +1067,6 @@ class Controls:
     start_time = sec_since_boot()
     self.experimental_mode = self.params.get_bool("ExperimentalMode") and self.CP.openpilotLongitudinalControl
 
-    # ✅ UI(Params)에서만 MyDrivingMode/MySafeModeFactor 실시간 반영
-    self._update_my_driving_mode_from_params(force=False)
-
     CS = self.data_sample()
 
     self.update_events(CS)
