@@ -146,10 +146,6 @@ class CruiseHelperLite:
           elif (not LongPressed) and b.type == ButtonType.decelCruise:
             v_cruise_kph -= button_speed_dn_diff if metric else button_speed_dn_diff * CV.MPH_TO_KPH
             button_type = ButtonType.decelCruise
-          elif (not LongPressed) and b.type == ButtonType.gapAdjustCruise:
-            self.longCruiseGap = self.longCruiseGap + 1 if self.longCruiseGap < 4 else 1
-            put_nonblocking("PrevCruiseGap", str(int(self.longCruiseGap)))
-            button_type = ButtonType.gapAdjustCruise
 
           LongPressed = False
           ButtonCnt = 0
