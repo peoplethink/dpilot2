@@ -253,6 +253,7 @@ class LongitudinalMpc:
     self.source = SOURCES[2]
     self.openpilotLongitudinalControl = False
     self.experimentalMode = False
+    self.mySafeModeFactor = 1.0
 
   def reset(self):
     self.solver.reset()
@@ -380,8 +381,6 @@ class LongitudinalMpc:
     self.update_params()
     v_ego = self.x0[1]
     a_ego = carstate.aEgo
-
-    self.mySafeModeFactor = clip(controls.mySafeModeFactor, 0.5, 1.0)
 
     self.status = radarstate.leadOne.status or radarstate.leadTwo.status
 
@@ -527,7 +526,7 @@ class LongitudinalMpc:
       self.tFollowGap4 = float(int(Params().get("TFollowGap4", encoding="utf8"))) / 100.0
 
     elif self.lo_timer == 120:
-      pass
+      self.mySafeModeFactor = float(int(self.params.get("MySafeModeFactor", encoding="utf8"))) / 100.0
     elif self.lo_timer == 140:
       self.softHoldMode = int(Params().get("SoftHoldMode", encoding="utf8"))
     elif self.lo_timer == 160:
