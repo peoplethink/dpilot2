@@ -74,11 +74,11 @@ class Planner:
     self.vCluRatio = 1.0
 
     self.myEcoModeFactor = 1.0
-    self.myDrivingMode = 3  # ✅ UI(Params) 기반으로만 사용할 driving mode (기본: 일반)
+    self.mySafeModeFactor = 1.0
+    self.myDrivingMode = 3
 
     self.params_count = 0
 
-    # (초기값) 파라미터 없을 수 있으니 안전하게 기본값 세팅
     self.cruiseMaxVals1 = 1.5
     self.cruiseMaxVals2 = 1.3
     self.cruiseMaxVals3 = 0.4
@@ -98,20 +98,23 @@ class Planner:
     self.read_param()
 
   def read_param(self):
-    # ✅ 안전하게: 값이 없거나 파싱 실패해도 크래시 안 나게
     try:
       self.myEcoModeFactor = float(int(self.params.get("MyEcoModeFactor", encoding="utf8"))) / 100.
     except Exception:
       pass
 
+    try:
+      self.mySafeModeFactor = float(int(self.params.get("MySafeModeFactor", encoding="utf8"))) / 100.
+    except Exception:
+      pass
+      
     for i in range(1, 7):
       try:
         v = float(int(self.params.get(f"CruiseMaxVals{i}", encoding="utf8"))) / 100.
         setattr(self, f"cruiseMaxVals{i}", v)
       except Exception:
         pass
-
-    # ✅ UI에서만 실시간 반영: controlsState.myDrivingMode 무시하고 Params만 사용
+        
     try:
       self.myDrivingMode = int(self.params.get("MyDrivingMode", encoding="utf8"))
     except Exception:
@@ -124,7 +127,6 @@ class Planner:
     ]
     return interp(v_ego, A_CRUISE_MAX_BP, cruiseMaxVals)
 
-  # ✅ FIX: staticmethod 제거 + 인자/호출 일치 (model_msg가 float로 들어가던 크래시 해결)
   def parse_model(self, model_msg, model_error, v_ego):
     # modelV2 메시지가 깨졌을 때(혹은 None) 크래시 방지
     if model_msg is None or not hasattr(model_msg, 'position'):
@@ -149,7 +151,6 @@ class Planner:
     return x, v, a, j
 
   def update(self, sm):
-    # ✅ UI 실시간 반영: 더 자주 읽기(0.1s 정도 체감)
     if self.param_read_counter % 10 == 0:
       self.read_param()
     self.param_read_counter += 1
@@ -168,9 +169,8 @@ class Planner:
         v_cruise *= vCluRatio
         v_cruise = int(v_cruise * CV.MS_TO_KPH + 0.25) * CV.KPH_TO_MS
 
-    mySafeModeFactor = sm['controlsState'].mySafeModeFactor
-
-    # ✅ UI(Params)에서만 실시간 반영되도록 고정
+    mySafeModeFactor = self.mySafeModeFactor
+    myEcoModeFactor  = self.myEcoModeFactor
     myDrivingMode = self.myDrivingMode
 
     long_control_off = sm['controlsState'].longControlState == LongCtrlState.off
@@ -184,9 +184,9 @@ class Planner:
 
     if self.mpc.mode == 'acc':
       if myDrivingMode in [1]:  # 연비
-        myMaxAccel = clip(self.get_max_accel(v_ego) * self.myEcoModeFactor, 0, ACCEL_MAX)
+        myMaxAccel = clip(self.get_max_accel(v_ego) * myEcoModeFactor, 0, ACCEL_MAX)
       elif myDrivingMode in [2]:  # 안전
-        myMaxAccel = clip(self.get_max_accel(v_ego) * self.myEcoModeFactor * mySafeModeFactor, 0, ACCEL_MAX)
+        myMaxAccel = clip(self.get_max_accel(v_ego) * myEcoModeFactor * mySafeModeFactor, 0, ACCEL_MAX)
       elif myDrivingMode in [3, 4]:  # 일반, 고속
         myMaxAccel = clip(self.get_max_accel(v_ego), 0, ACCEL_MAX)
       else:
@@ -206,7 +206,6 @@ class Planner:
       self.a_desired = clip(sm['carState'].aEgo, accel_limits[0], accel_limits[1])
       # mpc에서는 prev_a를 참고하여 constraint작동함.... pid off -> on시에는 현재 constraint가 작동하지 않아서 집어넣어봄...
       self.mpc.prev_a = np.full(N + 1, self.a_desired)
-      # ✅ FIX: 중복 대입 제거 (오타) + 하한 0으로(원 코드 유지)
       accel_limits_turns[0] = 0.0
 
     # Prevent divergence, smooth in current v_ego
@@ -232,7 +231,6 @@ class Planner:
     self.mpc.set_accel_limits(accel_limits_turns[0], accel_limits_turns[1])
     self.mpc.set_cur_state(self.v_desired_filter.x, self.a_desired)
 
-    # ✅ FIX: parse_model 시그니처/호출 일치
     x, v, a, j = self.parse_model(sm['modelV2'], self.v_model_error, v_ego)
 
     self.mpc.update(
