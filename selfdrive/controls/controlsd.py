@@ -333,7 +333,13 @@ class Controls:
     self._traffic_evt_frame = 0
     self._xstate_prev_for_traffic = XState.cruise
 
-    self.longCruiseGap = clip(int(self.params.get("PrevCruiseGap", encoding="utf8")), 1, 4)
+    try:
+      pg = self.params.get("PrevCruiseGap", encoding="utf8")
+      self.longCruiseGap = clip(int(pg) if (pg is not None and len(pg)) else 1, 1, 4)
+    except Exception:
+      self.longCruiseGap = 1
+
+    self._gap_param_read_cnt = 0
 
     self._gap_btn_cnt = 0
     self._gap_btn_prev = ButtonType.unknown
@@ -371,9 +377,7 @@ class Controls:
     self.rk = Ratekeeper(100, print_delay_threshold=None)
     self.prof = Profiler(False)
 
-  # ✅ UI(Params)에서 MyDrivingMode + MySafeModeFactor 읽어 실시간 반영
   def _update_my_driving_mode_from_params(self, force: bool = False):
-    # 너무 자주 읽지 않도록 10프레임(0.1s)마다 갱신
     if (not force) and (self._md_mode_read_cnt % 10 != 0):
       self._md_mode_read_cnt += 1
       return
@@ -397,6 +401,23 @@ class Controls:
     self.mySafeModeFactor = float(clip(float(self.mySafeModeFactor), 0.1, 1.0))
 
     self._md_mode_read_cnt += 1
+
+  def _update_long_cruise_gap_from_params(self, force: bool = False) -> None:
+    if (not force) and (self._gap_param_read_cnt % 10 != 0):
+      self._gap_param_read_cnt += 1
+      return
+
+    try:
+      v = self.params.get("PrevCruiseGap", encoding="utf8")
+      if v is not None and len(v):
+        new_gap = int(v)
+        new_gap = int(clip(new_gap, 1, 4))
+        if new_gap != int(self.longCruiseGap):
+          self.longCruiseGap = new_gap
+    except Exception:
+      pass
+
+    self._gap_param_read_cnt += 1
 
   def send_apilot_event(self, eventName, waiting=20.0):
     # CruiseHelper와 동일: 마지막 이벤트 후 waiting초 경과 시에만 발생
@@ -429,7 +450,7 @@ class Controls:
 
       elif (not b.pressed) and self._gap_btn_cnt > 0 and b.type == ButtonType.gapAdjustCruise:
         if not self._gap_btn_long_pressed:
-          self.longCruiseGap = self.longCruiseGap + 1 if self.longCruiseGap < 4 else 1
+          self.longCruiseGap = int(self.longCruiseGap) + 1 if int(self.longCruiseGap) < 4 else 1
           put_nonblocking("PrevCruiseGap", str(int(self.longCruiseGap)))
         self._gap_btn_long_pressed = False
         self._gap_btn_cnt = 0
@@ -701,14 +722,13 @@ class Controls:
       self.mySafeModeFactor = 1.0
     self.mySafeModeFactor = float(clip(self.mySafeModeFactor, 0.1, 1.0))
 
-    try:
-      pref_gap = int(self.params.get("PrevCruiseGap", encoding="utf8"))
-      self.longCruiseGap = clip(pref_gap, 1, 4)
-    except Exception:
-      if self.CP.openpilotLongitudinalControl:
-        self.longCruiseGap = clip(int(self.sm['longitudinalPlan'].cruiseGap), 1, 4)
-      else:
+    if self.CP.openpilotLongitudinalControl:
+      self._update_long_cruise_gap_from_params(force=False)
+    else:
+      try:
         self.longCruiseGap = clip(int(getattr(CS, 'cruiseGap', 1)), 1, 4)
+      except Exception:
+        self.longCruiseGap = clip(int(self.longCruiseGap), 1, 4)
 
     lead = self.sm['radarState'].leadOne
     if lead.status:
@@ -775,7 +795,6 @@ class Controls:
             self.state = State.enabled
           self.current_alert_types.append(ET.ENABLE)
 
-          # ✅ commaai#26472: enable 시 helper 초기 set speed
           self.v_cruise_helper.initialize_v_cruise(CS, self.experimental_mode)
 
     self.enabled = self.state in ENABLED_STATES
@@ -1103,10 +1122,11 @@ class Controls:
   def step(self):
     start_time = sec_since_boot()
     self.experimental_mode = self.params.get_bool("ExperimentalMode") and self.CP.openpilotLongitudinalControl
-
-    # ✅ UI(Params)에서만 MyDrivingMode/MySafeModeFactor 실시간 반영
     self._update_my_driving_mode_from_params(force=False)
-
+    
+    if self.CP.openpilotLongitudinalControl:
+      self._update_long_cruise_gap_from_params(force=False)
+    
     CS = self.data_sample()
 
     self.update_events(CS)
