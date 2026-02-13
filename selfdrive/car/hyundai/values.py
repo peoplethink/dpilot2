@@ -3,13 +3,13 @@ from selfdrive.car import dbc_dict
 Ecu = car.CarParams.Ecu
 
 class CarControllerParams:
-  ACCEL_MAX = 2.0
-  ACCEL_MIN = -3.5
+  ACCEL_MAX = 2.5
+  ACCEL_MIN = -4.0
 
   def __init__(self, CP):
     self.STEER_MAX = 408   # 409 is the max, 255 is stock
-    self.STEER_DELTA_UP = 6   # 1.5s time to peak torque
-    self.STEER_DELTA_DOWN = 8
+    self.STEER_DELTA_UP = 3   # 1.5s time to peak torque
+    self.STEER_DELTA_DOWN = 7
     self.STEER_DRIVER_ALLOWANCE = 50
     self.STEER_DRIVER_MULTIPLIER = 2
     self.STEER_DRIVER_FACTOR = 1
