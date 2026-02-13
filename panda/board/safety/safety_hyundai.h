@@ -1,12 +1,12 @@
 #include "safety_hyundai_common.h"
 
 const SteeringLimits HYUNDAI_STEERING_LIMITS = {
-  .max_steer = 408,
-  .max_rt_delta = 120,
+  .max_steer = 509,
+  .max_rt_delta = 300,
   .max_rt_interval = 250000,
-  .max_rate_up = 3,
-  .max_rate_down = 7,
-  .driver_torque_allowance = 50,
+  .max_rate_up = 30,
+  .max_rate_down = 30,
+  .driver_torque_allowance = 350,
   .driver_torque_factor = 2,
   .type = TorqueDriverLimited,
   
@@ -18,8 +18,8 @@ const SteeringLimits HYUNDAI_STEERING_LIMITS = {
   .has_steer_req_tolerance = true,
 };
 
-const int HYUNDAI_MAX_ACCEL = 200;  // 1/100 m/s2
-const int HYUNDAI_MIN_ACCEL = -370; // 1/100 m/s2
+const int HYUNDAI_MAX_ACCEL = 250;  // 1/100 m/s2
+const int HYUNDAI_MIN_ACCEL = -400; // 1/100 m/s2
 
 const CanMsg HYUNDAI_TX_MSGS[] = {
   {832, 0, 8},  // LKAS11 Bus 0
