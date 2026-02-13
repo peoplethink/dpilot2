@@ -139,6 +139,8 @@ def manager_init() -> None:
     ("CruiseMaxVals6", "60"),
     ("SccConnectedBus2", "1"),
     ("PrevCruiseGap", "4"),
+    ("SteerDeltaUp", "3"),       
+    ("SteerDeltaDown", "7"),
     ("NNFF", "0"),
     ("NNFFLite", "0"),
     ("PutPrebuilt", "0"), 
