@@ -556,7 +556,7 @@ class LongitudinalMpc:
           [0, 40, 100],
           [tf, tf + self.tFollowSpeedAddM, tf + self.tFollowSpeedAdd]
         )
-        self.t_follow = max(0.8, cruiseGapRatio)
+        self.t_follow = max(0.6, cruiseGapRatio)
     else:
       if self.status:
         if v_ego_kph < 0.1:
