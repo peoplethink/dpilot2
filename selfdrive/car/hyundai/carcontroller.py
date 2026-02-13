@@ -55,9 +55,8 @@ class CarController:
 
     self.apply_steer_last = 0
 
-    # ✅ accel (첫번째 코드 스타일: update()에서 매 프레임 갱신)
     self.accel = 0.0
-    self.accel_last = 0.0  # (선택) 디버그/튜닝용, 에러 없음
+    self.accel_last = 0.0
 
     self.lkas11_cnt = 0
     self.scc12_cnt = -1
@@ -95,9 +94,11 @@ class CarController:
     self.jerkStartLimit = 1.0
     self.jerk_count = 0.0
 
-    # ===== softHold =====
-    self.softHoldMode = 1  # 0이면 무시, 1이면 사용(기본), 2는 mix-scc 보정모드에서 의미있음
+    self.softHoldMode = 1
 
+    self.steerDeltaUp = 3
+    self.steerDeltaDown = 7
+    
   def update(self, CC, CS, controls):
     actuators = CC.actuators
     hud_control = CC.hudControl
@@ -126,24 +127,18 @@ class CarController:
     torque_fault = CC.latActive and not apply_steer_req
     self.apply_steer_last = apply_steer
 
-    # ==========================================================
-    # ✅ accel: 첫번째 코드 방식 (update()에서 매 프레임 clip)
-    # ==========================================================
     accel = clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
     self.accel = float(accel)
     controls.apply_accel = float(accel)
 
-    # (옵션) longControl off면 0으로
     if actuators.longControlState == LongCtrlState.off:
       self.accel = 0.0
       controls.apply_accel = 0.0
-    # ==========================================================
 
     sys_warning, sys_state, left_lane_warning, right_lane_warning = process_hud_alert(
       CC.enabled, self.car_fingerprint, hud_control
     )
 
-    # 과속카메라 햅틱(차선이탈 경고로 진동 대용)
     if self.haptic_feedback_speed_camera:
       if self.prev_active_cam != self.scc_smoother.active_cam:
         self.prev_active_cam = self.scc_smoother.active_cam
@@ -165,15 +160,30 @@ class CarController:
       self.lkas11_cnt = CS.lkas11["CF_Lkas_MsgCount"]
     self.lkas11_cnt = (self.lkas11_cnt + 1) % 0x10
 
-    # ===== Params 주기 로드 =====
     if self.frame % 100 == 0:
       self.maxAngleFrames = int(Params().get("MaxAngleFrames", encoding="utf8"))
       self.jerkStartLimit = float(int(Params().get("JerkStartLimit", encoding="utf8"))) * 0.1
-      try:
-        self.softHoldMode = int(Params().get("SoftHoldMode", encoding="utf8"))
-      except Exception:
-        pass
+      self.softHoldMode = int(Params().get("SoftHoldMode", encoding="utf8"))
+      self.steerDeltaUp = int(Params().get("SteerDeltaUp", encoding="utf8"))
+      self.steerDeltaDown = int(Params().get("SteerDeltaDown", encoding="utf8"))
+      
+    new_steer = int(round(actuators.steer * self.params.STEER_MAX))
 
+    self.params.STEER_DELTA_UP = self.steerDeltaUp
+    self.params.STEER_DELTA_DOWN = self.steerDeltaDown
+
+    apply_steer = apply_std_steer_torque_limits(
+      new_steer, self.apply_steer_last, CS.out.steeringTorque, self.params
+    )
+
+    self.angle_limit_counter, apply_steer_req = common_fault_avoidance(
+      abs(CS.out.steeringAngleDeg) >= MAX_ANGLE, CC.latActive,
+      self.angle_limit_counter, self.maxAngleFrames,
+      MAX_ANGLE_CONSECUTIVE_FRAMES
+    )
+
+    lkas_active = CC.latActive
+      
     can_sends = []
 
     can_sends.append(create_lkas11(
