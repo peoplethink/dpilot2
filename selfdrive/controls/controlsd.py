@@ -99,13 +99,8 @@ class CruiseHelperLite:
     except Exception:
       self.cruiseSpeedUnit = 1
 
-    try:
-      self.longCruiseGap = clip(int(Params().get("PrevCruiseGap", encoding="utf8") or b"2"), 1, 4)
-    except Exception:
-      self.longCruiseGap = 2
 
   def update_params_light(self, frame):
-    # 너무 자주 읽지 않도록 가볍게
     if frame % 50 == 0:
       try:
         self.cruiseSpeedMin = int(Params().get("CruiseSpeedMin", encoding="utf8") or b"20")
@@ -133,8 +128,7 @@ class CruiseHelperLite:
       if ButtonCnt > 0:
         ButtonCnt += 1
       for b in buttonEvents:
-        if b.pressed and ButtonCnt == 0 and (b.type in [ButtonType.accelCruise, ButtonType.decelCruise,
-                                                        ButtonType.gapAdjustCruise, ButtonType.cancel]):
+        if b.pressed and ButtonCnt == 0 and (b.type in [ButtonType.accelCruise, ButtonType.decelCruise, ButtonType.cancel]):
           ButtonCnt = 1
           ButtonPrev = b.type
         elif (not b.pressed) and ButtonCnt > 0:
@@ -146,10 +140,6 @@ class CruiseHelperLite:
           elif (not LongPressed) and b.type == ButtonType.decelCruise:
             v_cruise_kph -= button_speed_dn_diff if metric else button_speed_dn_diff * CV.MPH_TO_KPH
             button_type = ButtonType.decelCruise
-          elif (not LongPressed) and b.type == ButtonType.gapAdjustCruise:
-            self.longCruiseGap = self.longCruiseGap + 1 if self.longCruiseGap < 4 else 1
-            put_nonblocking("PrevCruiseGap", str(int(self.longCruiseGap)))
-            button_type = ButtonType.gapAdjustCruise
 
           LongPressed = False
           ButtonCnt = 0
@@ -168,9 +158,6 @@ class CruiseHelperLite:
           v_cruise_kph -= V_CRUISE_DELTA - -v_cruise_kph % V_CRUISE_DELTA
           button_type = ButtonType.decelCruise
           ButtonCnt %= 40
-        elif ButtonPrev == ButtonType.gapAdjustCruise:
-          button_type = ButtonType.gapAdjustCruise
-          ButtonCnt = 0
 
     v_cruise_kph = clip(v_cruise_kph, self.cruiseSpeedMin, self.V_CRUISE_MAX)
     return v_cruise_kph
@@ -186,7 +173,6 @@ class Controls:
   def __init__(self, sm=None, pm=None, can_sock=None, CI=None):
     config_realtime_process(4 if TICI else 3, Priority.CTRL_HIGH)
 
-    # ✅ Params 통일 (크래시 방지 핵심)
     self.params = Params()
     params = self.params
 
@@ -347,7 +333,7 @@ class Controls:
     self._traffic_evt_frame = 0
     self._xstate_prev_for_traffic = XState.cruise
 
-    self.longCruiseGap = clip(int(self.params.get("PrevCruiseGap")), 1, 4)
+    self.longCruiseGap = clip(int(self.params.get("PrevCruiseGap", encoding="utf8")), 1, 4)
 
     self._gap_btn_cnt = 0
     self._gap_btn_prev = ButtonType.unknown
@@ -356,7 +342,6 @@ class Controls:
     self.dRel = 0.0
     self.vRel = 0.0
 
-    # ✅ UI에서만 반영할 값들
     self.myDrivingMode = 3          # 1:ECO 2:SAFE 3:NORMAL 4:HIGH 5:AUTO
     self.mySafeModeFactor = 1.0     # 0.1~1.0
     self._md_mode_read_cnt = 0      # param read counter
@@ -434,7 +419,6 @@ class Controls:
     self._traffic_evt_frame = self.sm.frame
 
   def _update_long_cruise_gap_from_buttons(self, button_events) -> None:
-    # press 시작 -> release에서 short press면 gap 순환
     if self._gap_btn_cnt > 0:
       self._gap_btn_cnt += 1
 
@@ -444,14 +428,12 @@ class Controls:
         self._gap_btn_prev = b.type
 
       elif (not b.pressed) and self._gap_btn_cnt > 0 and b.type == ButtonType.gapAdjustCruise:
-        # release: short press만 처리 (long press면 무시)
         if not self._gap_btn_long_pressed:
           self.longCruiseGap = self.longCruiseGap + 1 if self.longCruiseGap < 4 else 1
           put_nonblocking("PrevCruiseGap", str(int(self.longCruiseGap)))
         self._gap_btn_long_pressed = False
         self._gap_btn_cnt = 0
 
-    # long press 판정(원 코드: 40프레임 초과)
     if self._gap_btn_cnt > 40 and self._gap_btn_prev == ButtonType.gapAdjustCruise:
       self._gap_btn_long_pressed = True
       self._gap_btn_cnt = 0
@@ -693,7 +675,6 @@ class Controls:
     return CS
 
   def state_transition(self, CS):
-    # keep in sync (CI 내부 CP 갱신 가능)
     self.CP.pcmCruise = self.CI.CP.pcmCruise
     self.v_cruise_helper.update_v_cruise(CS, self.enabled, self.is_metric)
     base_v_cruise_kph = float(self.v_cruise_helper.v_cruise_kph)
@@ -721,7 +702,7 @@ class Controls:
     self.mySafeModeFactor = float(clip(self.mySafeModeFactor, 0.1, 1.0))
 
     try:
-      pref_gap = int(self.params.get("PrevCruiseGap"))
+      pref_gap = int(self.params.get("PrevCruiseGap", encoding="utf8"))
       self.longCruiseGap = clip(pref_gap, 1, 4)
     except Exception:
       if self.CP.openpilotLongitudinalControl:
