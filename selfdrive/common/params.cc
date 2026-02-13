@@ -285,10 +285,13 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"CruiseMaxVals6", PERSISTENT},
     {"SccConnectedBus2", PERSISTENT},
     {"PrevCruiseGap", PERSISTENT},
+    {"SteerDeltaUp", PERSISTENT},
+    {"SteerDeltaDown", PERSISTENT},
     {"NNFF", PERSISTENT},
     {"NNFFLite", PERSISTENT},
     {"NNFFModelName", PERSISTENT},
     {"AutoLaneChangeEnabled", PERSISTENT},
+
 };
 
 } // namespace
