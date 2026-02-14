@@ -60,7 +60,7 @@ class LanePlanner:
       self.l_turn_prob = desire_state[log.LateralPlan.Desire.turnLeft]
       self.r_turn_prob = desire_state[log.LateralPlan.Desire.turnRight]
 
-  def get_d_path(self, v_ego, path_t, path_xyz, lanelines_active):
+  def get_d_path(self, v_ego, path_t, path_xyz):
     # Reduce reliance on lanelines that are too far apart or will be in a few seconds
     l_prob, r_prob = self.lll_prob, self.rll_prob
     width_pts = self.rll_y - self.lll_y
@@ -116,8 +116,10 @@ class LanePlanner:
     lane_path_y = (l_prob * path_from_left_lane + r_prob * path_from_right_lane) / (l_prob + r_prob + 0.0001)
 
     safe_idxs = np.isfinite(self.ll_t)
-    if safe_idxs[0] and lanelines_active:
+    
+    if safe_idxs.any():
       lane_path_y_interp = np.interp(path_t, self.ll_t[safe_idxs], lane_path_y[safe_idxs])
-      path_xyz[:, 1] = self.d_prob * lane_path_y_interp + (1.0 - self.d_prob) * path_xyz[:, 1]
+      path_xyz[:, 1] = self.d_prob * lane_path_y_interp + \
+                       (1.0 - self.d_prob) * path_xyz[:, 1]
 
     return path_xyz
