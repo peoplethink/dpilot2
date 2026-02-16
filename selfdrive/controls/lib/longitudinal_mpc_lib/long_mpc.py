@@ -401,7 +401,7 @@ class LongitudinalMpc:
     lead_xv_0 = self.process_lead(radarstate.leadOne)
     lead_xv_1 = self.process_lead(radarstate.leadTwo)
 
-    self.update_gap_tf(controls, v_ego, a_ego)
+    self.update_gap_tf(controls, v_ego)
 
     self.comfort_brake = COMFORT_BRAKE
     applyStopDistance = self.stopDistance * (2.0 - self.mySafeModeFactor)
