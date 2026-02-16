@@ -549,29 +549,23 @@ class LongitudinalMpc:
       self.trafficStopAdjustRatio = float(int(Params().get("TrafficStopAdjustRatio", encoding="utf8"))) / 100.0
 
   def update_gap_tf(self, carstate, v_ego):
-  """
-  ✅ ACC 모드도 첫번째 코드처럼 '완전 고정 테이블'만 사용
-  - carstate.cruiseGap 우선 사용 (0이면 AUTO_TR로 간주)
-  - AUTO_TR(=4)면 속도 기반 AUTO_TR_V
-  - 아니면 gap(1~4) -> CRUISE_GAP_V(ACC) / CRUISE_GAP_E2E_V(비ACC)로 바로 매핑
-  """
-  cg_raw = float(getattr(carstate, "cruiseGap", 0.0))
-  cruise_gap = int(clip(cg_raw, 1., 4.)) if cg_raw > 0 else AUTO_TR_CRUISE_GAP
-  self.applyCruiseGap = cruise_gap
+    cg_raw = float(getattr(carstate, "cruiseGap", 0.0))
+    cruise_gap = int(clip(cg_raw, 1., 4.)) if cg_raw > 0 else AUTO_TR_CRUISE_GAP
+    self.applyCruiseGap = cruise_gap
 
-  # AUTO_TR(=4): 속도 기반 TR
-  if cruise_gap == AUTO_TR_CRUISE_GAP:
-    tr = float(interp(v_ego, AUTO_TR_BP, AUTO_TR_V)) if self.mode == 'acc' else float(T_FOLLOW)
+    # AUTO_TR(=4): 속도 기반 TR
+    if cruise_gap == AUTO_TR_CRUISE_GAP:
+      tr = float(interp(v_ego, AUTO_TR_BP, AUTO_TR_V)) if self.mode == 'acc' else float(T_FOLLOW)
+      self.t_follow = max(0.6, tr)
+      return
+
+    # GAP(1~4): 완전 고정 테이블 매핑
+    if self.mode == 'acc':
+      tr = float(interp(float(cruise_gap), CRUISE_GAP_BP, CRUISE_GAP_V))
+    else:
+      tr = float(interp(float(cruise_gap), CRUISE_GAP_BP, CRUISE_GAP_E2E_V))
+
     self.t_follow = max(0.6, tr)
-    return
-
-  # GAP(1~4): 완전 고정 테이블 매핑
-  if self.mode == 'acc':
-    tr = float(interp(float(cruise_gap), CRUISE_GAP_BP, CRUISE_GAP_V))
-  else:
-    tr = float(interp(float(cruise_gap), CRUISE_GAP_BP, CRUISE_GAP_E2E_V))
-
-  self.t_follow = max(0.6, tr)
 
   # stop dist helpers
   def update_stop_dist(self, stop_x):
