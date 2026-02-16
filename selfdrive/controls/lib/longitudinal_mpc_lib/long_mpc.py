@@ -65,6 +65,19 @@ T_FOLLOW = 1.45
 COMFORT_BRAKE = 2.5
 STOP_DISTANCE = 6.0
 
+# ====== Cruise gap -> TR mapping (첫번째 코드 방식 이식) ======
+CRUISE_GAP_BP = [1., 2., 3., 4.]
+
+# (원하면 여기 값을 "첫번째 코드 값"으로 고정해도 되고,
+#  아래 update_gap_tf에서 self.tFollowGap1~4를 쓰도록 했으니 파람값을 계속 써도 됩니다)
+CRUISE_GAP_V = [1.1, 1.3, 1.6, 1.8]
+CRUISE_GAP_E2E_V = [1.3, 1.45, 1.6, 1.8]
+
+AUTO_TR_BP = [0., 30.*CV.KPH_TO_MS, 70.*CV.KPH_TO_MS, 110.*CV.KPH_TO_MS]
+AUTO_TR_V  = [1.2, 1.3, 1.4, 1.5]
+
+AUTO_TR_CRUISE_GAP = 4
+
 
 def get_stopped_equivalence_factor(v_lead, v_ego, t_follow=T_FOLLOW, stop_distance=STOP_DISTANCE, krkeegan=False):
   if not krkeegan:
@@ -535,36 +548,30 @@ class LongitudinalMpc:
       self.applyModelDistOrder = int(Params().get("ApplyModelDistOrder", encoding="utf8"))
       self.trafficStopAdjustRatio = float(int(Params().get("TrafficStopAdjustRatio", encoding="utf8"))) / 100.0
 
-  # ✅ Add / AddM 버전 tfollow 계산 (첫번째 코드 그대로)
-  def update_gap_tf(self, controls, v_ego, a_ego):
-    v_ego_kph = v_ego * CV.MS_TO_KPH
+  def update_gap_tf(self, carstate, v_ego):
+  """
+  ✅ ACC 모드도 첫번째 코드처럼 '완전 고정 테이블'만 사용
+  - carstate.cruiseGap 우선 사용 (0이면 AUTO_TR로 간주)
+  - AUTO_TR(=4)면 속도 기반 AUTO_TR_V
+  - 아니면 gap(1~4) -> CRUISE_GAP_V(ACC) / CRUISE_GAP_E2E_V(비ACC)로 바로 매핑
+  """
+  cg_raw = float(getattr(carstate, "cruiseGap", 0.0))
+  cruise_gap = int(clip(cg_raw, 1., 4.)) if cg_raw > 0 else AUTO_TR_CRUISE_GAP
+  self.applyCruiseGap = cruise_gap
 
-    self.applyCruiseGap = clip(controls.longCruiseGap, 1, 4)
-    if self.openpilotLongitudinalControl:
-      # 감속일 때는 t_follow 계산 안함
-      if v_ego_kph >= self.v_ego_kph_prev:
-        cruiseGap_dict = {
-          1: self.tFollowGap1,
-          2: self.tFollowGap2,
-          3: self.tFollowGap3,
-          4: self.tFollowGap4,
-        }
-        tf = cruiseGap_dict[self.applyCruiseGap]
+  # AUTO_TR(=4): 속도 기반 TR
+  if cruise_gap == AUTO_TR_CRUISE_GAP:
+    tr = float(interp(v_ego, AUTO_TR_BP, AUTO_TR_V)) if self.mode == 'acc' else float(T_FOLLOW)
+    self.t_follow = max(0.6, tr)
+    return
 
-        cruiseGapRatio = interp(
-          v_ego_kph,
-          [0, 40, 100],
-          [tf, tf + self.tFollowSpeedAddM, tf + self.tFollowSpeedAdd]
-        )
-        self.t_follow = max(0.6, cruiseGapRatio)
-    else:
-      if self.status:
-        if v_ego_kph < 0.1:
-          self.applyCruiseGap = 1
-        else:
-          self.applyCruiseGap = int(interp(a_ego, [-1.5, -0.5], [4, self.applyCruiseGap]))
+  # GAP(1~4): 완전 고정 테이블 매핑
+  if self.mode == 'acc':
+    tr = float(interp(float(cruise_gap), CRUISE_GAP_BP, CRUISE_GAP_V))
+  else:
+    tr = float(interp(float(cruise_gap), CRUISE_GAP_BP, CRUISE_GAP_E2E_V))
 
-    self.v_ego_kph_prev = v_ego_kph
+  self.t_follow = max(0.6, tr)
 
   # stop dist helpers
   def update_stop_dist(self, stop_x):
