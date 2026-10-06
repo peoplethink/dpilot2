@@ -153,6 +153,7 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     trafficSignGreen @127; #ajouatom
     trafficSignChanged @128; #ajouatom
     resumeBlocked @129;
+    leadCarDeparted @130;
   }
 }
 
@@ -435,6 +436,10 @@ struct CarControl {
       promptDistracted @8;
 
       slowingDownSpeed @9;
+
+      leadCarDeparted @10;
+      trafficSignGreen @11;
+      trafficSignChanged @12;
     }
   }
 

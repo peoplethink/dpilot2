@@ -934,7 +934,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
       "출발합니다",
       "",
       AlertStatus.normal, AlertSize.small,
-      Priority.LOW, VisualAlert.none, AudibleAlert.none,
+      Priority.LOW, VisualAlert.none, AudibleAlert.trafficSignGreen,
       2.0,
       alert_rate=0.5),
   },
@@ -944,9 +944,17 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
       "신호가 바뀌었어요",
       "",
       AlertStatus.normal, AlertSize.small,
-      Priority.LOW, VisualAlert.none, AudibleAlert.none,
+      Priority.LOW, VisualAlert.none, AudibleAlert.trafficSignChanged,
       2.0,
       alert_rate=0.5),
+  },
+
+  EventName.leadCarDeparted: {
+    ET.PERMANENT: Alert(
+      "앞차가 출발했어요",
+      "",
+      AlertStatus.normal, AlertSize.small,
+      Priority.LOW, VisualAlert.none, AudibleAlert.leadCarDeparted, 2.0),
   },
 
   EventName.slowingDownSpeed: {

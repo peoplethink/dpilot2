@@ -346,6 +346,9 @@ class Controls:
     self._traffic_state_prev = 0
     self._traffic_evt_frame = 0
     self._xstate_prev_for_traffic = XState.cruise
+    self._lead_depart_stop_frames = 0
+    self._lead_depart_base_dist = None
+    self._lead_depart_armed = False
 
     self.longCruiseGap = clip(int(self.params.get("PrevCruiseGap")), 1, 4)
 
@@ -432,6 +435,31 @@ class Controls:
       return
     self.events.add(evt)
     self._traffic_evt_frame = self.sm.frame
+
+  def _update_lead_depart_alert(self, CS) -> None:
+    # 정차 중 앞차가 출발하면 알림 (정차 1초 이상, 앞차 15m 이내, 1.5m 이상 멀어지고 앞차 속도 0.5m/s 이상)
+    lead = self.sm['radarState'].leadOne
+    if CS.vEgo > 0.5 or CS.gasPressed:
+      self._lead_depart_stop_frames = 0
+      self._lead_depart_base_dist = None
+      self._lead_depart_armed = False
+      return
+
+    self._lead_depart_stop_frames += 1
+    if self._lead_depart_stop_frames * DT_CTRL < 1.0 or not lead.status:
+      return
+
+    if self._lead_depart_base_dist is None:
+      if lead.dRel < 15.0:
+        self._lead_depart_base_dist = lead.dRel
+        self._lead_depart_armed = True
+      return
+
+    self._lead_depart_base_dist = min(self._lead_depart_base_dist, lead.dRel)
+    v_lead = CS.vEgo + lead.vRel
+    if self._lead_depart_armed and lead.dRel - self._lead_depart_base_dist > 1.5 and v_lead > 0.5:
+      self.events.add(EventName.leadCarDeparted)
+      self._lead_depart_armed = False
 
   def _update_long_cruise_gap_from_buttons(self, button_events) -> None:
     # press 시작 -> release에서 short press면 gap 순환
@@ -599,6 +627,8 @@ class Controls:
         self.send_apilot_event(mpcEvent, 5.0)
 
     self.mpcEvent_prev = mpcEvent
+    self._update_lead_depart_alert(CS)
+
     traffic_raw = int(self.sm['longitudinalPlan'].trafficState)
     traffic_state = traffic_raw % 100
     traffic_error = traffic_raw >= 1000
