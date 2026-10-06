@@ -1,4 +1,4 @@
-##!/usr/bin/env python3
+#!/usr/bin/env python3
 import os
 from enum import IntEnum
 from typing import Dict, Union, Callable, List, Optional
@@ -924,8 +924,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
       "신호감속 정지중입니다",
       "감속/정지 중입니다",
       AlertStatus.normal, AlertSize.small,
-#     Priority.LOW, VisualAlert.none, AudibleAlert.none,
-      Priority.LOW, VisualAlert.none, AudibleAlert.warningImmediate,
+      Priority.LOW, VisualAlert.none, AudibleAlert.none,
       2.0,
       alert_rate=1.0),
   },
@@ -935,8 +934,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
       "출발합니다",
       "",
       AlertStatus.normal, AlertSize.small,
-#     Priority.LOW, VisualAlert.none, AudibleAlert.none,
-      Priority.LOW, VisualAlert.none, AudibleAlert.warningImmediate,
+      Priority.LOW, VisualAlert.none, AudibleAlert.none,
       2.0,
       alert_rate=0.5),
   },
@@ -946,17 +944,18 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
       "신호가 바뀌었어요",
       "",
       AlertStatus.normal, AlertSize.small,
-#     Priority.LOW, VisualAlert.none, AudibleAlert.none,
-      Priority.LOW, VisualAlert.none, AudibleAlert.warningImmediate, 2.0, alert_rate=0.5),
+      Priority.LOW, VisualAlert.none, AudibleAlert.none,
+      2.0,
+      alert_rate=0.5),
   },
 
   EventName.slowingDownSpeed: {
     ET.PERMANENT: Alert("과속카메라 감지 : 감속중","", AlertStatus.normal, AlertSize.small,
-      Priority.MID, VisualAlert.none, AudibleAlert.warningImmediate, .1),
+      Priority.MID, VisualAlert.none, AudibleAlert.none, .1),
   },
 
   EventName.slowingDownSpeedSound: {
     ET.PERMANENT: Alert("과속카메라 감지 : 감속중","", AlertStatus.normal, AlertSize.small,
-      Priority.HIGH, VisualAlert.none, AudibleAlert.warningImmediate, 2.),
+      Priority.HIGH, VisualAlert.none, AudibleAlert.none, 2.),
   },
 }
